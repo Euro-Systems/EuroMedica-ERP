@@ -38,12 +38,7 @@ class RecursosHumanosController extends Controller
             $colsEmp = \Illuminate\Support\Facades\Schema::getColumnListing('rh_empleados');
             foreach ($empleados as $item) {
                 $item = array_intersect_key($item, array_flip($colsEmp));
-                if (isset($item['documentos']) && is_array($item['documentos'])) {
-                    $item['documentos'] = json_encode($item['documentos']);
-                }
-                if (isset($item['observaciones']) && is_array($item['observaciones'])) {
-                    $item['observaciones'] = json_encode($item['observaciones']);
-                }
+                // Laravel casts to array natively
                 unset($item['created_at'], $item['updated_at']);
                 if (!empty($item['id'])) {
                     RhEmpleado::updateOrCreate(['id' => $item['id']], $item);
@@ -59,12 +54,7 @@ class RecursosHumanosController extends Controller
             $colsPrac = \Illuminate\Support\Facades\Schema::getColumnListing('rh_practicantes');
             foreach ($practicantes as $item) {
                 $item = array_intersect_key($item, array_flip($colsPrac));
-                if (isset($item['documentos']) && is_array($item['documentos'])) {
-                    $item['documentos'] = json_encode($item['documentos']);
-                }
-                if (isset($item['observaciones']) && is_array($item['observaciones'])) {
-                    $item['observaciones'] = json_encode($item['observaciones']);
-                }
+                // Laravel casts to array natively
                 unset($item['created_at'], $item['updated_at']);
                 if (!empty($item['id'])) {
                     RhPracticante::updateOrCreate(['id' => $item['id']], $item);
@@ -80,15 +70,7 @@ class RecursosHumanosController extends Controller
             $colsCand = \Illuminate\Support\Facades\Schema::getColumnListing('rh_candidatos');
             foreach ($candidatos as $item) {
                 $item = array_intersect_key($item, array_flip($colsCand));
-                if (isset($item['documentos']) && is_array($item['documentos'])) {
-                    $item['documentos'] = json_encode($item['documentos']);
-                }
-                if (isset($item['observaciones']) && is_array($item['observaciones'])) {
-                    $item['observaciones'] = json_encode($item['observaciones']);
-                }
-                if (isset($item['evaluacion_details']) && is_array($item['evaluacion_details'])) {
-                    $item['evaluacion_details'] = json_encode($item['evaluacion_details']);
-                }
+                // Laravel casts to array natively
                 unset($item['created_at'], $item['updated_at']);
                 if (!empty($item['id'])) {
                     RhCandidato::updateOrCreate(['id' => $item['id']], $item);
@@ -104,9 +86,7 @@ class RecursosHumanosController extends Controller
             $colsCita = \Illuminate\Support\Facades\Schema::getColumnListing('rh_citas');
             foreach ($citas as $item) {
                 $item = array_intersect_key($item, array_flip($colsCita));
-                if (isset($item['documentos']) && is_array($item['documentos'])) {
-                    $item['documentos'] = json_encode($item['documentos']);
-                }
+                // Laravel casts to array natively
                 unset($item['created_at'], $item['updated_at']);
                 if (!empty($item['id'])) {
                     RhCita::updateOrCreate(['id' => $item['id']], $item);

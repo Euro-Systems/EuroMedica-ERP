@@ -469,6 +469,20 @@ let citas = @json($citas);
 
 let contratos = @json($contratos ?? []);
 
+// SANITIZACIÓN DEFENSIVA PARA BASES DE DATOS DOBLEMENTE CODIFICADAS
+function sanitizeJSON(obj, props) {
+    if(!obj) return;
+    props.forEach(p => {
+        if(typeof obj[p] === 'string') {
+            try { obj[p] = JSON.parse(obj[p] || '[]'); } catch(ex) { obj[p] = []; }
+        }
+    });
+}
+empleados.forEach(e => sanitizeJSON(e, ['documentos', 'observaciones']));
+practicantes.forEach(p => sanitizeJSON(p, ['documentos', 'observaciones']));
+candidatos.forEach(c => sanitizeJSON(c, ['documentos', 'observaciones', 'evaluacion_details']));
+citas.forEach(ci => sanitizeJSON(ci, ['documentos']));
+
 const csrfToken = '{{ csrf_token() }}';
 
 function syncToServer() {
@@ -627,6 +641,7 @@ function formatearFecha(fecha){
  * @param {string} v - Nombre de la vista a mostrar
  */
 function mostrar(v){
+try {
 
 // Manejo de clases activas en navegación
 document.querySelectorAll(".rh-nav").forEach(n=>{
@@ -760,7 +775,7 @@ new Date(b.fecha+" "+(b.hora||"00:00"))
 new Date(a.fecha+" "+(a.hora||"00:00"))
 )
 .map((ci,idx)=>`
-<tr style="cursor:pointer;" onclick="seleccionarCita(${ci.id})">
+<tr style="cursor:pointer;" onclick="seleccionarCita('${ci.id}')">
 <td>${ci.nombre}</td>
 <td>${ci.puesto}</td>
 <td>${ci.tipo}</td>
@@ -809,7 +824,7 @@ html=`
     <option value="Trabajador" ${ci.tipo==='Trabajador'?'selected':''}>Trabajador</option>
     <option value="Practicante" ${ci.tipo==='Practicante'?'selected':''}>Practicante</option>
 </select></div>
-<div><b>Fecha de cita</b><input type="date" value="${ci.fecha}" onchange="citaSel.fecha=this.value"></div>
+<div><b>Fecha de cita</b><input type="date" value="${ci.fecha || ''}" onchange="citaSel.fecha=this.value"></div>
 <div><b>Hora</b><input type="time" value="${ci.hora}" onchange="citaSel.hora=this.value"></div>
 <div><b>Entrevistador RH</b><input value="${ci.entrevistador_rh}" onchange="citaSel.entrevistador_rh=this.value"></div>
 <div><b>Jefe Depto.</b><input value="${ci.jefe_depto}" onchange="citaSel.jefe_depto=this.value"></div>
@@ -828,11 +843,11 @@ html=`
 <button class="btn-ver" onclick="document.getElementById('fileUploadCita').click()" style="background:#3b82f6;">Subir Archivo</button>
 <input type="file" id="fileUploadCita" style="display:none" onchange="subirArchivoCita(this)">
 <hr>
-${ci.documentos && ci.documentos.length > 0 ? `
+${(ci.documentos || []) && ((ci.documentos || []) || []).length > 0 ? `
 <div style="text-align:center;">
-${ci.documentos[0].tipo==='imagen' ? `<img src="${ci.documentos[0].url}" style="width:120px;cursor:pointer;" onclick="ver('${ci.documentos[0].url}')"><br>` : `<div style="padding:10px;background:#e5e7eb;font-weight:bold;">PDF</div>`}
-<small>${ci.documentos[0].nombre||'CV'}</small><br>
-<button class="btn-ver" onclick="descargarURL('${ci.documentos[0].url}')">Descargar</button>
+${(ci.documentos || [])[0].tipo==='imagen' ? `<img src="${(ci.documentos || [])[0].url}" style="width:120px;cursor:pointer;" onclick="ver('${(ci.documentos || [])[0].url}')"><br>` : `<div style="padding:10px;background:#e5e7eb;font-weight:bold;">PDF</div>`}
+<small>${(ci.documentos || [])[0].nombre||'CV'}</small><br>
+<button class="btn-ver" onclick="descargarURL('${(ci.documentos || [])[0].url}')">Descargar</button>
 <button class="btn-ver" style="background:#ef4444;" onclick="eliminarCVCita()">✕</button>
 </div>
 ` : '<p style="color:#6b7280;text-align:center;">Sin CV cargado</p>'}
@@ -904,13 +919,13 @@ html=`
 ${filtrados.map(e=>{
 let estado = e.egreso ? "Inactivo" : "Activo";
 return `
-<tr style="cursor:pointer;" onclick="seleccionar(${e.id})">
+<tr style="cursor:pointer;" onclick="seleccionar('${e.id}')">
 <td>${e.nombre}</td>
 <td>${e.ap}</td>
 <td>${e.am}</td>
 <td>${e.empresa}</td>
 <td>${estado}</td>
-<td>${e.fecha}</td>
+<td>${e.fecha || ''}</td>
 <td>${e.egreso || '-'}</td>
 </tr>
 `;
@@ -951,7 +966,7 @@ if(v==="practicantes"){
             </thead>
             <tbody>
                 ${(vistaPract === 'activos' ? activos : historial).map(p => `
-                <tr style="cursor:pointer;" onclick="seleccionarPract(${p.id}); mostrar('ficha_practicante');">
+                <tr style="cursor:pointer;" onclick="seleccionarPract('${p.id}'); mostrar('ficha_practicante');">
                     <td>${p.destacado ? '⭐ ' : ''}${p.nombre || ''} ${p.ap || ''}</td>
                     <td>${p.puesto_solicitado || p.puesto || 'N/A'}</td>
                     <td>${p.escuela_procedencia || 'N/A'}</td>
@@ -1004,7 +1019,7 @@ html = `
 </thead>
 <tbody>
 ${filtrados.map(c => `
-<tr style="cursor:pointer;" onclick="seleccionarCandidato(${c.id})">
+<tr style="cursor:pointer;" onclick="seleccionarCandidato('${c.id}')">
 <td>${c.nombre} ${c.ap} ${c.am}</td>
 <td>${c.puesto_deseado}</td>
 <td>${c.nivel_educativo}</td>
@@ -1072,7 +1087,7 @@ html=`
 <div><b>Celular</b><input value="${e.celular}" onchange="empSel.celular=this.value"></div>
 <div><b>Dirección</b><input value="${e.direccion}" onchange="empSel.direccion=this.value"></div>
 <div><b>Estado civil</b><input value="${e.estado_civil}" onchange="empSel.estado_civil=this.value"></div>
-<div><b>Fecha nacimiento</b><input type="date" value="${e.nacimiento}" onchange="empSel.nacimiento=this.value"></div>
+<div><b>Fecha nacimiento</b><input type="date" value="${e.nacimiento || ''}" onchange="empSel.nacimiento=this.value"></div>
 <div><b>Talla Uniforme</b><select onchange="empSel.talla_uniforme=this.value" style="width:100%;padding:5px;border-radius:6px;border:1px solid #d1d5db;">
     <option value="S" ${e.talla_uniforme==='S'?'selected':''}>Chica (S)</option>
     <option value="M" ${e.talla_uniforme==='M'?'selected':''}>Mediana (M)</option>
@@ -1109,8 +1124,8 @@ html=`
 <div style="margin-top:10px;text-align:right;"><button class="btn-ver" onclick="guardarObservacion()">Guardar</button></div>
 <hr>
 <div class="obs-list">
-${e.observaciones.length===0 ? `<div id="noObs">Sin observaciones registradas.</div>` : 
-e.observaciones.map(o=>`<div class="obs-item"><div class="obs-fecha">${o.fecha}</div><div>${o.texto}</div></div>`).join('')}
+${(e.observaciones || []).length===0 ? `<div id="noObs">Sin observaciones registradas.</div>` : 
+(e.observaciones || []).map(o=>`<div class="obs-item"><div class="obs-fecha">${o.fecha}</div><div>${o.texto}</div></div>`).join('')}
 </div>
 </div>
 </div>
@@ -1121,8 +1136,8 @@ e.observaciones.map(o=>`<div class="obs-item"><div class="obs-fecha">${o.fecha}<
 <div class="empleado-grid">
 <div><b>Puesto</b><input value="${e.puesto}" onchange="empSel.puesto=this.value"></div>
 <div><b>Empresa</b><input value="${e.empresa}" onchange="empSel.empresa=this.value" placeholder="Nombre de la empresa"></div>
-<div><b>Fecha inicio</b><input type="date" value="${e.fecha}" onchange="empSel.fecha=this.value"></div>
-<div><b>Alta IMSS</b><input type="date" value="${e.alta_imss}" onchange="empSel.alta_imss=this.value"></div>
+<div><b>Fecha inicio</b><input type="date" value="${e.fecha || ''}" onchange="empSel.fecha=this.value"></div>
+<div><b>Alta IMSS</b><input type="date" value="${e.alta_imss || ''}" onchange="empSel.alta_imss=this.value"></div>
 <div><b>Fecha egreso</b><input value="${e.egreso}" onchange="empSel.egreso=this.value" placeholder="YYYY-MM-DD"></div>
 <div><b>Motivo Egreso</b><input value="${e.motivo}" onchange="empSel.motivo=this.value"></div>
 <button class="btn-ver" style="background:#ef4444; margin-top:20px;" onclick="document.getElementById('modalBaja').style.display='flex'">
@@ -1178,7 +1193,7 @@ ${vacEmp.map(v=>`
 <button class="btn-ver" onclick="escanear()">Escanear documento</button>
 <div id="dwtcontrolContainer"></div>
 <hr>
-${e.documentos.length===0 ? "Sin documentos" : e.documentos.map(d=>`
+${(e.documentos || []).length===0 ? "Sin documentos" : (e.documentos || []).map(d=>`
 <div style="display:inline-block;margin:5px;">
 <img src="${d.url}" onclick="ver('${d.url}')" style="width:120px;cursor:pointer;"><br>
 <button class="btn-ver" onclick="descargarPDF('${d.url}')">PDF</button>
@@ -1260,8 +1275,8 @@ html = `
 <h3>Periodo</h3>
 <div class="empleado-grid">
 <div><b>Escuela de procedencia</b><input value="${p.escuela_procedencia || ''}" onchange="practSel.escuela_procedencia=this.value"></div>
-<div><b>Fecha inicio</b><input type="date" value="${p.fecha_inicio}" onchange="practSel.fecha_inicio=this.value"></div>
-<div><b>Fecha término</b><input type="date" value="${p.fecha_termino}" onchange="practSel.fecha_termino=this.value"></div>
+<div><b>Fecha inicio</b><input type="date" value="${p.fecha_inicio || ''}" onchange="practSel.fecha_inicio=this.value"></div>
+<div><b>Fecha término</b><input type="date" value="${p.fecha_termino || ''}" onchange="practSel.fecha_termino=this.value"></div>
 </div>
 </div>
 </div>
@@ -1369,8 +1384,8 @@ html = `
 <div style="margin-top:10px;text-align:right;"><button class="btn-ver" onclick="guardarObservacionCand()">Guardar Nota</button></div>
 <hr>
 <div class="obs-list">
-${c.observaciones.length===0 ? `<div id="noObs">Sin notas registradas.</div>` : 
-c.observaciones.map(o=>`<div class="obs-item"><div class="obs-fecha">${o.fecha}</div><div>${o.texto}</div></div>`).join('')}
+${(c.observaciones || []).length===0 ? `<div id="noObs">Sin notas registradas.</div>` : 
+(c.observaciones || []).map(o=>`<div class="obs-item"><div class="obs-fecha">${o.fecha}</div><div>${o.texto}</div></div>`).join('')}
 </div>
 </div>
 </div>
@@ -1382,7 +1397,7 @@ c.observaciones.map(o=>`<div class="obs-item"><div class="obs-fecha">${o.fecha}<
 <div><b>Tipo de vacante</b><input value="${c.tipo_candidatura}" readonly></div>
 <div><b>Puesto deseado</b><input value="${c.puesto_deseado}" onchange="candSel.puesto_deseado=this.value"></div>
 <div><b>Expectativa Salarial / Beca</b><input value="${c.expectativa_salarial}" onchange="candSel.expectativa_salarial=this.value"></div>
-<div><b>Fecha Primera Postulación</b><input type="date" value="${c.fecha_postulacion}" readonly></div>
+<div><b>Fecha Primera Postulación</b><input type="date" value="${c.fecha_postulacion || ''}" readonly></div>
 <div><b>Fecha Agendado (Contacto)</b><input type="date" value="${c.fecha_agendado || ''}" onchange="candSel.fecha_agendado=this.value"></div>
 <div><b>Fecha de Cita Próxima</b><input type="date" value="${c.fecha_entrevista || ''}" onchange="candSel.fecha_entrevista=this.value"></div>
 </div>
@@ -1399,7 +1414,7 @@ c.observaciones.map(o=>`<div class="obs-item"><div class="obs-fecha">${o.fecha}<
 <input type="file" id="fileUpload" style="display:none" onchange="subirArchivoCandidato(this)">
 <div id="dwtcontrolContainer"></div>
 <hr>
-${c.documentos.length===0 ? "Sin documentos" : c.documentos.map(d=>`
+${(c.documentos || []).length===0 ? "Sin documentos" : (c.documentos || []).map(d=>`
 <div style="display:inline-block;margin:5px;text-align:center;">
 ${d.tipo==='imagen' ? `<img src="${d.url}" onclick="ver('${d.url}')" style="width:120px;cursor:pointer;"><br>` : `<div style="padding:20px;background:#e5e7eb;font-weight:bold;">PDF/DOC</div><br>`}
 <small>${d.nombre||''}</small><br>
@@ -1443,11 +1458,11 @@ html=`
 </thead>
 <tbody>
 ${vacaciones.filter(v=>{
-    let emp = empleados.find(e=>e.id===v.empleado_id);
+    let emp = empleados.find(e=>e.id==v.empleado_id);
     let nombreCompleto = emp ? (emp.nombre + " " + emp.ap + " " + emp.am).toLowerCase() : "";
     return nombreCompleto.includes(filtroNombreVacaciones.toLowerCase());
 }).map(v=>{
-let emp = empleados.find(e=>e.id===v.empleado_id);
+let emp = empleados.find(e=>e.id==v.empleado_id);
 return `
 <tr>
 <td>${emp ? emp.nombre : 'N/A'}</td>
@@ -1497,6 +1512,10 @@ if(v === "contratos") {
 }
 
 contenido.innerHTML=html;
+} catch (err) {
+    alert("¡Ups! Error en la plataforma: " + err.message + "\nLínea aproximada en consola.");
+    console.error("Crash report:", err);
+}
 }
 
 // ... dentro de tu función mostrar(v) ...
@@ -1505,7 +1524,9 @@ contenido.innerHTML=html;
  * Selecciona un empleado y cambia a su ficha
  */
 function seleccionar(id){
-empSel=empleados.find(e=>e.id===id);
+console.log("Seleccionando emp con ID:", id, typeof id);
+empSel=empleados.find(e=>e.id==id);
+if(!empSel) { alert("ERROR CRÍTICO: No se encontró empleado con ID: " + id); }
 practSel=null;
 candSel=null;
 mostrar("ficha");
@@ -1525,14 +1546,16 @@ function cambiarAnio(anio){
  * Selecciona un practicante y cambia a su ficha
  */
 function seleccionarPract(id){
-practSel = practicantes.find(p => p.id === id);
+practSel = practicantes.find(p => p.id == id);
 empSel = null;
 candSel = null;
 mostrar("ficha_practicante");
 }
 
 function seleccionarCandidato(id){
-candSel=candidatos.find(c=>c.id===id);
+console.log("Seleccionando candidato con ID:", id, typeof id);
+candSel=candidatos.find(c=>c.id==id);
+if(!candSel) { alert("ERROR CRÍTICO: No se encontró candidato con ID: " + id); }
 empSel=null;
 practSel=null;
 mostrar("ficha_candidato");
@@ -1667,7 +1690,7 @@ function guardarNuevaVacacion(){
 
 function guardarCambiosFicha(){
     if(citaSel){ 
-        let existe = citas.find(c=>c.id===citaSel.id);
+        let existe = citas.find(c=>c.id==citaSel.id);
         if(!existe) citas.unshift(citaSel); // Sólo empuja si es nueva
     }
     
@@ -1742,7 +1765,7 @@ function nuevaCita(){
 }
 
 function seleccionarCita(id){
-    citaSel = citas.find(c=>c.id===id);
+    citaSel = citas.find(c=>c.id==id);
     empSel=null; practSel=null; candSel=null;
     mostrar("ficha_cita");
 }
@@ -1785,7 +1808,7 @@ function noSePresentoCita(){
     citaSel.estado = "No se presentó";
 
     // 2. actualizar base REAL (array citas)
-    let idx = citas.findIndex(c => c.id === citaSel.id);
+    let idx = citas.findIndex(c => c.id == citaSel.id);
     if(idx !== -1){
         citas[idx].estado = "No se presentó";
     }
