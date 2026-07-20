@@ -1,0 +1,18 @@
+# Configura el manejo de los saltos de línea globales. 
+# 'text=auto' permite que Git gestione automáticamente las conversiones de texto.
+# 'eol=lf' fuerza a que, al descargar el código en el espacio de trabajo, todos los archivos de texto usen saltos de línea estilo Unix (LF), previniendo problemas entre desarrolladores en Windows y Linux/Mac.
+* text=auto eol=lf
+
+# Configuración de controladores de diferencias (diff) específicos por tipo de archivo.
+# Esto ayuda a comandos como 'git diff' a generar representaciones visuales más legibles y precisas según la sintaxis de cada lenguaje:
+*.blade.php diff=html    # Trata las plantillas Blade de Laravel usando las reglas de comparación de HTML
+*.css diff=css           # Utiliza las reglas de comparación optimizadas para hojas de estilo CSS
+*.html diff=html         # Utiliza las reglas de comparación nativas para documentos HTML
+*.md diff=markdown       # Utiliza las reglas de comparación optimizadas para formato Markdown
+*.php diff=php           # Utiliza las reglas de comparación nativas para la estructura de código PHP
+
+# Atributos de exportación ('export-ignore').
+# Estas directivas le indican a Git qué archivos o carpetas debe excluir por completo cuando ejecutes el comando 'git archive' (por ejemplo, al generar un archivo comprimido .zip o .tar.gz para producción):
+/.github export-ignore     # Excluye la carpeta de flujos de trabajo (Workflows) y automatizaciones de GitHub
+CHANGELOG.md export-ignore # Excluye el registro de cambios del proyecto para que no se incluya en la versión final de distribución
+.styleci.yml export-ignore # Excluye el archivo de configuración del analizador de estilo de código StyleCI
