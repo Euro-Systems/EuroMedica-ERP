@@ -115,7 +115,7 @@ html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,Arial;ove
                 <i class="bi bi-buildings-fill"></i> Regresar a Áreas
             </a>
 
-            <a href="/" class="rh-nav">
+            <a href="{{ url('/') }}" class="rh-nav">
                 <i class="bi bi-box-arrow-left"></i> Regreasar a Inicio
             </a>
         </div>

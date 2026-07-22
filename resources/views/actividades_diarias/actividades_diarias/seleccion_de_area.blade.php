@@ -126,7 +126,7 @@
             <p class="header-subtitle">Gestione las actividades, flujos de trabajo y personal por departamento</p>
         </div>
         <div>
-            <a href="/" class="btn-regresar">
+            <a href="{{ url('/') }}" class="btn-regresar">
                 <i class="bi bi-arrow-left"></i> Regresar
             </a>
         </div>

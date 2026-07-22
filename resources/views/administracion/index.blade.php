@@ -187,7 +187,7 @@ margin-top:10px;
     </div>
 
     <!-- Botón de regreso -->
-    <a href="/" class="btn btn-light shadow-sm btn-back">
+    <a href="{{ url('/') }}" class="btn btn-light shadow-sm btn-back">
         ← Regresar
     </a>
 
