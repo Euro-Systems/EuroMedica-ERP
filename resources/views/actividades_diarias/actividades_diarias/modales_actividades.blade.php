@@ -43,6 +43,22 @@
             <div id="bloque_base" style="display:none;">
                 <div class="empleado-grid">
                     <div style="grid-column: span 2;">
+                        <b>Empleado Asignado *</b>
+                        <select name="empleado_id" id="nueva_empleado_id" required>
+                            <option value="">Selecciona un empleado</option>
+                            @if(auth()->check())
+                                <option value="{{ auth()->id() }}" data-area="{{ auth()->user()->area_id ?? '' }}" style="font-weight:bold;color:#1e3a8a;">YO ({{ auth()->user()->name }})</option>
+                            @endif
+                            @foreach ($empleadosRH as $emp)
+                                @if(($emp['id'] ?? $emp->id) !== auth()->id())
+                                    <option value="{{ $emp['id'] ?? $emp->id }}" data-area="{{ $emp['area_id'] ?? $emp->area_id ?? '' }}">
+                                        {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
+                                    </option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+                    <div style="grid-column: span 2; margin-top: 10px;">
                         <b>Título de la Actividad *</b>
                         <input type="text" name="titulo" required placeholder="Ej: Revisión de teléfonos">
                     </div>
@@ -54,26 +70,6 @@
 
                 <!-- Campos adicionales solo si NO es sencilla -->
                 <div id="bloque_completo" style="display:none; margin-top:10px;">
-
-                    <!-- Empleado asignado -->
-                    <div class="empleado-grid" style="margin-top:5px;">
-                        <div style="grid-column: span 2;">
-                            <b>Empleado Asignado *</b>
-                            <select name="empleado_id" id="nueva_empleado_id" required>
-                                <option value="">Selecciona un empleado</option>
-                                @if(auth()->check())
-                                    <option value="{{ auth()->id() }}" data-area="{{ auth()->user()->area_id ?? '' }}" style="font-weight:bold;color:#1e3a8a;">YO</option>
-                                @endif
-                                @foreach ($empleadosRH as $emp)
-                                    @if(($emp['id'] ?? $emp->id) !== auth()->id())
-                                        <option value="{{ $emp['id'] ?? $emp->id }}" data-area="{{ $emp['area_id'] ?? $emp->area_id ?? '' }}">
-                                            {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
-                                        </option>
-                                    @endif
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
 
                     <!-- PREGUNTA 2: ¿Es compartida? -->
                     <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:16px 20px; margin:14px 0;">
@@ -173,9 +169,7 @@ function toggleSencilla(val) {
     if (val === 'si') {
         completo.style.display = 'none';
         completo.querySelectorAll('input,select,textarea').forEach(el => {
-            if (el.name !== 'empleado_id') {
-                el.disabled = true;
-            }
+            el.disabled = true;
         });
         btnSencilla.style.display = 'inline-block';
         btnCompleto.style.display = 'none';
@@ -305,6 +299,22 @@ function toggleEditDuracion(val) {
             <div id="edit_bloque_base" style="display:block;">
                 <div class="empleado-grid">
                     <div style="grid-column: span 2;">
+                        <b>Empleado Asignado *</b>
+                        <select name="empleado_id" id="edit_empleado" required>
+                            <option value="">Selecciona un empleado</option>
+                            @if(auth()->check())
+                                <option value="{{ auth()->id() }}" style="font-weight:bold;color:#1e3a8a;">YO ({{ auth()->user()->name }})</option>
+                            @endif
+                            @foreach ($empleadosRH as $emp)
+                                @if(($emp['id'] ?? $emp->id) !== auth()->id())
+                                    <option value="{{ $emp['id'] ?? $emp->id }}">
+                                        {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
+                                    </option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+                    <div style="grid-column: span 2; margin-top: 10px;">
                         <b>Título de la Actividad *</b>
                         <input type="text" name="titulo" id="edit_titulo" required placeholder="Ej: Revisión de teléfonos">
                     </div>
@@ -316,26 +326,6 @@ function toggleEditDuracion(val) {
 
                 <!-- Campos adicionales solo si NO es sencilla -->
                 <div id="edit_bloque_completo" style="margin-top:10px;">
-
-                    <!-- Empleado asignado -->
-                    <div class="empleado-grid" style="margin-top:5px;">
-                        <div style="grid-column: span 2;">
-                            <b>Empleado Asignado *</b>
-                            <select name="empleado_id" id="edit_empleado" required>
-                                <option value="">Selecciona un empleado</option>
-                                @if(auth()->check())
-                                    <option value="{{ auth()->id() }}" style="font-weight:bold;color:#1e3a8a;">YO</option>
-                                @endif
-                                @foreach ($empleadosRH as $emp)
-                                    @if(($emp['id'] ?? $emp->id) !== auth()->id())
-                                        <option value="{{ $emp['id'] ?? $emp->id }}">
-                                            {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
-                                        </option>
-                                    @endif
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
 
                     <!-- PREGUNTA 2: ¿Es compartida? -->
                     <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:16px 20px; margin:14px 0;">
