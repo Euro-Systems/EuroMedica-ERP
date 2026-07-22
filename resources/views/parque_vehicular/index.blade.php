@@ -361,7 +361,7 @@
             @endforeach
         </div>
 
-        <a href="/" class="btn-back">← Regresar al inicio</a>
+        <a href="{{ url('/') }}" class="btn-back">← Regresar al inicio</a>
     </aside>
 
     <!-- Sección derecha: Renderizado dinámico de contenido -->
