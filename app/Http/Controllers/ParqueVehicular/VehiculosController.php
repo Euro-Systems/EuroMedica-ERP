@@ -21,6 +21,10 @@ class VehiculosController extends Controller
 
     public function store(Request $request)
     {
+        if (!auth()->user()->hasPermission('vehiculos_agregar_unidad')) {
+            abort(403, 'No tienes permiso para agregar unidades.');
+        }
+
         $data = $request->validate([
             'nombre' => 'required|string|max:255',
             'marca' => 'nullable|string|max:255',
@@ -54,6 +58,10 @@ class VehiculosController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (!auth()->user()->hasPermission('vehiculos_editar_unidad')) {
+            abort(403, 'No tienes permiso para editar unidades.');
+        }
+
         $vehiculo = Vehiculo::findOrFail($id);
 
         $data = $request->validate([
@@ -83,6 +91,10 @@ class VehiculosController extends Controller
 
     public function destroy($id)
     {
+        if (!auth()->user()->hasPermission('vehiculos_eliminar_unidad')) {
+            abort(403, 'No tienes permiso para eliminar unidades.');
+        }
+
         $vehiculo = Vehiculo::findOrFail($id);
         $vehiculo->delete();
 
@@ -95,6 +107,10 @@ class VehiculosController extends Controller
     // Gestión de Servicios
     public function storeServicio(Request $request, $vehiculoId)
     {
+        if (!auth()->user()->hasPermission('vehiculos_registrar_servicio')) {
+            abort(403, 'No tienes permiso para registrar servicios.');
+        }
+
         $request->validate([
             'fecha' => 'nullable|date',
             'solicitud_servicio' => 'nullable|string|max:255',
@@ -133,6 +149,10 @@ class VehiculosController extends Controller
 
     public function updateServicio(Request $request, $id)
     {
+        if (!auth()->user()->hasPermission('vehiculos_editar_servicio')) {
+            abort(403, 'No tienes permiso para editar servicios.');
+        }
+
         $servicio = ServicioVehiculo::findOrFail($id);
 
         $request->validate([
@@ -171,6 +191,10 @@ class VehiculosController extends Controller
 
     public function destroyServicio($id)
     {
+        if (!auth()->user()->hasPermission('vehiculos_eliminar_servicio')) {
+            abort(403, 'No tienes permiso para eliminar servicios.');
+        }
+
         $servicio = ServicioVehiculo::findOrFail($id);
         $servicio->delete();
 

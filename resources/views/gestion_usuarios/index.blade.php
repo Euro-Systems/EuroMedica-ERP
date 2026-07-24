@@ -180,6 +180,8 @@
                                     <td>
                                         @if($user->rol === 'admin')
                                             <span style="color:#dc3545; font-weight:700;">Administrador</span>
+                                        @elseif($user->rol === 'directivo')
+                                            <span style="color:#8b5cf6; font-weight:700;">Directivo</span>
                                         @elseif($user->rol === 'jefe')
                                             <span style="color:#0d6efd; font-weight:700;">Jefe</span>
                                         @elseif($user->rol === 'empleado')

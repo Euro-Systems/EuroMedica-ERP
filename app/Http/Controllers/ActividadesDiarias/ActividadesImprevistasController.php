@@ -99,6 +99,28 @@ class ActividadesImprevistasController extends Controller
         return view('actividades_diarias.actividades_diarias.actividades_imprevistas.show', compact('imprevisto'));
     }
 
+    public function update(Request $request, $id)
+    {
+        $imprevisto = ActividadImprevista::findOrFail($id);
+
+        $request->validate([
+            'titulo'                => 'required|string|max:255',
+            'descripcion_detallada' => 'required',
+            'motivo'                => 'required',
+            'resultado_obtenido'    => 'required',
+            'estado'                => 'required|in:pendiente,en_proceso,en_pausa,finalizada,atrasada'
+        ]);
+
+        $data = $request->all();
+        if ($request->has('empleado_id') && Auth::user() && in_array(Auth::user()->rol, ['jefe', 'admin'])) {
+            $data['empleado_id'] = $request->empleado_id;
+        }
+
+        $imprevisto->update($data);
+
+        return redirect()->back()->with('success', 'Imprevisto actualizado con éxito.');
+    }
+
     public function destroy($id)
     {
         ActividadImprevista::destroy($id);

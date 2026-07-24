@@ -78,23 +78,28 @@ html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,Arial;ove
     <aside class="rh-menu">
         <h2><i class="bi bi-calendar2-week me-1"></i> Actividades</h2>
 
-        @if($isJefeAdmin)
+        @if(Auth::user()->hasPermission('actividades_tablero') || Auth::user()->hasPermission('actividades'))
         <a href="{{ session('active_area_id') ? route('actividades.area.workspace', session('active_area_id')) : route('actividades.area.workspace', 1) }}"
            class="rh-nav {{ Request::routeIs('actividades.area.workspace') ? 'active' : '' }}">
             <i class="bi bi-calendar-check"></i> Actividades Diarias
         </a>
+        @endif
 
+        @if(Auth::user()->hasPermission('actividades_resumen') || Auth::user()->hasPermission('actividades'))
         <a href="{{ route('actividades.resumen') }}"
            class="rh-nav {{ Request::routeIs('actividades.resumen') ? 'active' : '' }}">
             <i class="bi bi-bar-chart-line-fill"></i> Resumen General
         </a>
         @endif
 
+        @if(Auth::user()->hasPermission('actividades_mis_actividades') || Auth::user()->hasPermission('actividades'))
         <a href="{{ route('actividades.mias') }}"
            class="rh-nav {{ Request::routeIs('actividades.mias') ? 'active' : '' }}">
             <i class="bi bi-person-fill-check"></i> Mis Actividades
         </a>
-        @if($isJefeAdmin)
+        @endif
+
+        @if(Auth::user()->hasPermission('actividades_reportes') || Auth::user()->hasPermission('actividades'))
             <a href="{{ route('bitacora.index') }}"
                class="rh-nav {{ Request::routeIs('bitacora.*') ? 'active' : '' }}">
                 <i class="bi bi-file-earmark-bar-graph"></i> Reportes
@@ -110,13 +115,15 @@ html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,Arial;ove
                 </div>
             @endif
 
+            @if(Auth::user()->hasPermission('actividades_ver_areas') || Auth::user()->hasPermission('actividades'))
             <a href="{{ route('actividades.index') }}"
                class="rh-nav {{ Request::routeIs('actividades.index') ? 'active' : '' }}" style="margin-bottom:8px;">
                 <i class="bi bi-buildings-fill"></i> Regresar a Áreas
             </a>
+            @endif
 
             <a href="{{ url('/') }}" class="rh-nav">
-                <i class="bi bi-box-arrow-left"></i> Regreasar a Inicio
+                <i class="bi bi-box-arrow-left"></i> Regresar a Inicio
             </a>
         </div>
     </aside>

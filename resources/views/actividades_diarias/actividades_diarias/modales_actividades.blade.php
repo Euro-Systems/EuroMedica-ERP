@@ -160,6 +160,10 @@
 </div>
 
 <script>
+window.APP_BASE_URL = "{{ url('/') }}";
+window.authId = {{ auth()->id() ?? 0 }};
+var authId = window.authId;
+
 function toggleSencilla(val) {
     document.getElementById('bloque_base').style.display = 'block';
     const completo    = document.getElementById('bloque_completo');
@@ -570,14 +574,13 @@ function toggleEditDuracion(val) {
             </div>
 
             <!-- Empleado Responsable -->
-            @if(auth()->user() && in_array(auth()->user()->rol, ['jefe', 'admin']))
             <div style="margin-bottom:14px;">
                 <b>Empleado Responsable *</b>
                 <select name="empleado_id" required
                     style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
                     <option value="">Selecciona un empleado</option>
                     @if(auth()->check())
-                        <option value="{{ auth()->id() }}" style="font-weight:bold;color:#1e3a8a;">YO</option>
+                        <option value="{{ auth()->id() }}" style="font-weight:bold;color:#1e3a8a;">YO ({{ auth()->user()->name }})</option>
                     @endif
                     @foreach ($empleadosRH as $emp)
                         @if(($emp['id'] ?? $emp->id) !== auth()->id())
@@ -588,10 +591,6 @@ function toggleEditDuracion(val) {
                     @endforeach
                 </select>
             </div>
-            @else
-            {{-- Si eres empleado/practicante, te asignamos automáticamente --}}
-            <input type="hidden" name="empleado_id" value="{{ auth()->id() }}">
-            @endif
 
             <!-- ¿Es compartida? -->
             <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px 18px; margin-bottom:14px;">
@@ -716,15 +715,14 @@ function toggleRutinaRepetida(val) {
                 </select>
             </div>
 
-            <!-- Empleado Asignado: solo para jefe/admin -->
-            @if(auth()->user() && in_array(auth()->user()->rol, ['jefe', 'admin']))
+            <!-- Empleado Asignado -->
             <div style="margin-bottom:12px;">
                 <b>Empleado Asignado *</b>
-                <select name="empleado_id"
+                <select name="empleado_id" required
                     style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
                     <option value="">Selecciona un empleado</option>
                     @if(auth()->check())
-                        <option value="{{ auth()->id() }}" style="font-weight:bold;color:#1e3a8a;">YO</option>
+                        <option value="{{ auth()->id() }}" style="font-weight:bold;color:#1e3a8a;">YO ({{ auth()->user()->name }})</option>
                     @endif
                     @foreach ($empleadosRH as $emp)
                         @if(($emp['id'] ?? $emp->id) !== auth()->id())
@@ -735,7 +733,6 @@ function toggleRutinaRepetida(val) {
                     @endforeach
                 </select>
             </div>
-            @endif
 
             <!-- ¿Alguien más colaboró? -->
             <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px 18px; margin-bottom:14px;">
@@ -823,11 +820,108 @@ function toggleRutinaRepetida(val) {
                 <input type="number" name="veces_al_dia" id="edit_rutina_veces" min="1" max="20" required
                     style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;margin-top:4px;">
             </div>
-
-            <div style="margin-top:20px; text-align:right;">
-                <button type="button" class="btn-ver" style="background:#6b7280; margin-right:10px;" onclick="cerrarModal('modalEditarRutina')">Cancelar</button>
-                <button type="submit" class="btn-form">Guardar Cambios</button>
+            
+            <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" onclick="confirmDeleteRutinaModal()" class="btn-ver" style="background:#ef4444; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; cursor:pointer;">
+                    <i class="bi bi-trash-fill me-1"></i> Eliminar Rutina
+                </button>
+                <div>
+                    <button type="button" class="btn-ver" style="background:#6b7280; margin-right:10px;" onclick="cerrarModal('modalEditarRutina')">Cancelar</button>
+                    <button type="submit" class="btn-form">Guardar Cambios</button>
+                </div>
             </div>
+        </form>
+
+        <form action="" method="POST" id="formEliminarRutina" style="display:none;">
+            @csrf
+            @method('DELETE')
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: EDITAR ACTIVIDAD IMPREVISTA -->
+<!-- ============================================== -->
+<div id="modalEditarImprevista" class="rh-modal">
+    <div class="rh-modal-content">
+        <span class="rh-modal-close" onclick="cerrarModal('modalEditarImprevista')">&times;</span>
+        <h2 style="margin-bottom: 20px; margin-top:0; color:#d97706;"><i class="bi bi-pencil-square me-2"></i>Editar Actividad Imprevista</h2>
+        <form action="" method="POST" id="formEditarImprevista">
+            @csrf
+            @method('PUT')
+
+            <!-- Título -->
+            <div style="margin-bottom:12px;">
+                <b>Título *</b>
+                <input type="text" name="titulo" id="edit_imprevista_titulo" required placeholder="Ej: Falla de internet masiva"
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
+            </div>
+
+            <!-- Descripción Detallada -->
+            <div style="margin-bottom:12px;">
+                <b>Descripción Detallada *</b>
+                <textarea name="descripcion_detallada" id="edit_imprevista_descripcion" rows="3" required placeholder="¿Qué pasó exactamente?"
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;"></textarea>
+            </div>
+
+            <!-- Motivo -->
+            <div style="margin-bottom:12px;">
+                <b>Motivo *</b>
+                <input type="text" name="motivo" id="edit_imprevista_motivo" required placeholder="¿Por qué tuviste que atenderlo?"
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
+            </div>
+
+            <!-- Resultado Obtenido -->
+            <div style="margin-bottom:12px;">
+                <b>Resultado Obtenido *</b>
+                <textarea name="resultado_obtenido" id="edit_imprevista_resultado" rows="2" required placeholder="Resultado..."
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;"></textarea>
+            </div>
+
+            <!-- Estado -->
+            <div style="margin-bottom:12px;">
+                <b>Estado *</b>
+                <select name="estado" id="edit_imprevista_estado" required style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
+                    <option value="finalizada">Terminada / Completada</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="en_proceso">En Proceso</option>
+                    <option value="en_pausa">En Pausa</option>
+                </select>
+            </div>
+
+            <!-- Empleado Asignado -->
+            <div style="margin-bottom:12px;">
+                <b>Empleado Asignado *</b>
+                <select name="empleado_id" id="edit_imprevista_empleado" required
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
+                    <option value="">Selecciona un empleado</option>
+                    @if(auth()->check())
+                        <option value="{{ auth()->id() }}" style="font-weight:bold;color:#1e3a8a;">YO ({{ auth()->user()->name }})</option>
+                    @endif
+                    @foreach ($empleadosRH as $emp)
+                        @if(($emp['id'] ?? $emp->id) !== auth()->id())
+                            <option value="{{ $emp['id'] ?? $emp->id }}">
+                                {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
+                            </option>
+                        @endif
+                    @endforeach
+                </select>
+            </div>
+
+            <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" onclick="confirmDeleteImprevistaModal()" class="btn-ver" style="background:#ef4444; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; cursor:pointer;">
+                    <i class="bi bi-trash-fill me-1"></i> Eliminar Imprevisto
+                </button>
+                <div>
+                    <button type="button" class="btn-ver" style="background:#6b7280; margin-right:10px;" onclick="cerrarModal('modalEditarImprevista')">Cancelar</button>
+                    <button type="submit" class="btn-form">Guardar Cambios</button>
+                </div>
+            </div>
+        </form>
+
+        <form action="" method="POST" id="formEliminarImprevista" style="display:none;">
+            @csrf
+            @method('DELETE')
         </form>
     </div>
 </div>
@@ -835,163 +929,380 @@ function toggleRutinaRepetida(val) {
 <script>
 function toggleColaboradores(val) {
     const bloque = document.getElementById('bloque_colaboradores');
-    bloque.style.display = val === 'si' ? 'block' : 'none';
-    bloque.querySelectorAll('input[type=checkbox]').forEach(el => el.disabled = val !== 'si');
+    if (bloque) {
+        bloque.style.display = val === 'si' ? 'block' : 'none';
+        bloque.querySelectorAll('input[type=checkbox]').forEach(el => el.disabled = val !== 'si');
+    }
+}
+
+function toggleRutinaCompartida(val) {
+    const bloque = document.getElementById('bloque_rutina_compartida');
+    if (bloque) {
+        bloque.style.display = val === 'si' ? 'block' : 'none';
+        bloque.querySelectorAll('input[type=checkbox]').forEach(el => el.disabled = val !== 'si');
+    }
+}
+
+function toggleRutinaRepetida(val) {
+    const bloque = document.getElementById('bloque_rutina_veces');
+    const input = document.getElementById('rutina_veces_input');
+    if (bloque && input) {
+        if (val === 'si') {
+            bloque.style.display = 'block';
+            input.disabled = false;
+            input.required = true;
+            if (!input.value || input.value < 2) input.value = 2;
+        } else {
+            bloque.style.display = 'none';
+            input.disabled = true;
+            input.required = false;
+            input.value = 1;
+        }
+    }
 }
 
 function calcImpTime() {
-    const t1 = document.getElementById('imp_hora_inicio').value;
-    const t2 = document.getElementById('imp_hora_fin').value;
+    const t1 = document.getElementById('imp_hora_inicio')?.value;
+    const t2 = document.getElementById('imp_hora_fin')?.value;
     const label = document.getElementById('imp_tiempo_calc');
     const hidden = document.getElementById('imp_horas_hidden');
 
     if (t1 && t2) {
-        let d1 = new Date("1970-01-01T" + t1 + "Z");
-        let d2 = new Date("1970-01-01T" + t2 + "Z");
-        let diff = (d2 - d1) / 60000;
-        if (diff < 0) diff += 1440;
-        let hrs  = Math.floor(diff / 60);
-        let mins = diff % 60;
-        let str  = '';
-        if (hrs > 0)  str += hrs + ' hora(s) ';
-        if (mins > 0) str += mins + ' minuto(s)';
-        if (!str) str = '0 minutos';
-        label.innerHTML = '<span style="color:#059669; font-weight:bold;">' + str + '</span>';
-        hidden.value = (diff / 60).toFixed(2);
+        const d1 = new Date("1970-01-01T" + t1 + ":00");
+        const d2 = new Date("1970-01-01T" + t2 + ":00");
+        let diffMs = d2 - d1;
+        if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000;
+
+        const totalMin = Math.floor(diffMs / (1000 * 60));
+        const hrs = (totalMin / 60).toFixed(1);
+        if (label) label.textContent = `${hrs} Horas (Calculado automáticamente)`;
+        if (hidden) hidden.value = hrs;
     } else {
-        label.textContent = 'Configura las horas para calcular el tiempo invertido...';
-        hidden.value = '0';
+        if (label) label.textContent = '0 Horas';
+        if (hidden) hidden.value = 0;
     }
 }
-
-const authId = "{{ auth()->id() }}";
 
 function safeBtoa(str) {
     return btoa(unescape(encodeURIComponent(str)));
 }
 function safeAtob(str) {
-    return decodeURIComponent(escape(atob(str)));
+    if (!str) return '';
+    try {
+        if (str.trim().startsWith('{') || str.trim().startsWith('[')) {
+            return str;
+        }
+        return decodeURIComponent(escape(atob(str)));
+    } catch (e1) {
+        try {
+            let binary = atob(str);
+            let bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return new TextDecoder().decode(bytes);
+        } catch (e2) {
+            try {
+                return atob(str);
+            } catch(e3) {
+                return str;
+            }
+        }
+    }
 }
 
 function abrirModal(id) {
     let m = document.getElementById(id);
-    if (m) m.classList.add('active');
+    if (m) {
+        m.classList.add('active');
+        m.style.display = 'flex';
+    }
 }
 function cerrarModal(id) {
     let m = document.getElementById(id);
-    if (m) m.classList.remove('active');
+    if (m) {
+        m.classList.remove('active');
+        m.style.display = 'none';
+    }
+}
+
+function openEditModalFromRow(btn) {
+    let elWithData = null;
+    if (btn) {
+        elWithData = (btn.dataset && btn.dataset.actividad) ? btn : (btn.closest ? btn.closest('[data-actividad]') : null);
+        while (elWithData && (!elWithData.dataset || !elWithData.dataset.actividad)) {
+            elWithData = elWithData.parentElement ? elWithData.parentElement.closest('[data-actividad]') : null;
+        }
+    }
+    let rawData = (elWithData && elWithData.dataset && elWithData.dataset.actividad) ? elWithData.dataset.actividad : '';
+    openEditModal({ dataset: { actividad: rawData } });
 }
 
 function openEditModal(btn) {
     cerrarModal('modalFicha');
-    let rawData = btn.dataset.actividad;
-    if (!rawData) return;
-    let actividad = JSON.parse(safeAtob(rawData));
-    document.getElementById('formEditar').action = `/actividades/${actividad.id}`;
-    document.getElementById('edit_titulo').value = actividad.titulo;
-    document.getElementById('edit_descripcion').value = actividad.descripcion;
-    document.getElementById('edit_empleado').value = actividad.empleado_id;
-    document.getElementById('edit_estado').value = actividad.estado;
-    document.getElementById('edit_prioridad').value = actividad.prioridad;
-    
-    // Simulate mapping to questions
-    // Sencilla:
-    if (document.getElementById('edit_sencilla_no')) {
-        document.getElementById('edit_sencilla_no').checked = true;
-        toggleEditSencilla('no'); // Unfold everything by default for editing
+    let actividad = null;
+    let rawData = '';
+
+    if (btn) {
+        let elWithData = (btn.dataset && btn.dataset.actividad) ? btn : (btn.closest ? btn.closest('[data-actividad]') : null);
+        while (elWithData && (!elWithData.dataset || !elWithData.dataset.actividad)) {
+            elWithData = elWithData.parentElement ? elWithData.parentElement.closest('[data-actividad]') : null;
+        }
+        if (elWithData && elWithData.dataset && elWithData.dataset.actividad) {
+            rawData = elWithData.dataset.actividad;
+        }
     }
 
-    // Compartida:
-    if (document.getElementById('edit_compartida_no')) {
-        document.getElementById('edit_compartida_no').checked = true;
-        toggleEditCompartida('no');
+    if (rawData) {
+        try {
+            let decoded = safeAtob(rawData);
+            actividad = JSON.parse(decoded);
+        } catch(e) {
+            console.warn("Could not parse rawData for openEditModal", e);
+        }
     }
 
-    // Duracion:
-    if (actividad.modalidad === 'varios_dias' || actividad.fecha_inicio) {
-        if (document.getElementById('edit_mas_un_dia_si')) {
-            document.getElementById('edit_mas_un_dia_si').checked = true;
-            toggleEditDuracion('si');
+    if (!actividad && window.currentActividad) {
+        actividad = window.currentActividad;
+    }
+
+    if (!actividad) {
+        alert("No se encontró la información de la actividad para editar.");
+        return;
+    }
+
+    try {
+        let baseUrl = getAppBaseUrl();
+        let formEdit = document.getElementById('formEditar');
+        if (formEdit) {
+            formEdit.action = `${baseUrl}/actividades/${actividad.id}`;
         }
-        if (document.getElementById('edit_fecha_inicio')) {
-            document.getElementById('edit_fecha_inicio').value = actividad.fecha_inicio ? actividad.fecha_inicio.substring(0,10) : '';
+        
+        if (document.getElementById('edit_titulo')) {
+            document.getElementById('edit_titulo').value = actividad.titulo || '';
         }
-        if (document.getElementById('edit_fecha_fin')) {
-            document.getElementById('edit_fecha_fin').value = actividad.fecha_estimada_fin ? actividad.fecha_estimada_fin.substring(0,10) : '';
+        if (document.getElementById('edit_descripcion')) {
+            document.getElementById('edit_descripcion').value = actividad.descripcion || '';
         }
-    } else {
-        if (document.getElementById('edit_mas_un_dia_no')) {
-            document.getElementById('edit_mas_un_dia_no').checked = true;
-            toggleEditDuracion('no');
+        if (document.getElementById('edit_empleado')) {
+            document.getElementById('edit_empleado').value = actividad.empleado_id || '';
         }
-        if (document.getElementById('edit_tiempo_estimado')) {
-            document.getElementById('edit_tiempo_estimado').value = actividad.tiempo_estimado || '';
+        if (document.getElementById('edit_estado')) {
+            document.getElementById('edit_estado').value = actividad.estado || 'pendiente';
+        }
+        if (document.getElementById('edit_prioridad')) {
+            document.getElementById('edit_prioridad').value = actividad.prioridad || 'media';
+        }
+        
+        // Sencilla:
+        if (document.getElementById('edit_sencilla_no')) {
+            document.getElementById('edit_sencilla_no').checked = true;
+            toggleEditSencilla('no');
+        }
+
+        // Compartida:
+        if (document.getElementById('edit_compartida_no')) {
+            document.getElementById('edit_compartida_no').checked = true;
+            toggleEditCompartida('no');
+        }
+
+        // Duracion:
+        if (actividad.modalidad === 'varios_dias' || (actividad.fecha_inicio && actividad.fecha_estimada_fin && actividad.fecha_inicio !== actividad.fecha_estimada_fin)) {
+            if (document.getElementById('edit_mas_un_dia_si')) {
+                document.getElementById('edit_mas_un_dia_si').checked = true;
+                toggleEditDuracion('si');
+            }
+            if (document.getElementById('edit_fecha_inicio')) {
+                document.getElementById('edit_fecha_inicio').value = actividad.fecha_inicio ? actividad.fecha_inicio.substring(0,10) : '';
+            }
+            if (document.getElementById('edit_fecha_fin')) {
+                document.getElementById('edit_fecha_fin').value = actividad.fecha_estimada_fin ? actividad.fecha_estimada_fin.substring(0,10) : '';
+            }
+        } else {
+            if (document.getElementById('edit_mas_un_dia_no')) {
+                document.getElementById('edit_mas_un_dia_no').checked = true;
+                toggleEditDuracion('no');
+            }
+            if (document.getElementById('edit_tiempo_estimado')) {
+                document.getElementById('edit_tiempo_estimado').value = actividad.tiempo_estimado || '';
+            }
+        }
+        
+        abrirModal('modalEditar');
+    } catch(err) {
+        console.error("Error al abrir modal de edición de actividad:", err);
+        alert("Ocurrió un error al cargar los datos para editar la actividad.");
+    }
+}
+
+function openEditRutinaModal(btn) {
+    let rutina = null;
+    let rawData = '';
+
+    if (btn) {
+        let elWithData = (btn.dataset && btn.dataset.rutina) ? btn : (btn.closest ? btn.closest('[data-rutina]') : null);
+        while (elWithData && (!elWithData.dataset || !elWithData.dataset.rutina)) {
+            elWithData = elWithData.parentElement ? elWithData.parentElement.closest('[data-rutina]') : null;
+        }
+        if (elWithData && elWithData.dataset && elWithData.dataset.rutina) {
+            rawData = elWithData.dataset.rutina;
         }
     }
-    
-    abrirModal('modalEditar');
+
+    if (rawData) {
+        try {
+            let decoded = safeAtob(rawData);
+            rutina = JSON.parse(decoded);
+        } catch(e) {
+            console.warn("Could not parse rawData rutina", e);
+        }
+    }
+
+    if (!rutina && window.currentRutina) {
+        rutina = window.currentRutina;
+    }
+
+    if (!rutina) {
+        alert("No se pudo encontrar la información de la rutina para editar.");
+        return;
+    }
+
+    try {
+        window.currentRutina = rutina;
+        let baseUrl = getAppBaseUrl();
+        
+        let formEdit = document.getElementById('formEditarRutina');
+        if (formEdit) {
+            formEdit.action = `${baseUrl}/rutinas/${rutina.id}`;
+        }
+
+        let formDelete = document.getElementById('formEliminarRutina');
+        if (formDelete) {
+            formDelete.action = `${baseUrl}/rutinas/${rutina.id}`;
+        }
+        
+        if (document.getElementById('edit_rutina_titulo')) {
+            document.getElementById('edit_rutina_titulo').value = rutina.titulo || '';
+        }
+        if (document.getElementById('edit_rutina_descripcion')) {
+            document.getElementById('edit_rutina_descripcion').value = rutina.descripcion || '';
+        }
+        if (document.getElementById('edit_rutina_veces')) {
+            document.getElementById('edit_rutina_veces').value = rutina.veces_al_dia || rutina.veces || 1;
+        }
+        
+        abrirModal('modalEditarRutina');
+    } catch(err) {
+        console.error("Error al abrir modal de edición de rutina:", err);
+        alert("Ocurrió un error al cargar la rutina para editar.");
+    }
+}
+
+function getAppBaseUrl() {
+    let appUrl = "{{ url('/') }}".replace(/\/$/, '');
+    try {
+        let parsedApp = new URL(appUrl);
+        let path = parsedApp.pathname;
+        if (path === '/') path = '';
+        return window.location.origin + path;
+    } catch(e) {
+        return window.location.origin;
+    }
 }
 
 function openShowModal(btn) {
-    let actividadId = btn.dataset.id;
-    if (!actividadId) {
-        let strData = btn.dataset.actividad;
+    let targetEl = (btn && btn.closest) ? (btn.closest('[data-id], [data-actividad]') || btn) : btn;
+    let actividadId = targetEl ? (targetEl.dataset ? targetEl.dataset.id : null) : null;
+    if (!actividadId && targetEl && targetEl.dataset && targetEl.dataset.actividad) {
+        let strData = targetEl.dataset.actividad;
         if (strData) {
-            let actObj = JSON.parse(safeAtob(strData));
-            actividadId = actObj.id;
+            try {
+                let actObj = JSON.parse(safeAtob(strData));
+                actividadId = actObj ? actObj.id : null;
+            } catch(e) {}
         }
     }
     if (!actividadId) return;
 
-    fetch(`/actividades/${actividadId}/details`)
-        .then(r => r.json())
-        .then(actividad => {
-            document.getElementById('ficha_btn_editar').dataset.actividad = safeBtoa(JSON.stringify(actividad));
-            document.getElementById('form_delete_actividad').action = `/actividades/${actividad.id}`;
-            
-            document.getElementById('avance_actividad_id').value = actividad.id;
-            document.getElementById('form-slider-avance').action = `/actividades/${actividad.id}`;
-            
-            document.getElementById('ficha_prioridad').textContent = 'Prioridad: ' + (actividad.prioridad ? actividad.prioridad.toUpperCase() : '');
-            
-            let sel = document.getElementById('ficha_estado_select');
-            if (sel) {
-                sel.value = actividad.estado;
-                let colorMap = {
-                    'pendiente': '#fef3c7', 'en_proceso': '#dbeafe', 'en_pausa': '#f3f4f6', 'finalizada': '#dcfce7', 'atrasada': '#fee2e2', 'cancelada': '#f1f5f9'
-                };
-                let txtMap = {
-                    'pendiente': '#92400e', 'en_proceso': '#1e40af', 'en_pausa': '#475569', 'finalizada': '#166534', 'atrasada': '#991b1b', 'cancelada': '#64748b'
-                };
-                sel.style.backgroundColor = colorMap[actividad.estado] || '#f1f5f9';
-                sel.style.color = txtMap[actividad.estado] || '#475569';
-            }
-            
-            document.getElementById('ficha_titulo').textContent = actividad.titulo;
-            document.getElementById('ficha_descripcion').textContent = actividad.descripcion;
-            document.getElementById('ficha_impacto').textContent = actividad.impacto || '';
-            
-            let fIni = actividad.fecha_inicio ? actividad.fecha_inicio.substring(0,10) : '';
-            let fFin = actividad.fecha_estimada_fin ? actividad.fecha_estimada_fin.substring(0,10) : '';
-            document.getElementById('ficha_fechas').textContent = `Del ${fIni} al ${fFin} (${actividad.tiempo_estimado || 'N/A'})`;
-            
-            document.getElementById('slider_avance').value = actividad.porcentaje_avance || 0;
-            document.getElementById('ficha_avance_text_val').textContent = actividad.porcentaje_avance || 0;
+    let fetchUrl = `${getAppBaseUrl()}/actividades/${actividadId}/details`;
 
-            // Show/Hide completada/reabrir buttons conditionally based on status
-            let btnCompletar = document.getElementById('ficha_btn_completar');
-            let btnReabrir = document.getElementById('ficha_btn_reabrir');
-            if (btnCompletar && btnReabrir) {
-                if (actividad.estado === 'finalizada') {
-                    btnCompletar.style.display = 'none';
-                    btnReabrir.style.display = 'block';
-                } else {
-                    btnCompletar.style.display = 'block';
-                    btnReabrir.style.display = 'none';
-                }
-            }
+    fetch(fetchUrl, {
+        headers: {
+            "Accept": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+        }
+    })
+    .then(r => {
+        if (!r.ok) {
+            throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+        }
+        return r.json();
+    })
+    .then(actividad => {
+        window.currentActividad = actividad;
+        let btnEdit = document.getElementById('ficha_btn_editar');
+        if (btnEdit) btnEdit.dataset.actividad = safeBtoa(JSON.stringify(actividad));
 
-            const tbody = document.getElementById('tabla_avances');
+        let formDel = document.getElementById('form_delete_actividad');
+        if (formDel) formDel.action = `${getAppBaseUrl()}/actividades/${actividad.id}`;
+        
+        let avanceId = document.getElementById('avance_actividad_id');
+        if (avanceId) avanceId.value = actividad.id;
+
+        let formSlider = document.getElementById('form-slider-avance');
+        if (formSlider) formSlider.action = `${getAppBaseUrl()}/actividades/${actividad.id}`;
+        
+        let elPrioridad = document.getElementById('ficha_prioridad');
+        if (elPrioridad) elPrioridad.textContent = 'Prioridad: ' + (actividad.prioridad ? actividad.prioridad.toUpperCase() : '');
+        
+        let sel = document.getElementById('ficha_estado_select');
+        if (sel) {
+            sel.value = actividad.estado;
+            let colorMap = {
+                'pendiente': '#fef3c7', 'en_proceso': '#dbeafe', 'en_pausa': '#f3f4f6', 'finalizada': '#dcfce7', 'atrasada': '#fee2e2', 'cancelada': '#f1f5f9'
+            };
+            let txtMap = {
+                'pendiente': '#92400e', 'en_proceso': '#1e40af', 'en_pausa': '#475569', 'finalizada': '#166534', 'atrasada': '#991b1b', 'cancelada': '#64748b'
+            };
+            sel.style.backgroundColor = colorMap[actividad.estado] || '#f1f5f9';
+            sel.style.color = txtMap[actividad.estado] || '#475569';
+        }
+        
+        let elTitulo = document.getElementById('ficha_titulo');
+        if (elTitulo) elTitulo.textContent = actividad.titulo || '';
+
+        let elDesc = document.getElementById('ficha_descripcion');
+        if (elDesc) elDesc.textContent = actividad.descripcion || '';
+
+        let elImp = document.getElementById('ficha_impacto');
+        if (elImp) elImp.textContent = actividad.impacto || '';
+        
+        let fIni = actividad.fecha_inicio ? actividad.fecha_inicio.substring(0,10) : '';
+        let fFin = actividad.fecha_estimada_fin ? actividad.fecha_estimada_fin.substring(0,10) : '';
+        let elFechas = document.getElementById('ficha_fechas');
+        if (elFechas) elFechas.textContent = `Del ${fIni} al ${fFin} (${actividad.tiempo_estimado || 'N/A'})`;
+        
+        let slider = document.getElementById('slider_avance');
+        if (slider) slider.value = actividad.porcentaje_avance || 0;
+
+        let elAvanceVal = document.getElementById('ficha_avance_text_val');
+        if (elAvanceVal) elAvanceVal.textContent = actividad.porcentaje_avance || 0;
+
+        // Show/Hide completada/reabrir buttons conditionally based on status
+        let btnCompletar = document.getElementById('ficha_btn_completar');
+        let btnReabrir = document.getElementById('ficha_btn_reabrir');
+        if (btnCompletar && btnReabrir) {
+            if (actividad.estado === 'finalizada') {
+                btnCompletar.style.display = 'none';
+                btnReabrir.style.display = 'block';
+            } else {
+                btnCompletar.style.display = 'block';
+                btnReabrir.style.display = 'none';
+            }
+        }
+
+        const tbody = document.getElementById('tabla_avances');
+        if (tbody) {
             tbody.innerHTML = '';
             if (actividad.avances && actividad.avances.length > 0) {
                 actividad.avances.forEach(av => {
@@ -1015,8 +1326,6 @@ function openShowModal(btn) {
                         aprobacionCell = `<span style="color:#ef4444; font-weight:bold;" title="${av.comentario_jefe || ''}">Rechazado</span>`;
                     }
 
-                    let nameDisplay = av.empleado ? av.empleado.name : 'Usuario';
-
                     row.innerHTML = `
                         <td style="padding:4px;">${av.fecha_avance ? av.fecha_avance.substring(0,10) : ''}<br><small style="color:#6b7280;">${av.hora_inicio} - ${av.hora_fin}</small></td>
                         <td style="padding:4px;">${av.horas_trabajadas || '0'} hrs</td>
@@ -1031,49 +1340,55 @@ function openShowModal(btn) {
             } else {
                 tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#6b7280; padding:15px;">Aún no se registran avances.</td></tr>`;
             }
+        }
 
-            const chatBox = document.getElementById('chat_mensajes');
-            if (chatBox) {
-                chatBox.innerHTML = '';
-                if (actividad.mensajes && actividad.mensajes.length > 0) {
-                    actividad.mensajes.forEach(msj => {
-                        let bubble = document.createElement('div');
-                        bubble.style.marginBottom = '8px';
-                        bubble.style.padding = '6px 10px';
-                        bubble.style.borderRadius = '8px';
-                        bubble.style.maxWidth = '85%';
-                        
-                        let senderName = msj.remitente ? msj.remitente.name : (msj.user ? msj.user.name : 'Usuario');
-                        let isMe = msj.remitente_id == authId || msj.user_id == authId;
-                        
-                        if (isMe) {
-                            bubble.style.background = '#dbeafe';
-                            bubble.style.color = '#1e3a8a';
-                            bubble.style.marginLeft = 'auto';
-                        } else {
-                            bubble.style.background = '#f1f5f9';
-                            bubble.style.color = '#334155';
-                        }
-                        
-                        bubble.innerHTML = `
-                            <div style="font-size:11px; font-weight:bold; margin-bottom:2px;">${senderName}</div>
-                            <div style="font-size:13px; line-height:1.4;">${msj.mensaje}</div>
-                            <div style="font-size:9px; text-align:right; margin-top:3px; opacity:0.7;">${msj.created_at ? msj.created_at.substring(11,16) : ''}</div>
-                        `;
-                        chatBox.appendChild(bubble);
-                    });
-                } else {
-                    chatBox.innerHTML = `<div style="text-align:center; color:#94a3b8; padding:20px; font-size:13px;">No hay mensajes en este chat.</div>`;
-                }
+        const chatBox = document.getElementById('chat_mensajes');
+        if (chatBox) {
+            chatBox.innerHTML = '';
+            if (actividad.mensajes && actividad.mensajes.length > 0) {
+                actividad.mensajes.forEach(msj => {
+                    let bubble = document.createElement('div');
+                    bubble.style.marginBottom = '8px';
+                    bubble.style.padding = '6px 10px';
+                    bubble.style.borderRadius = '8px';
+                    bubble.style.maxWidth = '85%';
+                    
+                    let senderName = msj.remitente ? msj.remitente.name : (msj.user ? msj.user.name : 'Usuario');
+                    let currentAuthId = (typeof authId !== 'undefined') ? authId : 0;
+                    let isMe = msj.remitente_id == currentAuthId || msj.user_id == currentAuthId;
+                    
+                    if (isMe) {
+                        bubble.style.background = '#dbeafe';
+                        bubble.style.color = '#1e3a8a';
+                        bubble.style.marginLeft = 'auto';
+                    } else {
+                        bubble.style.background = '#f1f5f9';
+                        bubble.style.color = '#334155';
+                    }
+                    
+                    bubble.innerHTML = `
+                        <div style="font-size:11px; font-weight:bold; margin-bottom:2px;">${senderName}</div>
+                        <div style="font-size:13px; line-height:1.4;">${msj.mensaje}</div>
+                        <div style="font-size:9px; text-align:right; margin-top:3px; opacity:0.7;">${msj.created_at ? msj.created_at.substring(11,16) : ''}</div>
+                    `;
+                    chatBox.appendChild(bubble);
+                });
+            } else {
+                chatBox.innerHTML = `<div style="text-align:center; color:#94a3b8; padding:20px; font-size:13px;">No hay mensajes en este chat.</div>`;
             }
-            
-            abrirModal('modalFicha');
-            if (chatBox) {
-                setTimeout(() => {
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }, 100);
-            }
-        });
+        }
+        
+        abrirModal('modalFicha');
+        if (chatBox) {
+            setTimeout(() => {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 100);
+        }
+    })
+    .catch(err => {
+        console.error("Error al obtener detalles de la actividad:", err);
+        alert("Ocurrió un error al cargar la ficha de la actividad (" + err.message + ").");
+    });
 }
 
 function enviarMensaje(ev) {
@@ -1084,17 +1399,7 @@ function enviarMensaje(ev) {
 
     if (!mensajeText.trim()) return;
 
-    fetch(`/actividades/${actividadId}/messages_send_direct_or_ajax_is_fine`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": "{{ csrf_token() }}",
-            "Accept": "application/json"
-        },
-        body: JSON.stringify({ mensaje: mensajeText })
-    })
-    // Wait, the post URL for messages is `/actividades/${actividad}/mensajes`. Let's correct it below.
-    fetch(`/actividades/${actividadId}/mensajes`, {
+    fetch(`${window.APP_BASE_URL}/actividades/${actividadId}/mensajes`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -1107,7 +1412,7 @@ function enviarMensaje(ev) {
     .then(data => {
         if (data.success) {
             input.value = '';
-            fetch(`/actividades/${actividadId}/details`)
+            fetch(`${window.APP_BASE_URL}/actividades/${actividadId}/details`)
                 .then(r => r.json())
                 .then(act => {
                     openShowModal({ dataset: { id: act.id } });
@@ -1120,7 +1425,7 @@ function aprobarAvance(id) {
     let comentario = prompt("Escribe un comentario opcional para el empleado:");
     if (comentario === null) return;
     
-    fetch(`/avances-actividad/${id}/aprobar`, {
+    fetch(`${window.APP_BASE_URL}/avances-actividad/${id}/aprobar`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -1141,7 +1446,7 @@ function rechazarAvance(id) {
         return;
     }
     
-    fetch(`/avances-actividad/${id}/rechazar`, {
+    fetch(`${window.APP_BASE_URL}/avances-actividad/${id}/rechazar`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -1189,7 +1494,7 @@ function aprobarActividadDesdeFicha() {
     if (!id) return;
     if (!confirm('¿Marcar esta actividad como finalizada/aprobada?')) return;
     
-    fetch(`/actividades/${id}/aprobar`, {
+    fetch(`${window.APP_BASE_URL}/actividades/${id}/aprobar`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -1212,7 +1517,7 @@ function reabrirActividadDesdeFicha() {
     if (!id) return;
     if (!confirm('¿Reabrir esta actividad?')) return;
     
-    fetch(`/actividades/${id}/reabrir`, {
+    fetch(`${window.APP_BASE_URL}/actividades/${id}/reabrir`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -1231,18 +1536,154 @@ function reabrirActividadDesdeFicha() {
 }
 
 function openEditRutinaModal(btn) {
-    let rawData = btn.dataset.rutina;
-    if (!rawData) {
-        let row = btn.closest('tr');
-        rawData = row ? row.dataset.rutina : '';
+    let rutina = null;
+    let rawData = btn ? (btn.dataset ? btn.dataset.rutina : '') : '';
+    if (!rawData && btn && btn.closest) {
+        let row = btn.closest('[data-rutina], tr');
+        rawData = row ? (row.dataset ? row.dataset.rutina : '') : '';
     }
-    if (!rawData) return;
-    let rutina = JSON.parse(safeAtob(rawData));
-    document.getElementById('formEditarRutina').action = `/rutinas/${rutina.id}`;
-    document.getElementById('edit_rutina_titulo').value = rutina.titulo;
-    document.getElementById('edit_rutina_descripcion').value = rutina.descripcion || '';
-    document.getElementById('edit_rutina_veces').value = rutina.veces_al_dia || 1;
-    abrirModal('modalEditarRutina');
+
+    if (rawData) {
+        try {
+            let decoded = safeAtob(rawData);
+            rutina = JSON.parse(decoded);
+        } catch(e) {
+            console.warn("Could not parse rawData rutina", e);
+        }
+    }
+
+    if (!rutina && window.currentRutina) {
+        rutina = window.currentRutina;
+    }
+
+    if (!rutina) {
+        alert("No se pudo encontrar la información de la rutina para editar.");
+        return;
+    }
+
+    try {
+        window.currentRutina = rutina;
+        let baseUrl = getAppBaseUrl();
+        
+        let formEdit = document.getElementById('formEditarRutina');
+        if (formEdit) {
+            formEdit.action = `${baseUrl}/rutinas/${rutina.id}`;
+        }
+
+        let formDelete = document.getElementById('formEliminarRutina');
+        if (formDelete) {
+            formDelete.action = `${baseUrl}/rutinas/${rutina.id}`;
+        }
+        
+        if (document.getElementById('edit_rutina_titulo')) {
+            document.getElementById('edit_rutina_titulo').value = rutina.titulo || '';
+        }
+        if (document.getElementById('edit_rutina_descripcion')) {
+            document.getElementById('edit_rutina_descripcion').value = rutina.descripcion || '';
+        }
+        if (document.getElementById('edit_rutina_veces')) {
+            document.getElementById('edit_rutina_veces').value = rutina.veces_al_dia || rutina.veces || 1;
+        }
+        
+        abrirModal('modalEditarRutina');
+    } catch(err) {
+        console.error("Error al abrir modal de edición de rutina:", err);
+        alert("Ocurrió un error al cargar la rutina para editar.");
+    }
+}
+
+function confirmDeleteRutinaModal() {
+    let formDelete = document.getElementById('formEliminarRutina');
+    if (formDelete && formDelete.action) {
+        if (confirm('¿Seguro que deseas eliminar esta rutina definitivamente?')) {
+            formDelete.submit();
+        }
+    } else {
+        alert('No se encontró la información para eliminar la rutina.');
+    }
+}
+
+function openEditImprevistaModal(btn) {
+    let imprevisto = null;
+    let rawData = '';
+
+    if (btn) {
+        let elWithData = (btn.dataset && btn.dataset.imprevisto) ? btn : (btn.closest ? btn.closest('[data-imprevisto]') : null);
+        while (elWithData && (!elWithData.dataset || !elWithData.dataset.imprevisto)) {
+            elWithData = elWithData.parentElement ? elWithData.parentElement.closest('[data-imprevisto]') : null;
+        }
+        if (elWithData && elWithData.dataset && elWithData.dataset.imprevisto) {
+            rawData = elWithData.dataset.imprevisto;
+        }
+    }
+
+    if (rawData) {
+        try {
+            let decoded = safeAtob(rawData);
+            imprevisto = JSON.parse(decoded);
+        } catch(e) {
+            console.warn("Could not parse rawData imprevisto", e);
+        }
+    }
+
+    if (!imprevisto && window.currentImprevisto) {
+        imprevisto = window.currentImprevisto;
+    }
+
+    if (!imprevisto) {
+        alert("No se pudo encontrar la información del imprevisto para editar.");
+        return;
+    }
+
+    try {
+        window.currentImprevisto = imprevisto;
+        let baseUrl = getAppBaseUrl();
+        
+        let formEdit = document.getElementById('formEditarImprevista');
+        if (formEdit) {
+            formEdit.action = `${baseUrl}/actividades-imprevistas/${imprevisto.id}`;
+        }
+
+        let formDelete = document.getElementById('formEliminarImprevista');
+        if (formDelete) {
+            formDelete.action = `${baseUrl}/actividades-imprevistas/${imprevisto.id}`;
+        }
+        
+        if (document.getElementById('edit_imprevista_titulo')) {
+            document.getElementById('edit_imprevista_titulo').value = imprevisto.titulo || '';
+        }
+        if (document.getElementById('edit_imprevista_descripcion')) {
+            document.getElementById('edit_imprevista_descripcion').value = imprevisto.descripcion_detallada || imprevisto.descripcion || '';
+        }
+        if (document.getElementById('edit_imprevista_motivo')) {
+            document.getElementById('edit_imprevista_motivo').value = imprevisto.motivo || '';
+        }
+        if (document.getElementById('edit_imprevista_resultado')) {
+            document.getElementById('edit_imprevista_resultado').value = imprevisto.resultado_obtenido || '';
+        }
+        if (document.getElementById('edit_imprevista_estado')) {
+            document.getElementById('edit_imprevista_estado').value = imprevisto.estado || 'finalizada';
+        }
+        if (document.getElementById('edit_imprevista_empleado')) {
+            document.getElementById('edit_imprevista_empleado').value = imprevisto.empleado_id || '';
+        }
+        
+        abrirModal('modalEditarImprevista');
+    } catch(err) {
+        console.error("Error al abrir modal de edición de imprevisto:", err);
+        alert("Ocurrió un error al cargar el imprevisto para editar.");
+    }
+}
+
+function confirmDeleteImprevistaModal() {
+    let formDelete = document.getElementById('formEliminarImprevista');
+    if (formDelete && formDelete.action) {
+        if (confirm('¿Seguro que deseas eliminar este imprevisto definitivamente?')) {
+            formDelete.submit();
+        }
+    } else {
+        alert('No se encontró la información para eliminar el imprevisto.');
+    }
 }
 
 function handleRutinaCheck(cb, event) {
@@ -1266,15 +1707,17 @@ function handleRutinaCheck(cb, event) {
         }
     });
 
+    let baseUrl = getAppBaseUrl();
+
     // Send update request to server
-    fetch(`/rutinas/${rutinaId}/set-ejecuciones`, {
+    fetch(`${baseUrl}/rutinas/${rutinaId}/set-ejecuciones`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             "X-CSRF-TOKEN": "{{ csrf_token() }}",
             "Accept": "application/json"
         },
-        body: JSON.stringify({ cantidad_ejecuciones: newQty })
+        body: JSON.stringify({ cantidad: newQty, cantidad_ejecuciones: newQty })
     })
     .then(r => r.json())
     .then(data => {
@@ -1304,7 +1747,9 @@ function actualizarEstadoRapido(nuevoEstado) {
         sel.style.color = txtMap[nuevoEstado] || '#475569';
     }
 
-    fetch(`/actividades/${actividadId}/estado`, {
+    let baseUrl = getAppBaseUrl();
+
+    fetch(`${baseUrl}/actividades/${actividadId}/estado`, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",

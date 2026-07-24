@@ -265,12 +265,22 @@ margin-bottom:5px;
 <!-- Menú de navegación lateral -->
 <aside class="rh-menu">
     <h2>Recursos Humanos</h2>
-    <div class="rh-nav" onclick="mostrar('citas')">Agendar Cita</div>
-    <div class="rh-nav" onclick="mostrar('candidatos')">Candidatos</div>
-    <div class="rh-nav" onclick="mostrar('practicantes')">Practicantes</div>
-    <div class="rh-nav" onclick="mostrar('empleados')">Empleados</div>
-    <div class="rh-nav" onclick="mostrar('vacaciones')">Vacaciones</div>
-    <div class="rh-nav" onclick="mostrar('contratos')">Contratos</div>
+    @if(Auth::user()->hasPermission('rh_agendar_citas') || Auth::user()->hasPermission('rh_ver_citas_realizadas') || Auth::user()->hasPermission('administracion_rh'))
+        <div class="rh-nav" onclick="mostrar('citas')">Agendar Cita</div>
+    @endif
+    @if(Auth::user()->hasPermission('rh_ver_editar_candidatos') || Auth::user()->hasPermission('rh_aprobar_candidato') || Auth::user()->hasPermission('administracion_rh'))
+        <div class="rh-nav" onclick="mostrar('candidatos')">Candidatos</div>
+    @endif
+    @if(Auth::user()->hasPermission('rh_ver_editar_empleados') || Auth::user()->hasPermission('administracion_rh'))
+        <div class="rh-nav" onclick="mostrar('practicantes')">Practicantes</div>
+        <div class="rh-nav" onclick="mostrar('empleados')">Empleados</div>
+    @endif
+    @if(Auth::user()->hasPermission('rh_gestion_vacaciones') || Auth::user()->hasPermission('administracion_rh'))
+        <div class="rh-nav" onclick="mostrar('vacaciones')">Vacaciones</div>
+    @endif
+    @if(Auth::user()->hasPermission('rh_gestion_contratos') || Auth::user()->hasPermission('administracion_rh'))
+        <div class="rh-nav" onclick="mostrar('contratos')">Contratos</div>
+    @endif
 
     <a href="{{ url('administracion') }}" class="btn-regresar">
         ⬅ Volver al Menú Principal

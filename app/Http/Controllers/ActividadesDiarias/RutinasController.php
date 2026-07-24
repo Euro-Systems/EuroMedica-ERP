@@ -67,14 +67,21 @@ class RutinasController extends Controller
         $request->validate([
             'titulo' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
-            'veces_al_dia' => 'required|integer|min:1',
+            'veces_al_dia' => 'nullable|integer|min:1',
+            'empleado_id' => 'nullable|exists:users,id',
         ]);
 
-        $rutina->update([
+        $updateData = [
             'titulo' => $request->input('titulo'),
             'descripcion' => $request->input('descripcion'),
-            'veces_al_dia' => $request->input('veces_al_dia'),
-        ]);
+            'veces_al_dia' => max(1, intval($request->input('veces_al_dia', $rutina->veces_al_dia ?? 1))),
+        ];
+
+        if ($request->filled('empleado_id')) {
+            $updateData['empleado_id'] = $request->input('empleado_id');
+        }
+
+        $rutina->update($updateData);
 
         return redirect()->back()->with('success', 'Rutina actualizada con éxito.');
     }
@@ -82,7 +89,7 @@ class RutinasController extends Controller
     public function setEjecuciones(Request $request, $id)
     {
         $rutina = Rutina::findOrFail($id);
-        $cantidad = (int) $request->input('cantidad', 0);
+        $cantidad = (int) ($request->input('cantidad') ?? $request->input('cantidad_ejecuciones', 0));
         $hoy = now()->toDateString();
 
         $ejecucion = EjecucionRutina::updateOrCreate(
@@ -100,11 +107,18 @@ class RutinasController extends Controller
     public function destroy($id)
     {
         $currentUser = Auth::user();
-        if (!$currentUser || !in_array($currentUser->rol, ['jefe', 'admin'])) {
-            return back()->with('error', 'No tienes permiso para eliminar rutinas.');
+        if (!$currentUser) {
+            return back()->with('error', 'Debes iniciar sesión.');
         }
-        Rutina::destroy($id);
-        return back()->with('success', 'Rutina eliminada.');
+
+        $rutina = Rutina::findOrFail($id);
+
+        if (in_array($currentUser->rol, ['admin', 'jefe', 'directivo']) || $rutina->empleado_id === $currentUser->id || $currentUser->hasPermission('actividades')) {
+            $rutina->delete();
+            return back()->with('success', 'Rutina eliminada.');
+        }
+
+        return back()->with('error', 'No tienes permiso para eliminar esta rutina.');
     }
 }
 

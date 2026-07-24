@@ -41,6 +41,7 @@ class StoreRutinaRequest extends FormRequest
             'prioridad' => $this->prioridad ?? 'media',
             'impacto'   => $this->impacto   ?? 'Ninguno',
             'frecuencia' => $this->frecuencia ?? 'diaria',
+            'veces_al_dia' => $this->veces_al_dia ? max(1, intval($this->veces_al_dia)) : 1,
         ]);
     }
 }

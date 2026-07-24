@@ -20,7 +20,7 @@ class BitacoraDiariaController extends Controller
             abort(403);
         }
 
-        if ($currentUser->rol === 'empleado' || $currentUser->rol === 'practicante') {
+        if (!in_array($currentUser->rol, ['jefe', 'directivo', 'admin'])) {
             return redirect()->route('bitacora.usuario', ['empleado' => $currentUser->id]);
         }
 

@@ -11,21 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('servicios_vehiculo', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('vehiculo_id')->constrained('vehiculos')->onDelete('cascade');
-            $table->date('fecha')->nullable();
-            $table->string('solicitud_servicio')->nullable();
-            $table->text('cotizacion_opciones')->nullable(); // JSON string
-            $table->string('cotizacion_aceptada')->nullable();
-            $table->date('fecha_autorizacion')->nullable();
-            $table->date('fecha_realizacion')->nullable();
-            $table->text('observacion')->nullable();
-            $table->string('proveedor')->nullable();
-            $table->decimal('costo', 10, 2)->nullable();
-            $table->string('factura')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('servicios_vehiculo')) {
+            Schema::create('servicios_vehiculo', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('vehiculo_id')->constrained('vehiculos')->onDelete('cascade');
+                $table->date('fecha')->nullable();
+                $table->string('solicitud_servicio')->nullable();
+                $table->text('cotizacion_opciones')->nullable(); // JSON string
+                $table->string('cotizacion_aceptada')->nullable();
+                $table->date('fecha_autorizacion')->nullable();
+                $table->date('fecha_realizacion')->nullable();
+                $table->text('observacion')->nullable();
+                $table->string('proveedor')->nullable();
+                $table->decimal('costo', 10, 2)->nullable();
+                $table->string('factura')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

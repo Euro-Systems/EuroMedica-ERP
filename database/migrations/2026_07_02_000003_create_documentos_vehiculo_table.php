@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('documentos_vehiculo', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('vehiculo_id')->constrained('vehiculos')->onDelete('cascade');
-            $table->string('nombre');
-            $table->string('ruta');
-            $table->string('tipo'); // 'pdf' or 'imagen'
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('documentos_vehiculo')) {
+            Schema::create('documentos_vehiculo', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('vehiculo_id')->constrained('vehiculos')->onDelete('cascade');
+                $table->string('nombre');
+                $table->string('ruta');
+                $table->string('tipo'); // 'pdf' or 'imagen'
+                $table->timestamps();
+            });
+        }
     }
 
     /**

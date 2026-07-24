@@ -121,11 +121,12 @@ class ActividadesController extends Controller
                 $userRutinas = collect($allUserRutinas->get($u->id, []))->map(function($r) {
                     $r->tipo = 'Rutinaria';
                     $r->fecha_display = 'Diaria';
+                    $r->veces_al_dia = ($r->veces_al_dia && $r->veces_al_dia > 0) ? intval($r->veces_al_dia) : 1;
                     
                     // Access the preloaded execution from memory (relation)
                     $ejecucion = $r->ejecuciones->first();
                     $r->ejecuciones_hoy = $ejecucion ? $ejecucion->cantidad_ejecuciones : 0;
-                    $r->porcentaje_avance = $r->veces_al_dia > 0 ? round(($r->ejecuciones_hoy / $r->veces_al_dia) * 100) : 0;
+                    $r->porcentaje_avance = round(($r->ejecuciones_hoy / $r->veces_al_dia) * 100);
                     if ($r->porcentaje_avance >= 100) {
                         $r->estado = 'finalizada';
                     } elseif ($r->porcentaje_avance > 0) {
@@ -178,10 +179,11 @@ class ActividadesController extends Controller
             ->orderBy('created_at', 'desc')->get()->map(function($r) {
                 $r->tipo = 'Rutinaria';
                 $r->fecha_display = 'Diaria';
+                $r->veces_al_dia = ($r->veces_al_dia && $r->veces_al_dia > 0) ? intval($r->veces_al_dia) : 1;
                 
                 $ejecucion = $r->ejecuciones->first();
                 $r->ejecuciones_hoy = $ejecucion ? $ejecucion->cantidad_ejecuciones : 0;
-                $r->porcentaje_avance = $r->veces_al_dia > 0 ? round(($r->ejecuciones_hoy / $r->veces_al_dia) * 100) : 0;
+                $r->porcentaje_avance = round(($r->ejecuciones_hoy / $r->veces_al_dia) * 100);
                 if ($r->porcentaje_avance >= 100) {
                     $r->estado = 'finalizada';
                 } elseif ($r->porcentaje_avance > 0) {
@@ -321,8 +323,16 @@ class ActividadesController extends Controller
         if (empty($data['tiempo_estimado'])) {
             $data['tiempo_estimado'] = 'Por definir';
         }
-        if (empty($data['impacto'])) {
-            $data['impacto'] = 'Ninguno';
+        $validImpactos = ['Pacientes', 'Sistemas', 'Administración', 'Recursos Humanos', 'Medicina Laboral', 'Laboratorio', 'Operaciones', 'Dirección'];
+        if (empty($data['impacto']) || !in_array($data['impacto'], $validImpactos)) {
+            $emp = User::find($data['empleado_id'] ?? null);
+            $areaId = $emp->area_id ?? session('active_area_id', 1);
+            $area = \App\Models\Area::find($areaId);
+            if ($area && in_array($area->nombre, $validImpactos)) {
+                $data['impacto'] = $area->nombre;
+            } else {
+                $data['impacto'] = 'Administración';
+            }
         }
 
         $this->checkDefaults();
@@ -485,10 +495,11 @@ class ActividadesController extends Controller
             $r->tipo = 'Rutinaria';
             $r->fecha_display = 'Diaria';
             $r->horas = 'N/A';
+            $r->veces_al_dia = ($r->veces_al_dia && $r->veces_al_dia > 0) ? intval($r->veces_al_dia) : 1;
             
             $ejecucion = $r->ejecuciones->first();
             $r->ejecuciones_hoy = $ejecucion ? $ejecucion->cantidad_ejecuciones : 0;
-            $r->porcentaje_avance = $r->veces_al_dia > 0 ? round(($r->ejecuciones_hoy / $r->veces_al_dia) * 100) : 0;
+            $r->porcentaje_avance = round(($r->ejecuciones_hoy / $r->veces_al_dia) * 100);
             if ($r->porcentaje_avance >= 100) {
                 $r->estado = 'finalizada';
             } elseif ($r->porcentaje_avance > 0) {

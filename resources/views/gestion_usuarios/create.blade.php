@@ -123,7 +123,8 @@
                                     <option value="empleado" {{ old('rol') == 'empleado' ? 'selected' : '' }}>Empleado</option>
                                     <option value="practicante" {{ old('rol') == 'practicante' ? 'selected' : '' }}>Practicante</option>
                                     <option value="jefe" {{ old('rol') == 'jefe' ? 'selected' : '' }}>Jefe</option>
-                                    <option value="admin" {{ old('rol') == 'admin' ? 'selected' : '' }}>Administrador</option>
+                                    <option value="directivo" {{ old('rol') == 'directivo' ? 'selected' : '' }}>Directivo</option>
+                                    <option value="admin" {{ old('rol') == 'admin' ? 'selected' : '' }}>Administrador (Servidor)</option>
                                 </select>
                             @else
                                 <select class="form-select" id="rol" name="rol" onchange="handleRolChange()" required>
@@ -236,16 +237,134 @@
                                     </div>
                                     <div class="sub-perms-container" id="sub_perms_{{ $key }}" style="display: flex; gap: 16px; flex-wrap: wrap;">
                                         @if($key === 'administracion')
-                                            @foreach(['rh' => 'Recursos Humanos', 'nomina' => 'Nómina', 'compras' => 'Compras'] as $subKey => $subLabel)
-                                                @php $subVal = 'administracion_' . $subKey; @endphp
-                                                <div class="form-check" style="margin: 0;">
-                                                    <input class="form-check-input sub-perm-checkbox" type="checkbox" name="permisos[]" value="{{ $subVal }}" id="perm_{{ $subVal }}"
-                                                        {{ is_array(old('permisos')) && in_array($subVal, old('permisos')) ? 'checked' : '' }}>
-                                                    <label class="form-check-label fw-semibold text-secondary" for="perm_{{ $subVal }}" style="cursor: pointer; font-size: 13px;">
-                                                        {{ $subLabel }}
-                                                    </label>
+                                            <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                                                <div style="display: flex; gap: 16px; flex-wrap: wrap; background: #f8fafc; padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0; align-items: center;">
+                                                    <span class="fw-bold text-dark" style="font-size: 13px;">Secciones:</span>
+                                                    <div class="form-check" style="margin: 0;">
+                                                        <input class="form-check-input sub-perm-checkbox" type="checkbox" name="permisos[]" value="administracion_rh" id="perm_administracion_rh"
+                                                            {{ is_array(old('permisos')) && in_array('administracion_rh', old('permisos')) ? 'checked' : '' }} onchange="toggleRhSubPerms(this.checked)">
+                                                        <label class="form-check-label fw-bold text-primary" for="perm_administracion_rh" style="cursor: pointer; font-size: 13px;">
+                                                            Recursos Humanos (RH)
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check" style="margin: 0;">
+                                                        <input class="form-check-input sub-perm-checkbox" type="checkbox" name="permisos[]" value="administracion_compras" id="perm_administracion_compras"
+                                                            {{ is_array(old('permisos')) && in_array('administracion_compras', old('permisos')) ? 'checked' : '' }}>
+                                                        <label class="form-check-label fw-bold text-primary" for="perm_administracion_compras" style="cursor: pointer; font-size: 13px;">
+                                                            Compras
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check" style="margin: 0;">
+                                                        <input class="form-check-input sub-perm-checkbox" type="checkbox" name="permisos[]" value="administracion_nomina" id="perm_administracion_nomina"
+                                                            {{ is_array(old('permisos')) && in_array('administracion_nomina', old('permisos')) ? 'checked' : '' }}>
+                                                        <label class="form-check-label fw-bold text-primary" for="perm_administracion_nomina" style="cursor: pointer; font-size: 13px;">
+                                                            Nómina
+                                                        </label>
+                                                    </div>
                                                 </div>
-                                            @endforeach
+
+                                                <div style="margin-left: 10px; border-left: 3px solid #3b82f6; padding-left: 12px;">
+                                                    <div class="fw-bold text-secondary mb-1" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Permisos específicos de Recursos Humanos (RH):</div>
+                                                    @php
+                                                        $rhSubPerms = [
+                                                            'rh_agendar_citas' => 'Agendar citas (+ Nueva Cita)',
+                                                            'rh_aprobar_candidato' => 'Aprobar candidato',
+                                                            'rh_ver_citas_realizadas' => 'Ver citas realizadas',
+                                                            'rh_ver_historial' => 'Ver historial',
+                                                            'rh_ver_editar_candidatos' => 'Ver / editar ficha de candidatos',
+                                                            'rh_aprobar_convertir_trabajador' => 'Aprobar y convertir a trabajador / practicante',
+                                                            'rh_ver_editar_empleados' => 'Ver / editar ficha de empleados o practicantes',
+                                                            'rh_dar_baja_empleado' => 'Dar de baja a un empleado o practicante',
+                                                            'rh_gestion_vacaciones' => 'Gestionar solicitudes de vacaciones',
+                                                            'rh_gestion_contratos' => 'Agregar, editar o eliminar contratos',
+                                                        ];
+                                                    @endphp
+                                                    <div style="display: flex; gap: 8px 16px; flex-wrap: wrap;">
+                                                        @foreach($rhSubPerms as $subVal => $subLabel)
+                                                            <div class="form-check" style="margin: 0;">
+                                                                <input class="form-check-input sub-perm-checkbox rh-sub-perm" type="checkbox" name="permisos[]" value="{{ $subVal }}" id="perm_{{ $subVal }}"
+                                                                    {{ is_array(old('permisos')) && in_array($subVal, old('permisos')) ? 'checked' : '' }}>
+                                                                <label class="form-check-label fw-semibold text-secondary" for="perm_{{ $subVal }}" style="cursor: pointer; font-size: 13px;">
+                                                                    {{ $subLabel }}
+                                                                </label>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @elseif($key === 'vehiculos')
+                                            @php
+                                                $vehiculosSubPerms = [
+                                                    'vehiculos' => 'Ver módulo',
+                                                    'vehiculos_agregar_unidad' => 'Agregar nueva unidad',
+                                                    'vehiculos_editar_unidad' => 'Editar la unidad',
+                                                    'vehiculos_eliminar_unidad' => 'Eliminar la unidad',
+                                                    'vehiculos_ver_sidebar' => 'Ver unidad en sidebar',
+                                                    'vehiculos_registrar_servicio' => 'Registrar nuevo servicio',
+                                                    'vehiculos_editar_servicio' => 'Editar servicio',
+                                                    'vehiculos_eliminar_servicio' => 'Eliminar servicio',
+                                                ];
+                                            @endphp
+                                            <div style="display: flex; gap: 10px 16px; flex-wrap: wrap;">
+                                                @foreach($vehiculosSubPerms as $subVal => $subLabel)
+                                                    <div class="form-check" style="margin: 0;">
+                                                        <input class="form-check-input sub-perm-checkbox" type="checkbox" name="permisos[]" value="{{ $subVal }}" id="perm_{{ $subVal }}"
+                                                            {{ is_array(old('permisos')) && in_array($subVal, old('permisos')) ? 'checked' : '' }}>
+                                                        <label class="form-check-label fw-semibold text-secondary" for="perm_{{ $subVal }}" style="cursor: pointer; font-size: 13px;">
+                                                            {{ $subLabel }}
+                                                        </label>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @elseif($key === 'actividades')
+                                            @php
+                                                $actividadesSubPerms = [
+                                                    'actividades' => 'Ver módulo',
+                                                    'actividades_tablero' => 'Apartado de Actividades Diarias (Tablero)',
+                                                    'actividades_resumen' => 'Resumen general',
+                                                    'actividades_mis_actividades' => 'Mis actividades',
+                                                    'actividades_reportes' => 'Reportes (propios si es empleado/practicante)',
+                                                ];
+                                                $allAreas = \App\Models\Area::all();
+                                            @endphp
+                                            <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                                                <div style="display: flex; gap: 10px 16px; flex-wrap: wrap;">
+                                                    @foreach($actividadesSubPerms as $subVal => $subLabel)
+                                                        <div class="form-check" style="margin: 0;">
+                                                            <input class="form-check-input sub-perm-checkbox" type="checkbox" name="permisos[]" value="{{ $subVal }}" id="perm_{{ $subVal }}"
+                                                                {{ is_array(old('permisos')) && in_array($subVal, old('permisos')) ? 'checked' : '' }}>
+                                                            <label class="form-check-label fw-semibold text-secondary" for="perm_{{ $subVal }}" style="cursor: pointer; font-size: 13px;">
+                                                                {{ $subLabel }}
+                                                            </label>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+
+                                                <div style="background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                                        <span class="fw-bold text-dark" style="font-size: 13px;">Áreas disponibles a visualizar:</span>
+                                                        <div class="form-check" style="margin: 0;">
+                                                            <input class="form-check-input sub-perm-checkbox" type="checkbox" name="permisos[]" value="actividades_ver_areas" id="perm_actividades_ver_areas"
+                                                                {{ is_array(old('permisos')) && in_array('actividades_ver_areas', old('permisos')) ? 'checked' : '' }} onchange="toggleAreaSubPerms(this.checked)">
+                                                            <label class="form-check-label fw-bold text-primary" for="perm_actividades_ver_areas" style="cursor: pointer; font-size: 13px;">
+                                                                ★ Ver todas las áreas
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div style="display: flex; gap: 8px 16px; flex-wrap: wrap;">
+                                                        @foreach($allAreas as $area)
+                                                            @php $areaVal = 'actividades_area_' . $area->id; @endphp
+                                                            <div class="form-check" style="margin: 0;">
+                                                                <input class="form-check-input sub-perm-checkbox area-sub-perm" type="checkbox" name="permisos[]" value="{{ $areaVal }}" id="perm_{{ $areaVal }}"
+                                                                    {{ is_array(old('permisos')) && in_array($areaVal, old('permisos')) ? 'checked' : '' }}>
+                                                                <label class="form-check-label fw-semibold text-secondary" for="perm_{{ $areaVal }}" style="cursor: pointer; font-size: 13px;">
+                                                                    {{ $area->nombre }}
+                                                                </label>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
                                         @else
                                             @foreach(['ver' => 'Ver', 'crear' => 'Crear/Editar', 'eliminar' => 'Eliminar'] as $subKey => $subLabel)
                                                 @php $subVal = $key . '_' . $subKey; @endphp
@@ -368,6 +487,18 @@
                     cb.checked = isChecked;
                 });
             }
+        }
+
+        function toggleRhSubPerms(isChecked) {
+            document.querySelectorAll('.rh-sub-perm').forEach(cb => {
+                cb.checked = isChecked;
+            });
+        }
+
+        function toggleAreaSubPerms(isChecked) {
+            document.querySelectorAll('.area-sub-perm').forEach(cb => {
+                cb.checked = isChecked;
+            });
         }
 
         document.addEventListener('DOMContentLoaded', function() {

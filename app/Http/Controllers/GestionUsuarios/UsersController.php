@@ -82,7 +82,7 @@ class UsersController extends Controller
         $request->validate([
             'name' => 'required|string|max:255|unique:users,name',
             'password' => 'required|string|min:4',
-            'rol' => 'required|string|in:admin,jefe,empleado,practicante',
+            'rol' => 'required|string|in:admin,jefe,directivo,empleado,practicante',
             'jefe_id' => 'nullable|exists:users,id',
             'area_id' => 'nullable|exists:areas,id',
             'departamentos_jefe' => 'nullable|array',
@@ -108,6 +108,10 @@ class UsersController extends Controller
             $departamento = 'Administración';
             $adminArea = Area::where('nombre', 'Administración')->first();
             $area_id = $adminArea ? $adminArea->id : null;
+            $jefe_id = null;
+        } else if ($rol === 'directivo') {
+            $departamento = 'Dirección';
+            $area_id = null;
             $jefe_id = null;
         } else {
             // Empleado o Practicante: departamento se deriva del área seleccionada
@@ -219,7 +223,7 @@ class UsersController extends Controller
         $request->validate([
             'name' => 'required|string|max:255|unique:users,name,' . $user->id,
             'password' => 'nullable|string|min:4',
-            'rol' => 'required|string|in:admin,jefe,empleado,practicante',
+            'rol' => 'required|string|in:admin,jefe,directivo,empleado,practicante',
             'jefe_id' => 'nullable|exists:users,id',
             'area_id' => 'nullable|exists:areas,id',
             'departamentos_jefe' => 'nullable|array',
@@ -244,6 +248,10 @@ class UsersController extends Controller
             $departamento = 'Administración';
             $adminArea = Area::where('nombre', 'Administración')->first();
             $area_id = $adminArea ? $adminArea->id : null;
+            $jefe_id = null;
+        } else if ($rol === 'directivo') {
+            $departamento = 'Dirección';
+            $area_id = null;
             $jefe_id = null;
         } else {
             // Empleado o Practicante: departamento se deriva del área seleccionada

@@ -79,9 +79,9 @@
                    
                    if ($isImprevista) {
                        $rowClick = "window.location.href='" . route('actividades-imprevistas.show', $act->id) . "'";
-                   } elseif ($isRutinaria) {
-                       $rowClick = (auth()->user() && in_array(auth()->user()->rol, ['jefe', 'admin'])) ? "openEditRutinaModal(this)" : "event.stopPropagation()";
-                   } else {
+                    } elseif ($isRutinaria) {
+                        $rowClick = "openEditRutinaModal(this)";
+                    } else {
                        $rowClick = "openShowModal(this)";
                    }
                 @endphp
@@ -161,20 +161,46 @@
                                                title="Ejecución {{ $i }} de {{ $act->veces_al_dia }}">
                                     @endfor
                                 </div>
-                                @if(in_array(auth()->user()->rol, ['jefe', 'admin']))
-                                    <button type="button" class="btn-ver" style="background:#10b981; color:white; border:none; padding:4px 10px; font-size:11px; border-radius:6px; cursor:pointer;" onclick="openEditRutinaModal(this)" data-rutina="{!! base64_encode(json_encode($act)) !!}">
+                                @if(in_array(auth()->user()->rol, ['jefe', 'directivo', 'admin']) || $act->empleado_id === auth()->id() || auth()->user()->hasPermission('actividades'))
+                                    <button type="button" class="btn-ver" style="background:#10b981; color:white; border:none; padding:4px 10px; font-size:11px; border-radius:6px; cursor:pointer;" onclick="event.stopPropagation(); openEditRutinaModal(this)" data-rutina="{!! base64_encode(json_encode($act)) !!}" title="Editar Rutina">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <form action="{{ route('rutinas.destroy', $act->id) }}" method="POST" style="display:inline; margin:0;" onsubmit="return confirm('¿Eliminar esta rutina?');">
+                                    <form action="{{ route('rutinas.destroy', $act->id) }}" method="POST" style="display:inline; margin:0;" onsubmit="return confirm('¿Seguro que deseas eliminar esta rutina definitivamente?');" onclick="event.stopPropagation();">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn-ver" style="background:#ef4444; color:white; border:none; padding:4px 10px; font-size:11px; border-radius:6px; cursor:pointer;">
+                                        <button type="submit" class="btn-ver" style="background:#ef4444; color:white; border:none; padding:4px 10px; font-size:11px; border-radius:6px; cursor:pointer;" title="Eliminar Rutina" onclick="event.stopPropagation();">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
                                 @endif
+                            @elseif($isImprevista)
+                                 @if(auth()->check() && (in_array(auth()->user()->rol, ['jefe', 'directivo', 'admin']) || $act->empleado_id === auth()->id() || auth()->user()->hasPermission('actividades')))
+                                     <button type="button" class="btn-ver" style="background:#10b981; color:white; border:none; padding:4px 10px; font-size:11px; border-radius:6px; cursor:pointer;" onclick="event.stopPropagation(); openEditImprevistaModal(this)" data-imprevisto="{!! base64_encode(json_encode($act)) !!}" title="Editar Imprevisto">
+                                         <i class="bi bi-pencil"></i>
+                                     </button>
+                                     <form action="{{ route('actividades-imprevistas.destroy', $act->id) }}" method="POST" style="display:inline; margin:0;" onsubmit="return confirm('¿Seguro que deseas eliminar este imprevisto definitivamente?');" onclick="event.stopPropagation();">
+                                         @csrf
+                                         @method('DELETE')
+                                         <button type="submit" class="btn-ver" style="background:#ef4444; color:white; border:none; padding:4px 10px; font-size:11px; border-radius:6px; cursor:pointer;" title="Eliminar Imprevisto" onclick="event.stopPropagation();">
+                                             <i class="bi bi-trash"></i>
+                                         </button>
+                                     </form>
+                                 @endif
                             @else
-                                <span style="color:#64748b; font-size:12px;">-</span>
+                                @if(auth()->check() && (in_array(auth()->user()->rol, ['jefe', 'directivo', 'admin']) || $act->empleado_id === auth()->id() || auth()->user()->hasPermission('actividades')))
+                                     <button type="button" class="btn-ver" style="background:#10b981; color:white; border:none; padding:4px 10px; font-size:11px; border-radius:6px; cursor:pointer;" onclick="event.stopPropagation(); openEditModalFromRow(this)" data-actividad="{!! base64_encode(json_encode($act)) !!}" title="Editar Actividad">
+                                         <i class="bi bi-pencil"></i>
+                                     </button>
+                                     <form action="{{ route('actividades.destroy', $act->id) }}" method="POST" style="display:inline; margin:0;" onsubmit="return confirm('¿Seguro que deseas eliminar esta actividad definitivamente?');" onclick="event.stopPropagation();">
+                                         @csrf
+                                         @method('DELETE')
+                                         <button type="submit" class="btn-ver" style="background:#ef4444; color:white; border:none; padding:4px 10px; font-size:11px; border-radius:6px; cursor:pointer;" title="Eliminar Actividad" onclick="event.stopPropagation();">
+                                             <i class="bi bi-trash"></i>
+                                         </button>
+                                     </form>
+                                @else
+                                    <span style="color:#64748b; font-size:12px;">-</span>
+                                @endif
                             @endif
                         </div>
                     </td>

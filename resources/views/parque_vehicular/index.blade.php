@@ -350,16 +350,18 @@
             Editable
         </div>
 
-        <hr style="border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 15px 0 12px; width: 100%;">
+        @if(Auth::user()->hasPermission('vehiculos_ver_sidebar'))
+            <hr style="border-top: 1px solid rgba(255, 255, 255, 0.2); margin: 15px 0 12px; width: 100%;">
 
-        <h3>Unidades</h3>
-        <div id="sidebar-vehicles" style="display: flex; flex-direction: column; gap: 4px;">
-            @foreach($vehiculos as $v)
-                <div class="rh-nav vehicle-nav-item" id="nav-item-{{ $v->id }}" onclick="cargarVehiculo({{ $v->id }})">
-                    {{ $v->nombre }}
-                </div>
-            @endforeach
-        </div>
+            <h3>Unidades</h3>
+            <div id="sidebar-vehicles" style="display: flex; flex-direction: column; gap: 4px;">
+                @foreach($vehiculos as $v)
+                    <div class="rh-nav vehicle-nav-item" id="nav-item-{{ $v->id }}" onclick="cargarVehiculo({{ $v->id }})">
+                        {{ $v->nombre }}
+                    </div>
+                @endforeach
+            </div>
+        @endif
 
         <a href="{{ url('/') }}" class="btn-back">← Regresar al inicio</a>
     </aside>
@@ -518,6 +520,19 @@
 
 <script>
     let activeVehiculoId = null;
+    const baseUrl = "{{ url('/vehiculos') }}";
+
+    // Permisos del usuario autenticado
+    const userPerms = {
+        ver_modulo: {{ Auth::user()->hasPermission('vehiculos') ? 'true' : 'false' }},
+        agregar_unidad: {{ Auth::user()->hasPermission('vehiculos_agregar_unidad') ? 'true' : 'false' }},
+        editar_unidad: {{ Auth::user()->hasPermission('vehiculos_editar_unidad') ? 'true' : 'false' }},
+        eliminar_unidad: {{ Auth::user()->hasPermission('vehiculos_eliminar_unidad') ? 'true' : 'false' }},
+        ver_sidebar: {{ Auth::user()->hasPermission('vehiculos_ver_sidebar') ? 'true' : 'false' }},
+        registrar_servicio: {{ Auth::user()->hasPermission('vehiculos_registrar_servicio') ? 'true' : 'false' }},
+        editar_servicio: {{ Auth::user()->hasPermission('vehiculos_editar_servicio') ? 'true' : 'false' }},
+        eliminar_servicio: {{ Auth::user()->hasPermission('vehiculos_eliminar_servicio') ? 'true' : 'false' }},
+    };
 
     // Encabezado para peticiones fetch con CSRF token
     const headers = {
@@ -534,16 +549,24 @@
         
         // Marcar activo en la barra lateral
         document.querySelectorAll('.vehicle-nav-item').forEach(item => item.classList.remove('active'));
-        document.getElementById('nav-item-editable').classList.remove('active');
+        const navEditable = document.getElementById('nav-item-editable');
+        if (navEditable) navEditable.classList.remove('active');
         const activeNav = document.getElementById(`nav-item-${id}`);
         if(activeNav) activeNav.classList.add('active');
 
-        fetch(`/vehiculos/${id}`, { headers })
+        fetch(`${baseUrl}/${id}`, { headers })
             .then(res => res.json())
             .then(vehiculo => {
                 let infoCompra = vehiculo.fecha_compra || 'N/A';
                 let inicioSeg = vehiculo.inicio_seguro || 'N/A';
                 let finSeg = vehiculo.caducidad_seguro || 'N/A';
+
+                let btnEditarFicha = userPerms.editar_unidad 
+                    ? `<button class="btn btn-secondary" onclick="abrirModalEditarVehiculo(${JSON.stringify(vehiculo).replace(/"/g, '&quot;')})">Editar Ficha</button>` 
+                    : '';
+                let btnEliminarUnidad = userPerms.eliminar_unidad 
+                    ? `<button class="btn btn-danger" onclick="eliminarVehiculo(${vehiculo.id})">Eliminar Unidad</button>` 
+                    : '';
 
                 // Generar HTML de la Ficha Técnica
                 let fichaHtml = `
@@ -565,18 +588,22 @@
                             <div class="info-item"><span>Caducidad del seguro</span>${finSeg}</div>
                         </div>
                         <div style="margin-top: 24px; display:flex; gap: 8px;">
-                            <button class="btn btn-secondary" onclick="abrirModalEditarVehiculo(${JSON.stringify(vehiculo).replace(/"/g, '&quot;')})">Editar Ficha</button>
-                            <button class="btn btn-danger" onclick="eliminarVehiculo(${vehiculo.id})">Eliminar Unidad</button>
+                            ${btnEditarFicha}
+                            ${btnEliminarUnidad}
                         </div>
                     </div>
                 `;
+
+                let btnRegistrarServicio = userPerms.registrar_servicio 
+                    ? `<button class="btn btn-primary" onclick="abrirModalNuevoServicio(${vehiculo.id})">+ Registrar Servicio</button>` 
+                    : '';
 
                 // Generar HTML de la Tabla de Servicios
                 let tablaServiciosHtml = `
                     <div class="card" style="overflow-x:auto;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <h2>Historial de Servicios - ${vehiculo.nombre}</h2>
-                            <button class="btn btn-primary" onclick="abrirModalNuevoServicio(${vehiculo.id})">+ Registrar Servicio</button>
+                            ${btnRegistrarServicio}
                         </div>
                         <table>
                             <thead>
@@ -614,11 +641,20 @@
                             });
                         }
 
+                        let disabledSelect = userPerms.editar_servicio ? '' : 'disabled';
                         let selectCotizacion = `
-                            <select onchange="actualizarCotizacionAceptada(${s.id}, this.value)">
+                            <select ${disabledSelect} onchange="actualizarCotizacionAceptada(${s.id}, this.value)">
                                 ${optionsHtml}
                             </select>
                         `;
+
+                        let btnEditarServicio = userPerms.editar_servicio 
+                            ? `<button class="btn btn-primary" style="padding:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="abrirModalEditarServicio(${JSON.stringify(s).replace(/"/g, '&quot;')})" title="Editar Servicio"><i class="bi bi-pencil-fill" style="font-size:12px; color:#fff;"></i></button>` 
+                            : '';
+
+                        let btnEliminarServicio = userPerms.eliminar_servicio 
+                            ? `<button class="btn btn-danger" style="padding:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="eliminarServicio(${s.id})" title="Eliminar Servicio"><i class="bi bi-trash" style="font-size:13px; color:#fff;"></i></button>` 
+                            : '';
 
                         let fechaS = s.fecha || 'N/A';
                         let fechaA = s.fecha_autorizacion || 'N/A';
@@ -639,8 +675,8 @@
                                 <td>${s.factura || 'N/A'}</td>
                                 <td>
                                     <div style="display:flex; gap:6px;">
-                                        <button class="btn btn-primary" style="padding:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="abrirModalEditarServicio(${JSON.stringify(s).replace(/"/g, '&quot;')})" title="Editar Servicio"><i class="bi bi-pencil-fill" style="font-size:12px; color:#fff;"></i></button>
-                                        <button class="btn btn-danger" style="padding:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="eliminarServicio(${s.id})" title="Eliminar Servicio"><i class="bi bi-trash" style="font-size:13px; color:#fff;"></i></button>
+                                        ${btnEditarServicio}
+                                        ${btnEliminarServicio}
                                     </div>
                                 </td>
                             </tr>
@@ -670,16 +706,21 @@
     function mostrarEditable() {
         activeVehiculoId = null;
         document.querySelectorAll('.vehicle-nav-item').forEach(item => item.classList.remove('active'));
-        document.getElementById('nav-item-editable').classList.add('active');
+        const navEditable = document.getElementById('nav-item-editable');
+        if (navEditable) navEditable.classList.add('active');
 
-        fetch('/vehiculos', { headers })
+        fetch(baseUrl, { headers })
             .then(res => res.json())
             .then(vehiculos => {
+                let btnNuevoVehiculo = userPerms.agregar_unidad 
+                    ? `<button class="btn btn-success" onclick="abrirModalNuevoVehiculo()">+ Nuevo Vehículo</button>` 
+                    : '';
+
                 let html = `
                     <div class="card">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                             <h2>Administración de Parque Vehicular (Editable)</h2>
-                            <button class="btn btn-success" onclick="abrirModalNuevoVehiculo()">+ Nuevo Vehículo</button>
+                            ${btnNuevoVehiculo}
                         </div>
                         <p>Aquí puedes gestionar todas las unidades registradas en el sistema de pruebas.</p>
                         <table>
@@ -699,6 +740,18 @@
 
                 if(vehiculos.length > 0) {
                     vehiculos.forEach(v => {
+                        let btnVerFichaRow = userPerms.ver_sidebar 
+                            ? `<button class="btn btn-secondary" style="padding:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="cargarVehiculo(${v.id})" title="Ver Ficha"><i class="bi bi-eye-fill" style="font-size:13px; color:#fff;"></i></button>` 
+                            : '';
+
+                        let btnEditarRow = userPerms.editar_unidad 
+                            ? `<button class="btn btn-primary" style="padding:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="abrirModalEditarVehiculo(${JSON.stringify(v).replace(/"/g, '&quot;')})" title="Editar Unidad"><i class="bi bi-pencil-fill" style="font-size:12px; color:#fff;"></i></button>` 
+                            : '';
+
+                        let btnEliminarRow = userPerms.eliminar_unidad 
+                            ? `<button class="btn btn-danger" style="padding:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="eliminarVehiculo(${v.id})" title="Eliminar Unidad"><i class="bi bi-trash" style="font-size:13px; color:#fff;"></i></button>` 
+                            : '';
+
                         html += `
                             <tr>
                                 <td><strong>${v.nombre}</strong></td>
@@ -709,9 +762,9 @@
                                 <td>${v.caducidad_seguro || 'N/A'}</td>
                                 <td>
                                     <div style="display:flex; gap:6px;">
-                                        <button class="btn btn-secondary" style="padding:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="cargarVehiculo(${v.id})" title="Ver Ficha"><i class="bi bi-eye-fill" style="font-size:13px; color:#fff;"></i></button>
-                                        <button class="btn btn-primary" style="padding:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="abrirModalEditarVehiculo(${JSON.stringify(v).replace(/"/g, '&quot;')})" title="Editar Unidad"><i class="bi bi-pencil-fill" style="font-size:12px; color:#fff;"></i></button>
-                                        <button class="btn btn-danger" style="padding:0; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="eliminarVehiculo(${v.id})" title="Eliminar Unidad"><i class="bi bi-trash" style="font-size:13px; color:#fff;"></i></button>
+                                        ${btnVerFichaRow}
+                                        ${btnEditarRow}
+                                        ${btnEliminarRow}
                                     </div>
                                 </td>
                             </tr>
@@ -766,7 +819,7 @@
 
     function guardarVehiculo() {
         const id = document.getElementById('vehiculo-id').value;
-        const url = id ? `/vehiculos/${id}` : '/vehiculos';
+        const url = id ? `${baseUrl}/${id}` : baseUrl;
         const method = id ? 'PUT' : 'POST';
 
         const data = {
@@ -807,7 +860,7 @@
     function eliminarVehiculo(id) {
         if(!confirm("¿Estás seguro de que deseas eliminar este vehículo y todo su historial de mantenimiento?")) return;
 
-        fetch(`/vehiculos/${id}`, {
+        fetch(`${baseUrl}/${id}`, {
             method: 'DELETE',
             headers
         })
@@ -878,7 +931,7 @@
     function guardarServicio() {
         const id = document.getElementById('servicio-id').value;
         const vehiculoId = document.getElementById('servicio-vehiculo-id').value;
-        const url = id ? `/vehiculos/servicios/${id}` : `/vehiculos/${vehiculoId}/servicios`;
+        const url = id ? `${baseUrl}/servicios/${id}` : `${baseUrl}/${vehiculoId}/servicios`;
         const method = id ? 'PUT' : 'POST';
 
         // Recolectar cotizaciones
@@ -926,7 +979,7 @@
     function eliminarServicio(id) {
         if(!confirm("¿Estás seguro de que deseas eliminar este servicio del historial?")) return;
 
-        fetch(`/vehiculos/servicios/${id}`, {
+        fetch(`${baseUrl}/servicios/${id}`, {
             method: 'DELETE',
             headers
         })
@@ -947,7 +1000,7 @@
      * Actualiza rápidamente la cotización aceptada al cambiar el dropdown en la tabla de servicios
      */
     function actualizarCotizacionAceptada(servicioId, valor) {
-        fetch(`/vehiculos/${activeVehiculoId}`, { headers })
+        fetch(`${baseUrl}/${activeVehiculoId}`, { headers })
             .then(res => res.json())
             .then(vehiculo => {
                 const servicio = vehiculo.servicios.find(s => s.id === servicioId);
@@ -984,7 +1037,7 @@
                     observacion: servicio.observacion
                 };
 
-                fetch(`/vehiculos/servicios/${servicioId}`, {
+                fetch(`${baseUrl}/servicios/${servicioId}`, {
                     method: 'PUT',
                     headers,
                     body: JSON.stringify(updatedData)
@@ -1005,7 +1058,12 @@
     }
 
     function recargarSidebar(selectId) {
-        fetch('/vehiculos', { headers })
+        const sidebarElem = document.getElementById('sidebar-vehicles');
+        if (!userPerms.ver_sidebar || !sidebarElem) {
+            mostrarEditable();
+            return;
+        }
+        fetch(baseUrl, { headers })
             .then(res => res.json())
             .then(vehiculos => {
                 let html = '';
@@ -1016,11 +1074,11 @@
                         </div>
                     `;
                 });
-                document.getElementById('sidebar-vehicles').innerHTML = html;
+                sidebarElem.innerHTML = html;
 
                 if (selectId) {
                     cargarVehiculo(selectId);
-                } else if (document.getElementById('nav-item-editable').classList.contains('active')) {
+                } else if (document.getElementById('nav-item-editable') && document.getElementById('nav-item-editable').classList.contains('active')) {
                     mostrarEditable();
                 } else if(vehiculos.length > 0) {
                     cargarVehiculo(vehiculos[0].id);

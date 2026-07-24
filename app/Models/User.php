@@ -79,7 +79,105 @@ class User extends Authenticatable
 
         $allowed = array_map('trim', explode(',', strtolower($this->permisos)));
 
-        return in_array('todos', $allowed) || in_array(strtolower($module), $allowed);
+        if (in_array('todos', $allowed)) {
+            return true;
+        }
+
+        $moduleLower = strtolower($module);
+
+        if (in_array($moduleLower, $allowed)) {
+            return true;
+        }
+
+        // Si se tiene 'administracion' completo, concede acceso a cualquier sub-permiso de administración o rh
+        if (in_array('administracion', $allowed)) {
+            if ($moduleLower === 'administracion' || str_starts_with($moduleLower, 'administracion_') || str_starts_with($moduleLower, 'rh_') || $moduleLower === 'rh') {
+                return true;
+            }
+        }
+
+        // Si se tiene 'administracion_rh', concede acceso a cualquier sub-permiso 'rh_*'
+        if (in_array('administracion_rh', $allowed)) {
+            if ($moduleLower === 'rh' || $moduleLower === 'administracion_rh' || $moduleLower === 'administracion' || str_starts_with($moduleLower, 'rh_')) {
+                return true;
+            }
+        }
+
+        // Si se verifica un sub-permiso de rh (ej. rh_agendar_citas)
+        if (str_starts_with($moduleLower, 'rh_') && (in_array('administracion_rh', $allowed) || in_array('administracion', $allowed))) {
+            return true;
+        }
+
+        // Si se verifica el módulo general 'administracion' o 'administracion_rh'
+        if ($moduleLower === 'administracion' || $moduleLower === 'administracion_rh') {
+            foreach ($allowed as $p) {
+                if (str_starts_with($p, 'administracion') || str_starts_with($p, 'rh_')) {
+                    return true;
+                }
+            }
+        }
+
+        // Si se tiene 'actividades' completo, concede acceso a cualquier sub-permiso de actividades
+        if (in_array('actividades', $allowed)) {
+            if ($moduleLower === 'actividades' || str_starts_with($moduleLower, 'actividades_')) {
+                return true;
+            }
+        }
+
+        // Si se verifica un permiso específico de área (ej: actividades_area_1)
+        if (str_starts_with($moduleLower, 'actividades_area_')) {
+            $areaId = str_replace('actividades_area_', '', $moduleLower);
+            return $this->canViewArea($areaId);
+        }
+
+        // Si se verifica un sub-permiso de actividades
+        if (str_starts_with($moduleLower, 'actividades_') && (in_array('actividades', $allowed) || in_array('actividades_ver_areas', $allowed))) {
+            return true;
+        }
+
+        // Si se verifica el módulo general 'actividades', conceder acceso si tiene cualquier sub-permiso
+        if ($moduleLower === 'actividades') {
+            foreach ($allowed as $p) {
+                if (str_starts_with($p, 'actividades')) {
+                    return true;
+                }
+            }
+        }
+
+        // Si se verifica un sub-permiso de vehículos y el usuario tiene el permiso global 'vehiculos'
+        if (str_starts_with($moduleLower, 'vehiculos_') && in_array('vehiculos', $allowed)) {
+            return true;
+        }
+
+        // Si se verifica el módulo general 'vehiculos', conceder acceso si el usuario tiene cualquier sub-permiso de vehículos
+        if ($moduleLower === 'vehiculos') {
+            foreach ($allowed as $p) {
+                if (str_starts_with($p, 'vehiculos')) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public function canViewArea($areaId)
+    {
+        if ($this->email === 'admin@admin.com' || $this->rol === 'admin') {
+            return true;
+        }
+
+        if (!$this->permisos) {
+            return false;
+        }
+
+        $allowed = array_map('trim', explode(',', strtolower($this->permisos)));
+
+        if (in_array('todos', $allowed) || in_array('actividades', $allowed) || in_array('actividades_ver_areas', $allowed)) {
+            return true;
+        }
+
+        return in_array('actividades_area_' . $areaId, $allowed);
     }
 
     public function area()

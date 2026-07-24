@@ -137,6 +137,7 @@
     <!-- Areas cards grid -->
     <div class="areas-grid">
         <!-- Administrativos -->
+        @if(Auth::user()->canViewArea(1))
         <a href="{{ route('actividades.area.select', 1) }}" class="area-card" style="background: #2563eb;">
             <div style="display:flex; flex-direction:column; align-items:center; flex-grow:1;">
                 <div class="area-icon">💼</div>
@@ -145,8 +146,10 @@
             </div>
             <div class="btn-entrar" style="color: #2563eb;">Entrar al área</div>
         </a>
+        @endif
 
         <!-- Sistemas -->
+        @if(Auth::user()->canViewArea(2))
         <a href="{{ route('actividades.area.select', 2) }}" class="area-card" style="background: #0d9488;">
             <div style="display:flex; flex-direction:column; align-items:center; flex-grow:1;">
                 <div class="area-icon">💻</div>
@@ -155,8 +158,10 @@
             </div>
             <div class="btn-entrar" style="color: #0d9488;">Entrar al área</div>
         </a>
+        @endif
 
         <!-- Marketing -->
+        @if(Auth::user()->canViewArea(3))
         <a href="{{ route('actividades.area.select', 3) }}" class="area-card" style="background: #e11d48;">
             <div style="display:flex; flex-direction:column; align-items:center; flex-grow:1;">
                 <div class="area-icon">📢</div>
@@ -165,8 +170,10 @@
             </div>
             <div class="btn-entrar" style="color: #e11d48;">Entrar al área</div>
         </a>
+        @endif
 
         <!-- Administración de empresas -->
+        @if(Auth::user()->canViewArea(4))
         <a href="{{ route('actividades.area.select', 4) }}" class="area-card" style="background: #6d28d9;">
             <div style="display:flex; flex-direction:column; align-items:center; flex-grow:1;">
                 <div class="area-icon">📊</div>
@@ -175,8 +182,10 @@
             </div>
             <div class="btn-entrar" style="color: #6d28d9;">Entrar al área</div>
         </a>
+        @endif
 
         <!-- Análisis de datos -->
+        @if(Auth::user()->canViewArea(5))
         <a href="{{ route('actividades.area.select', 5) }}" class="area-card" style="background: #4f46e5;">
             <div style="display:flex; flex-direction:column; align-items:center; flex-grow:1;">
                 <div class="area-icon">📈</div>
@@ -185,8 +194,10 @@
             </div>
             <div class="btn-entrar" style="color: #4f46e5;">Entrar al área</div>
         </a>
+        @endif
 
         <!-- Recursos Humanos -->
+        @if(Auth::user()->canViewArea(6))
         <a href="{{ route('actividades.area.select', 6) }}" class="area-card" style="background: #ea580c;">
             <div style="display:flex; flex-direction:column; align-items:center; flex-grow:1;">
                 <div class="area-icon">👥</div>
@@ -195,6 +206,7 @@
             </div>
             <div class="btn-entrar" style="color: #ea580c;">Entrar al área</div>
         </a>
+        @endif
     </div>
 </div>
 
