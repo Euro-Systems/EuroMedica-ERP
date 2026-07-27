@@ -110,15 +110,26 @@ ${vacEmp.map(v=>`
 </div>
 
 <div class="rh-card">
-<h3>Documentos</h3>
-<button class="btn-ver" onclick="escanear()">Escanear documento</button>
+<h3>Documentos Digitales</h3>
+<button class="btn-ver" onclick="escanear()" style="background:#475569; margin-bottom:10px;"><i class="bi bi-printer-fill me-1"></i> Escanear documento</button>
 <div id="dwtcontrolContainer"></div>
-<hr>
-${e.documentos.length===0 ? "Sin documentos" : e.documentos.map(d=>`
-<div style="display:inline-block;margin:5px;">
-<img src="${d.url}" onclick="ver('${d.url}')" style="width:120px;cursor:pointer;"><br>
-<button class="btn-ver" onclick="descargarPDF('${d.url}')">PDF</button>
+<hr style="margin:12px 0; border:0; border-top:1px solid #e2e8f0;">
+${(e.documentos || []).length===0 ? '<p style="color:#6b7280;text-align:center;margin:8px 0;font-size:13px;"><i class="bi bi-info-circle me-1"></i> Sin documentos cargados</p>' : (e.documentos || []).map(d=>`
+<div style="display:flex; align-items:center; justify-content:space-between; background:#f8fafc; padding:8px 12px; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:6px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+        <i class="bi bi-file-earmark-text-fill" style="font-size:20px; color:#2563eb;"></i>
+        <span style="font-weight:600; font-size:13px; color:#1e293b;">${d.nombre || 'Documento.pdf'}</span>
+    </div>
+    <button class="btn-ver" style="background:#2563eb; padding:5px 10px; font-size:12px;" onclick="descargarPDF('${d.url}')"><i class="bi bi-download"></i> Descargar</button>
 </div>`).join('')}
 </div>
+</div>
+</div>
+<div class="rh-card sticky-acciones" style="margin-top:14px;">
+<h3 style="border:none; padding:0; margin-bottom:10px;"><i class="bi bi-gear-fill me-2"></i>Acciones de Ficha</h3>
+<div style="display:flex; gap:10px; flex-wrap:wrap;">
+<button class="btn-ver" style="background:#2563eb; flex:1;" onclick="guardarBD()"><i class="bi bi-floppy-fill me-1"></i> Guardar Cambios</button>
+<button class="btn-ver" style="background:#dc2626; flex:1;" onclick="document.getElementById('modalBaja').style.display='flex'"><i class="bi bi-person-x-fill me-1"></i> Dar de Baja</button>
+${esAdminRH ? `<button class="btn-ver" style="background:#1e1e2e; flex:1; border:1px solid #dc2626;" onclick="eliminarRegistro('empleado')" title="Solo administradores"><i class="bi bi-trash3-fill me-1"></i> Eliminar Registro</button>` : ''}
 </div>
 </div>

@@ -100,26 +100,46 @@ html,body{
 }
 
 /* Estilos de tarjetas para separar secciones visualmente */
-.rh-card{
-    background:#fff;
-    padding:10px;
-    border-radius:12px;
-    box-shadow:0 4px 12px rgba(0,0,0,.06);
-    margin-bottom:10px;
+.rh-card {
+    background: #ffffff;
+    padding: 16px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    margin-bottom: 14px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease-in-out;
+}
+
+.rh-card h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e3a8a;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.rh-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e3a8a;
+    margin-top: 0;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #e2e8f0;
 }
 
 /* Layout de la ficha técnica usando Grid (2 columnas) */
 .ficha-wrap{
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:12px;
+    gap:14px;
     align-items:start;
 }
 
 .col{
     display:flex;
     flex-direction:column;
-    gap:10px;
+    gap:12px;
     min-height:0;
 }
 
@@ -127,51 +147,116 @@ html,body{
 .empleado-grid{
     display:grid;
     grid-template-columns:repeat(2, 1fr);
-    gap:8px;
+    gap:10px;
 }
 
-.empleado-grid b{
-    font-size:12px;
-    color:#6b7280;
+.empleado-grid b {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
 }
 
-.empleado-grid input{
-    width:100%;
-    padding:5px;
-    border:1px solid #d1d5db;
-    border-radius:6px;
+.empleado-grid input,
+.empleado-grid select,
+.empleado-grid textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background-color: #f8fafc;
+    color: #0f172a;
+    font-size: 13px;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+
+.empleado-grid input:focus,
+.empleado-grid select:focus,
+.empleado-grid textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.empleado-grid input[readonly] {
+    background-color: #e2e8f0;
+    color: #64748b;
+    cursor: not-allowed;
 }
 
 .radio-group{
     display:flex;
-    gap:10px;
+    gap:12px;
+    align-items:center;
 }
 
 /* Estilos para tablas de datos */
-.rh-table{
-    width:100%;
-    border-collapse:collapse;
+.rh-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
 }
 
-.rh-table th,.rh-table td{
-    padding:10px;
-    border-bottom:1px solid #e2e8f0;
+.rh-table th {
+    background: linear-gradient(130deg, #1e3a8a, #2563eb);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 14px;
+    border: none;
 }
 
-.rh-table th{
-    background:#1e3a8a;
-    color:white;
+.rh-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    font-size: 13px;
 }
 
-.btn-ver{
-    background:#1e3a8a;
-    color:white;
-    border:none;
-    padding:6px 12px;
-    border-radius:6px;
-    cursor:pointer;
-    display:block;
-    margin:auto;
+.rh-table tr:last-child td {
+    border-bottom: none;
+}
+
+.rh-table tr:hover td {
+    background-color: #f8fafc;
+}
+
+.btn-ver {
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-ver:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+}
+
+.btn-ver:active {
+    transform: translateY(0);
 }
 
 .ficha-wrap{
@@ -301,19 +386,169 @@ margin-bottom:5px;
 
 <!-- Modal Vacaciones -->
 <div id="modalVacaciones" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;align-items:center;justify-content:center;">
-  <div style="background:#fff;padding:25px;border-radius:12px;width:400px;max-width:90%;">
-    <h3>Solicitar Vacaciones / Permiso</h3>
-    <div class="empleado-grid" style="display:flex;flex-direction:column;gap:10px;">
-      <div><b>ID de Empleado</b><input type="number" id="v_emp_id" placeholder="Ej. 1"></div>
-      <div><b>Fecha Inicio</b><input type="date" id="v_inicio"></div>
-      <div><b>Fecha Fin</b><input type="date" id="v_fin"></div>
-      <div><b>Días a descontar</b><input type="number" id="v_dias"></div>
-      <div><b>Tipo</b><select id="v_tipo" style="width:100%;padding:5px;border-radius:6px;border:1px solid #d1d5db;"><option>Vacaciones</option><option>Permiso</option></select></div>
-      <div><b>Persona que cubre</b><input type="text" id="v_cobertura" placeholder="Nombre completo"></div>
+  <div style="background:#fff;padding:25px;border-radius:12px;width:420px;max-width:90%;">
+    <h3 style="margin:0 0 15px; color:#1e3a8a;"><i class="bi bi-calendar-plus me-2"></i>Solicitar Vacaciones / Permiso</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Empleado</b>
+        <select id="v_emp_id" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;font-size:13px;">
+          <option value="">-- Seleccionar empleado --</option>
+        </select>
+      </div>
+      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Fecha Inicio</b><input type="date" id="v_inicio" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"></div>
+      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Fecha Fin</b><input type="date" id="v_fin" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"></div>
+      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Días a descontar</b><input type="number" id="v_dias" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"></div>
+      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Tipo</b><select id="v_tipo" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"><option>Vacaciones</option><option>Permiso</option></select></div>
+      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Persona que cubre</b><input type="text" id="v_cobertura" placeholder="Nombre completo" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"></div>
     </div>
     <div style="display:flex;justify-content:flex-end;margin-top:20px;gap:10px;">
       <button class="btn-ver" style="background:#6b7280;" onclick="document.getElementById('modalVacaciones').style.display='none'">Cancelar</button>
       <button class="btn-ver" style="background:#22c55e;" onclick="guardarNuevaVacacion()">Guardar Solicitud</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nuevo Empleado Directo - EXPEDIENTE COMPLETO -->
+<div id="modalNuevoEmpleado" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:1100;align-items:center;justify-content:center;backdrop-filter:blur(5px);">
+  <div style="background:#fff;padding:0;border-radius:16px;width:680px;max-width:96%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,0.3);overflow:hidden;">
+
+    <!-- Header del modal -->
+    <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);padding:20px 25px;flex-shrink:0;">
+      <h3 style="margin:0;color:#fff;font-size:18px;font-weight:bold;"><i class="bi bi-person-plus-fill me-2"></i>Registrar Nuevo Empleado</h3>
+      <small style="color:#bfdbfe;">Llena el expediente completo. Los campos opcionales se pueden completar después.</small>
+    </div>
+
+    <!-- Cuerpo scrolleable -->
+    <div style="padding:22px 25px;overflow-y:auto;flex:1;">
+
+      <!-- SECCIÓN: Datos Personales -->
+      <div style="margin-bottom:18px;">
+        <h4 style="color:#1e3a8a;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;padding-bottom:6px;margin-bottom:12px;"><i class="bi bi-person-fill me-2"></i>Datos Personales</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div style="grid-column:span 3;"><b style="font-size:11px;color:#475569;text-transform:uppercase;">Nombre(s) *</b><input type="text" id="ne_nombre" placeholder="Nombre(s)" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Apellido Paterno *</b><input type="text" id="ne_ap" placeholder="Apellido Paterno" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Apellido Materno</b><input type="text" id="ne_am" placeholder="Apellido Materno" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Fecha Nacimiento</b><input type="date" id="ne_nacimiento" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">NSS</b><input type="text" id="ne_nss" placeholder="Número Seguro Social" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">RFC</b><input type="text" id="ne_rfc" placeholder="RFC" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">CURP</b><input type="text" id="ne_curp" placeholder="CURP" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Género</b>
+            <select id="ne_sexo" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;">
+              <option value="Indefinido">No especificado</option>
+              <option value="Hombre">Hombre</option>
+              <option value="Mujer">Mujer</option>
+            </select>
+          </div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Estado Civil</b><input type="text" id="ne_estado_civil" placeholder="Soltero/a, Casado/a..." style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Celular</b><input type="text" id="ne_celular" placeholder="10 dígitos" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div style="grid-column:span 2;"><b style="font-size:11px;color:#475569;text-transform:uppercase;">Correo Electrónico</b><input type="email" id="ne_correo" placeholder="correo@ejemplo.com" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div style="grid-column:span 3;"><b style="font-size:11px;color:#475569;text-transform:uppercase;">Dirección</b><input type="text" id="ne_direccion" placeholder="Calle, número, colonia, municipio" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Tipo de Sangre</b><input type="text" id="ne_tipo_sangre" placeholder="O+, A-, etc." style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Alergias / Med.</b><input type="text" id="ne_alergias" placeholder="Ninguna" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Talla Uniforme</b>
+            <select id="ne_talla" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;">
+              <option value="S">Chica (S)</option>
+              <option value="M" selected>Mediana (M)</option>
+              <option value="L">Grande (L)</option>
+              <option value="XL">Extra Grande (XL)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN: Datos Laborales -->
+      <div style="margin-bottom:18px;">
+        <h4 style="color:#1e3a8a;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;padding-bottom:6px;margin-bottom:12px;"><i class="bi bi-briefcase-fill me-2"></i>Datos Laborales</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div style="grid-column:span 2;"><b style="font-size:11px;color:#475569;text-transform:uppercase;">Puesto *</b><input type="text" id="ne_puesto" placeholder="Ej. Enfermera Jefe" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Empresa / Área</b><input type="text" id="ne_empresa" placeholder="Ej. EuroMedica" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Fecha de Ingreso *</b><input type="date" id="ne_fecha" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Alta IMSS</b><input type="date" id="ne_alta_imss" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">CLABE Bancaria</b><input type="text" id="ne_clabe" placeholder="18 dígitos" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Canal de Captación</b><input type="text" id="ne_canal" placeholder="Facebook, referido, etc." style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN: Contacto de Emergencia -->
+      <div style="margin-bottom:10px;">
+        <h4 style="color:#1e3a8a;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;padding-bottom:6px;margin-bottom:12px;"><i class="bi bi-telephone-fill me-2"></i>Contacto de Emergencia</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="grid-column:span 2;"><b style="font-size:11px;color:#475569;text-transform:uppercase;">Nombre del Contacto</b><input type="text" id="ne_contacto" placeholder="Nombre completo" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Parentesco</b><input type="text" id="ne_parentesco" placeholder="Madre, Esposo/a..." style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Teléfono 1</b><input type="text" id="ne_tel1" placeholder="10 dígitos" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Teléfono 2 (Opcional)</b><input type="text" id="ne_tel2" placeholder="10 dígitos" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer con botones -->
+    <div style="padding:16px 25px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;background:#f8fafc;">
+      <button class="btn-ver" style="background:#6b7280;" onclick="document.getElementById('modalNuevoEmpleado').style.display='none'"><i class="bi bi-x-circle me-1"></i> Cancelar</button>
+      <button class="btn-ver" style="background:#16a34a;" onclick="guardarNuevoEmpleadoDirecto()"><i class="bi bi-floppy-fill me-1"></i> Guardar y Abrir Expediente</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nuevo Practicante Directo - EXPEDIENTE COMPLETO -->
+<div id="modalNuevoPracticante" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:1100;align-items:center;justify-content:center;backdrop-filter:blur(5px);">
+  <div style="background:#fff;padding:0;border-radius:16px;width:680px;max-width:96%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,0.3);overflow:hidden;">
+
+    <!-- Header del modal -->
+    <div style="background:linear-gradient(135deg,#0f766e,#14b8a6);padding:20px 25px;flex-shrink:0;">
+      <h3 style="margin:0;color:#fff;font-size:18px;font-weight:bold;"><i class="bi bi-mortarboard-fill me-2"></i>Registrar Nuevo Practicante</h3>
+      <small style="color:#ccfbf1;">Llena el expediente completo. Los campos opcionales se pueden completar después.</small>
+    </div>
+
+    <!-- Cuerpo scrolleable -->
+    <div style="padding:22px 25px;overflow-y:auto;flex:1;">
+
+      <!-- SECCIÓN: Datos Personales -->
+      <div style="margin-bottom:18px;">
+        <h4 style="color:#0f766e;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;padding-bottom:6px;margin-bottom:12px;"><i class="bi bi-person-fill me-2"></i>Datos Personales</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div style="grid-column:span 3;"><b style="font-size:11px;color:#475569;text-transform:uppercase;">Nombre(s) *</b><input type="text" id="np_nombre" placeholder="Nombre(s)" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Apellido Paterno *</b><input type="text" id="np_ap" placeholder="Apellido Paterno" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Apellido Materno</b><input type="text" id="np_am" placeholder="Apellido Materno" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Fecha Nacimiento</b><input type="date" id="np_nacimiento" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">NSS</b><input type="text" id="np_nss" placeholder="Número Seguro Social" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">RFC</b><input type="text" id="np_rfc" placeholder="RFC" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">CURP</b><input type="text" id="np_curp" placeholder="CURP" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Celular</b><input type="text" id="np_celular" placeholder="10 dígitos" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div style="grid-column:span 2;"><b style="font-size:11px;color:#475569;text-transform:uppercase;">Correo Electrónico</b><input type="email" id="np_correo" placeholder="correo@ejemplo.com" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div style="grid-column:span 3;"><b style="font-size:11px;color:#475569;text-transform:uppercase;">Dirección</b><input type="text" id="np_direccion" placeholder="Calle, número, colonia, municipio" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Tipo de Sangre</b><input type="text" id="np_tipo_sangre" placeholder="O+, A-, etc." style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Alergias</b><input type="text" id="np_alergias" placeholder="Ninguna" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Nivel de Inglés</b><input type="text" id="np_nivel_ingles" placeholder="Básico, Intermedio..." style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Estado Civil</b><input type="text" id="np_estado_civil" placeholder="Soltero/a, Casado/a..." style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Talla Uniforme</b>
+            <select id="np_talla" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;">
+              <option value="S">Chica (S)</option>
+              <option value="M" selected>Mediana (M)</option>
+              <option value="L">Grande (L)</option>
+              <option value="XL">Extra Grande (XL)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN: Datos Académicos / Prácticas -->
+      <div style="margin-bottom:10px;">
+        <h4 style="color:#0f766e;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #e2e8f0;padding-bottom:6px;margin-bottom:12px;"><i class="bi bi-mortarboard me-2"></i>Datos Académicos y de Prácticas</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div style="grid-column:span 2;"><b style="font-size:11px;color:#475569;text-transform:uppercase;">Escuela de Procedencia *</b><input type="text" id="np_escuela" placeholder="Ej. UNAM, ITESM" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Horas Requeridas</b><input type="number" id="np_horas" placeholder="480" value="480" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div style="grid-column:span 2;"><b style="font-size:11px;color:#475569;text-transform:uppercase;">Área / Puesto Solicitado *</b><input type="text" id="np_puesto" placeholder="Ej. Enfermería, Laboratorio" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Empresa</b><input type="text" id="np_empresa" placeholder="EuroMedica" value="EuroMedica" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Fecha Inicio *</b><input type="date" id="np_fecha_inicio" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+          <div><b style="font-size:11px;color:#475569;text-transform:uppercase;">Fecha Término</b><input type="date" id="np_fecha_termino" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:3px;box-sizing:border-box;"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer con botones -->
+    <div style="padding:16px 25px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;background:#f8fafc;">
+      <button class="btn-ver" style="background:#6b7280;" onclick="document.getElementById('modalNuevoPracticante').style.display='none'"><i class="bi bi-x-circle me-1"></i> Cancelar</button>
+      <button class="btn-ver" style="background:#0f766e;" onclick="guardarNuevoPracticanteDirecto()"><i class="bi bi-floppy-fill me-1"></i> Guardar y Abrir Expediente</button>
     </div>
   </div>
 </div> 
@@ -491,9 +726,11 @@ function sanitizeJSON(obj, props) {
 empleados.forEach(e => sanitizeJSON(e, ['documentos', 'observaciones']));
 practicantes.forEach(p => sanitizeJSON(p, ['documentos', 'observaciones']));
 candidatos.forEach(c => sanitizeJSON(c, ['documentos', 'observaciones', 'evaluacion_details']));
-citas.forEach(ci => sanitizeJSON(ci, ['documentos']));
+citas.forEach(ci => sanitizeJSON(ci, ['documentos', 'evaluacion']));
 
 const csrfToken = '{{ csrf_token() }}';
+// Solo el administrador RH puede eliminar registros de forma permanente
+const esAdminRH = {{ Auth::user()->hasPermission('administracion_rh') ? 'true' : 'false' }};
 
 function syncToServer() {
     fetch('{{ route("rh.sync") }}', {
@@ -520,6 +757,406 @@ function guardarBD() {
 }
 
 
+
+/**
+ * FUNCIONES PARA EVALUACIÓN DE CITAS (FORMULARIO PRACTICANTE)
+ */
+function seleccionarFormularioEvaluacion(tipo) {
+    if (!citaSel) return;
+    if (!citaSel.evaluacion) citaSel.evaluacion = {};
+    citaSel.evaluacion.tipo = tipo;
+    
+    let bloquePrac = document.getElementById('bloque_form_practicante');
+    if (bloquePrac) {
+        bloquePrac.style.display = (tipo === 'Practicante') ? 'block' : 'none';
+    }
+}
+
+function actualizarEvaluacionCampo(campo, valor) {
+    if (!citaSel) return;
+    if (!citaSel.evaluacion) citaSel.evaluacion = { tipo: 'Practicante' };
+    citaSel.evaluacion[campo] = valor;
+}
+
+function actualizarEvaluacionCheck(campo, check) {
+    if (!citaSel) return;
+    if (!citaSel.evaluacion) citaSel.evaluacion = { tipo: 'Practicante' };
+    citaSel.evaluacion[campo] = check;
+}
+
+function toggleTranspMueven(check) {
+    if (!citaSel) return;
+    actualizarEvaluacionCheck('transp_check_mueven', check);
+    let wrap = document.getElementById('wrapper_transp_mueven');
+    if (wrap) wrap.style.display = check ? 'block' : 'none';
+}
+
+function toggleTranspOtro(check) {
+    if (!citaSel) return;
+    actualizarEvaluacionCheck('transp_check_otro', check);
+    let wrap = document.getElementById('wrapper_transp_otro');
+    if (wrap) wrap.style.display = check ? 'block' : 'none';
+}
+
+function toggleHijosOp(val) {
+    if (!citaSel) return;
+    actualizarEvaluacionCampo('tiene_hijos', val);
+    let wrap = document.getElementById('wrapper_hijos_detalle');
+    if (wrap) wrap.style.display = (val === 'si') ? 'block' : 'none';
+    if (val === 'si') {
+        let num = parseInt(citaSel.evaluacion?.hijos_num || 1);
+        renderizarCamposHijos(num);
+    }
+}
+
+function renderizarCamposHijos(num) {
+    if (!citaSel) return;
+    num = Math.max(1, Math.min(10, num));
+    if (!citaSel.evaluacion) citaSel.evaluacion = {};
+    citaSel.evaluacion.hijos_num = num;
+    if (!citaSel.evaluacion.hijos_lista) citaSel.evaluacion.hijos_lista = [];
+
+    let cont = document.getElementById('contenedor_hijos_lista');
+    if (!cont) return;
+
+    let html = '';
+    for (let i = 0; i < num; i++) {
+        let item = citaSel.evaluacion.hijos_lista[i] || { nombre: '', edad: '' };
+        html += `
+            <div style="display:flex; gap:10px; align-items:center; background:#fff; padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1;">
+                <b style="min-width:65px; color:#1e3a8a; font-size:12px;">Hijo ${i+1}:</b>
+                <input type="text" placeholder="Nombre completo" value="${item.nombre || ''}" onchange="actualizarHijoItem(${i}, 'nombre', this.value)" style="flex:2; padding:5px 8px; font-size:12px;">
+                <input type="text" placeholder="Edad (ej. 5 años)" value="${item.edad || ''}" onchange="actualizarHijoItem(${i}, 'edad', this.value)" style="flex:1; padding:5px 8px; font-size:12px;">
+            </div>
+        `;
+    }
+    cont.innerHTML = html;
+}
+
+function actualizarHijoItem(index, campo, valor) {
+    if (!citaSel) return;
+    if (!citaSel.evaluacion) citaSel.evaluacion = {};
+    if (!citaSel.evaluacion.hijos_lista) citaSel.evaluacion.hijos_lista = [];
+    if (!citaSel.evaluacion.hijos_lista[index]) citaSel.evaluacion.hijos_lista[index] = { nombre: '', edad: '' };
+    citaSel.evaluacion.hijos_lista[index][campo] = valor;
+}
+
+function toggleSeguroOp(val) {
+    if (!citaSel) return;
+    actualizarEvaluacionCampo('seguro_facultativo', val);
+    let wrap = document.getElementById('wrapper_seguro_cual');
+    if (wrap) wrap.style.display = (val === 'si') ? 'block' : 'none';
+}
+
+function actualizarEvaluacionAreaUnica(area) {
+    if (!citaSel) return;
+    if (!citaSel.evaluacion) citaSel.evaluacion = {};
+    citaSel.evaluacion.area_unica = area;
+    citaSel.evaluacion.areas = [area];
+}
+
+function actualizarEvaluacionPsicometrica(prueba, campo, valor) {
+    if (!citaSel) return;
+    if (!citaSel.evaluacion) citaSel.evaluacion = { tipo: 'Practicante' };
+    if (!citaSel.evaluacion.psicometricas) citaSel.evaluacion.psicometricas = {};
+    if (!citaSel.evaluacion.psicometricas[prueba]) citaSel.evaluacion.psicometricas[prueba] = {};
+    citaSel.evaluacion.psicometricas[prueba][campo] = valor;
+}
+
+// ================================================================
+// FUNCIONES EXCLUSIVAS DEL FORMULARIO ENFERMERÍA
+// ================================================================
+
+function toggleEnfTranspMueven(check) {
+    if (!citaSel) return;
+    actualizarEvaluacionCheck('enf_transp_mueven_chk', check);
+    let wrap = document.getElementById('enf_wrapper_mueven');
+    if (wrap) wrap.style.display = check ? 'block' : 'none';
+}
+
+function toggleEnfTranspOtro(check) {
+    if (!citaSel) return;
+    actualizarEvaluacionCheck('enf_transp_otro_chk', check);
+    let wrap = document.getElementById('enf_wrapper_otro');
+    if (wrap) wrap.style.display = check ? 'block' : 'none';
+}
+
+function toggleEnfHijos(val) {
+    if (!citaSel) return;
+    actualizarEvaluacionCampo('enf_tiene_hijos', val);
+    let wrap = document.getElementById('enf_wrapper_hijos');
+    if (wrap) wrap.style.display = (val === 'si') ? 'block' : 'none';
+    if (val === 'si') {
+        let num = parseInt(citaSel.evaluacion?.enf_hijos_num || 1);
+        renderizarCamposHijosEnf(num);
+    }
+}
+
+function renderizarCamposHijosEnf(num) {
+    if (!citaSel) return;
+    num = Math.max(1, Math.min(10, num));
+    if (!citaSel.evaluacion) citaSel.evaluacion = {};
+    citaSel.evaluacion.enf_hijos_num = num;
+    if (!citaSel.evaluacion.enf_hijos_lista) citaSel.evaluacion.enf_hijos_lista = [];
+
+    let cont = document.getElementById('enf_hijos_lista');
+    if (!cont) return;
+
+    let html = '';
+    for (let i = 0; i < num; i++) {
+        let item = citaSel.evaluacion.enf_hijos_lista[i] || { nombre: '', edad: '' };
+        html += `
+            <div style="display:flex; gap:10px; align-items:center; background:#fff; padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1;">
+                <b style="min-width:65px; color:#0f766e; font-size:12px;">Hijo ${i+1}:</b>
+                <input type="text" placeholder="Nombre completo" value="${item.nombre || ''}" onchange="actualizarHijoItemEnf(${i}, 'nombre', this.value)" style="flex:2; padding:5px 8px; font-size:12px;">
+                <input type="text" placeholder="Edad (ej. 5 años)" value="${item.edad || ''}" onchange="actualizarHijoItemEnf(${i}, 'edad', this.value)" style="flex:1; padding:5px 8px; font-size:12px;">
+            </div>
+        `;
+    }
+    cont.innerHTML = html;
+}
+
+function actualizarHijoItemEnf(index, campo, valor) {
+    if (!citaSel) return;
+    if (!citaSel.evaluacion) citaSel.evaluacion = {};
+    if (!citaSel.evaluacion.enf_hijos_lista) citaSel.evaluacion.enf_hijos_lista = [];
+    if (!citaSel.evaluacion.enf_hijos_lista[index]) citaSel.evaluacion.enf_hijos_lista[index] = { nombre: '', edad: '' };
+    citaSel.evaluacion.enf_hijos_lista[index][campo] = valor;
+}
+
+function actualizarEvaluacionPsicometricaEnf(prueba, campo, valor) {
+    if (!citaSel) return;
+    if (!citaSel.evaluacion) citaSel.evaluacion = { tipo: 'Enfermero' };
+    if (!citaSel.evaluacion.enf_psicometricas) citaSel.evaluacion.enf_psicometricas = {};
+    if (!citaSel.evaluacion.enf_psicometricas[prueba]) citaSel.evaluacion.enf_psicometricas[prueba] = {};
+    citaSel.evaluacion.enf_psicometricas[prueba][campo] = valor;
+}
+
+function imprimirFichaEnfermeriaPDF() {
+    alert('Función de impresión de Ficha Técnica de Enfermería en desarrollo.');
+}
+
+function seleccionarFormularioEvaluacion(tipo) {
+    if (!citaSel) return;
+    if (!citaSel.evaluacion) citaSel.evaluacion = {};
+    citaSel.evaluacion.tipo = tipo;
+
+    // Ocultar todos los bloques
+    let bloques = ['bloque_form_practicante', 'bloque_form_enfermero'];
+    bloques.forEach(id => {
+        let el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+
+    // Mostrar el seleccionado
+    if (tipo === 'Practicante') {
+        let el = document.getElementById('bloque_form_practicante');
+        if (el) el.style.display = 'block';
+    } else if (tipo === 'Enfermero') {
+        let el = document.getElementById('bloque_form_enfermero');
+        if (el) el.style.display = 'block';
+    }
+}
+
+
+// NAVEGACIÓN ENTRE CASILLAS CON ENTER (SIN GUARDAR AUTOMÁTICAMENTE)
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        const target = e.target;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA')) {
+            e.preventDefault();
+            
+            const focusables = Array.from(document.querySelectorAll('#contenido input:not([disabled]):not([type=hidden]), #contenido select:not([disabled]), #contenido textarea:not([disabled])'));
+            const currentIndex = focusables.indexOf(target);
+            
+            if (currentIndex !== -1 && currentIndex + 1 < focusables.length) {
+                const nextEl = focusables[currentIndex + 1];
+                nextEl.focus();
+                if (nextEl.select && nextEl.tagName === 'INPUT') {
+                    nextEl.select();
+                }
+            }
+            // Si es la última casilla, NO guarda. Solo se guarda al dar clic en el botón.
+        }
+    }
+});
+
+function imprimirFichaPracticantePDF() {
+    if (!citaSel) {
+        alert("Selecciona una cita primero.");
+        return;
+    }
+    let ev = citaSel.evaluacion || {};
+    
+    // Función auxiliar para que lo no llenado se muestre como N/A
+    function val(v) {
+        if (v === null || v === undefined || v === "") return "N/A";
+        let str = v.toString().trim();
+        return str === "" ? "N/A" : str;
+    }
+
+    let printWin = window.open('', '_blank');
+    
+    // Construcción de string de hijos si los tiene
+    let hijosTxt = "N/A";
+    if (ev.tiene_hijos === 'si') {
+        if (ev.hijos_lista && ev.hijos_lista.length > 0) {
+            hijosTxt = ev.hijos_lista.map((h, i) => `Hijo ${i+1}: ${val(h.nombre)} (${val(h.edad)})`).join('; ');
+        } else {
+            hijosTxt = `Sí (${val(ev.hijos_num)} hijo/s)`;
+        }
+    } else if (ev.tiene_hijos === 'no') {
+        hijosTxt = "No tiene hijos";
+    }
+
+    let html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Ficha Técnica de Evaluación - ${citaSel.nombre || 'Practicante'}</title>
+        <style>
+            @page { size: letter; margin: 12mm; }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11px; color: #0f172a; margin: 0; padding: 10px; line-height: 1.4; }
+            h1 { text-align: center; font-size: 17px; margin: 0; color: #1e3a8a; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
+            .subtitle { text-align: center; font-size: 12px; font-style: italic; color: #475569; margin-bottom: 12px; font-weight: 600; }
+            .section-title { font-size: 11px; font-weight: 800; color: #1e3a8a; margin-top: 12px; margin-bottom: 4px; text-transform: uppercase; border-bottom: 1.5px solid #1e3a8a; padding-bottom: 2px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 11px; }
+            th, td { border: 1px solid #94a3b8; padding: 5px 8px; text-align: left; vertical-align: top; }
+            th { background-color: #f1f5f9; font-weight: 700; color: #1e3a8a; }
+            .box { border: 1px solid #94a3b8; padding: 8px; min-height: 45px; margin-bottom: 8px; font-size: 11px; }
+            .checkbox-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 4px; }
+            .page-break { page-break-before: always; }
+        </style>
+    </head>
+    <body>
+        <h1>FICHA TÉCNICA DE EVALUACIÓN</h1>
+        <div class="subtitle">Área de Practicantes</div>
+
+        <div class="section-title">I. DATOS DE CONTROL Y ENTREVISTA</div>
+        <table>
+            <tr>
+                <td><b>Candidato para:</b> ${val(ev.candidato_para || citaSel.puesto)}</td>
+                <td><b>Entrevista #:</b> ${val(ev.entrevista_num || '1')}</td>
+                <td><b>Por:</b> ${val(ev.entrevista_por || citaSel.entrevistador_rh)}</td>
+            </tr>
+            <tr>
+                <td><b>Fecha:</b> ${val(ev.fecha || citaSel.fecha)}</td>
+                <td><b>Disponibilidad:</b> ${val(ev.disponibilidad)}</td>
+                <td><b>Horario:</b> ${val(ev.horario)}</td>
+            </tr>
+        </table>
+
+        <div class="section-title">II. DATOS PERSONALES Y FAMILIARES</div>
+        <table>
+            <tr>
+                <td style="width:50%;"><b>Edad:</b> ${val(ev.edad)}</td>
+                <td style="width:50%;"><b>A qué se dedica papá:</b> ${val(ev.papa_dedica)}</td>
+            </tr>
+            <tr>
+                <td><b>Vive en:</b> ${val(ev.vive_en)}</td>
+                <td><b>A qué se dedica mamá:</b> ${val(ev.mama_dedica)}</td>
+            </tr>
+            <tr>
+                <td><b>Vive con:</b> ${val(ev.vive_con)}</td>
+                <td><b>Hermanos (A qué se dedican):</b> ${val(ev.hermanos_dedican)}</td>
+            </tr>
+            <tr>
+                <td><b>Estado Civil:</b> ${val(ev.estado_civil)}</td>
+                <td>
+                    <b>Medio de transporte:</b><br>
+                    [${ev.transp_auto ? 'X' : ' '}] Auto propio &nbsp;
+                    [${ev.transp_uber ? 'X' : ' '}] Uber/Didi/Taxi &nbsp;
+                    [${ev.transp_publico ? 'X' : ' '}] Transp. Público<br>
+                    [${ev.transp_check_mueven ? 'X' : ' '}] Lo mueven: ${val(ev.transp_lo_mueven)} &nbsp;
+                    [${ev.transp_check_otro ? 'X' : ' '}] Otro: ${val(ev.transp_otro)}
+                </td>
+            </tr>
+            <tr>
+                <td><b>Hijos:</b> ${hijosTxt}</td>
+                <td><b>Tiempo para llegar:</b> ${val(ev.tiempo_llegar)}</td>
+            </tr>
+        </table>
+
+        <div class="section-title">III. PERFIL PROFESIONAL Y ESPECÍFICO</div>
+        <table>
+            <tr>
+                <td><b>Universidad:</b> ${val(ev.universidad)}</td>
+                <td><b>Carrera:</b> ${val(ev.carrera)}</td>
+            </tr>
+            <tr>
+                <td><b>Horas requeridas:</b> ${val(ev.horas_requeridas)}</td>
+                <td><b>Días disponibles:</b> ${val(ev.dias_disponibles)}</td>
+            </tr>
+            <tr>
+                <td><b>Horario tentativo:</b> ${val(ev.horario_tentativo)}</td>
+                <td><b>Horas por semana:</b> ${val(ev.horas_por_semana)}</td>
+            </tr>
+            <tr>
+                <td colspan="2"><b>Seguro Facultativo:</b> ${ev.seguro_facultativo==='si' ? `Sí (Cuál: ${val(ev.seguro_cual)})` : 'No'}</td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <b>Área de Interés Única:</b> ${val(ev.area_unica || (ev.areas || [])[0])}
+                </td>
+            </tr>
+        </table>
+
+        <div class="page-break"></div>
+
+        <table>
+            <tr>
+                <td colspan="2">
+                    <b>Servicio social:</b><br>
+                    <b>Lugar:</b> ${val(ev.ss_lugar)} &nbsp; <b>Fecha: De</b> ${val(ev.ss_fecha_de)} <b>A</b> ${val(ev.ss_fecha_a)}<br>
+                    <b>Actividades:</b> ${val(ev.ss_actividades)}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <b>Prácticas Profesionales:</b><br>
+                    <b>Lugar:</b> ${val(ev.pp_lugar)} &nbsp; <b>Fecha: De</b> ${val(ev.pp_fecha_de)} <b>A</b> ${val(ev.pp_fecha_a)}<br>
+                    <b>Actividades:</b> ${val(ev.pp_actividades)}
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title">IV. EXPERIENCIAS LABORALES:</div>
+        <div class="box">${val(ev.exp_laboral)}</div>
+
+        <div class="section-title">V. RESULTADOS DE PRUEBAS PSICOMÉTRICAS</div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:15%;">Prueba</th>
+                    <th style="width:20%;">Tiempo</th>
+                    <th style="width:65%;">Observaciones amplias</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${ ['DFH', 'PBL', 'Familia', 'Árbol', 'Casa'].map(p => {
+                    let key = p.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    let res = ev.psicometricas?.[key] || {};
+                    return `
+                        <tr>
+                            <td><b>${p}</b></td>
+                            <td>${val(res.tiempo)}</td>
+                            <td>${val(res.obs)}</td>
+                        </tr>
+                    `;
+                }).join('') }
+            </tbody>
+        </table>
+    </body>
+    </html>
+    `;
+
+    printWin.document.write(html);
+    printWin.document.close();
+    setTimeout(() => {
+        printWin.focus();
+        printWin.print();
+    }, 500);
+}
 
 /**
  * Funciones para cambiar el estado de solicitudes de vacaciones
@@ -634,6 +1271,62 @@ Dynamsoft.DWT.Load();
 }
 
 /**
+ * PERSISTENCIA DE NAVEGACIÓN Y ESTADO AL RECARGAR (F5 / Ctrl+F5)
+ */
+function guardarEstadoNavegacionRH(v) {
+    try {
+        let estadoRH = {
+            vista: v,
+            empSelId: empSel ? empSel.id : null,
+            practSelId: practSel ? practSel.id : null,
+            candSelId: candSel ? candSel.id : null,
+            citaSelId: citaSel ? citaSel.id : null,
+            citaModoActual: citaSel ? (citaSel.modo_actual || 'editar') : 'editar',
+            tipoCitaFiltro: typeof tipoCitaFiltro !== 'undefined' ? tipoCitaFiltro : 'Agendadas',
+            vistaPract: typeof vistaPract !== 'undefined' ? vistaPract : 'activos',
+            filtroCandidatoTipo: typeof filtroCandidatoTipo !== 'undefined' ? filtroCandidatoTipo : 'Trabajador'
+        };
+        localStorage.setItem('rh_estado_navegacion', JSON.stringify(estadoRH));
+    } catch(err) {
+        console.error("Error guardando estado RH:", err);
+    }
+}
+
+function restaurarEstadoNavegacionRH() {
+    try {
+        let raw = localStorage.getItem('rh_estado_navegacion');
+        if (!raw) return false;
+        let estadoRH = JSON.parse(raw);
+        if (!estadoRH || !estadoRH.vista) return false;
+
+        if (estadoRH.empSelId && typeof empleados !== 'undefined') {
+            empSel = empleados.find(e => e.id == estadoRH.empSelId) || null;
+        }
+        if (estadoRH.practSelId && typeof practicantes !== 'undefined') {
+            practSel = practicantes.find(p => p.id == estadoRH.practSelId) || null;
+        }
+        if (estadoRH.candSelId && typeof candidatos !== 'undefined') {
+            candSel = candidatos.find(c => c.id == estadoRH.candSelId) || null;
+        }
+        if (estadoRH.citaSelId && typeof citas !== 'undefined') {
+            citaSel = citas.find(ci => ci.id == estadoRH.citaSelId) || null;
+            if (citaSel && estadoRH.citaModoActual) {
+                citaSel.modo_actual = estadoRH.citaModoActual;
+            }
+        }
+        if (estadoRH.tipoCitaFiltro) tipoCitaFiltro = estadoRH.tipoCitaFiltro;
+        if (estadoRH.vistaPract) vistaPract = estadoRH.vistaPract;
+        if (estadoRH.filtroCandidatoTipo) filtroCandidatoTipo = estadoRH.filtroCandidatoTipo;
+
+        mostrar(estadoRH.vista);
+        return true;
+    } catch(err) {
+        console.error("Error restaurando estado RH:", err);
+        return false;
+    }
+}
+
+/**
  * Formatea fechas ISO a formato legible en español mexicano
  */
 function formatearFecha(fecha){
@@ -652,6 +1345,7 @@ function formatearFecha(fecha){
  */
 function mostrar(v){
 try {
+guardarEstadoNavegacionRH(v);
 
 // Manejo de clases activas en navegación
 document.querySelectorAll(".rh-nav").forEach(n=>{
@@ -780,12 +1474,29 @@ ${tipoCitaFiltro === 'Historial' ? `
 <tbody>
 ${filtradas
 .sort((a,b)=>
-new Date(b.fecha+" "+(b.hora||"00:00"))
--
 new Date(a.fecha+" "+(a.hora||"00:00"))
+-
+new Date(b.fecha+" "+(b.hora||"00:00"))
 )
-.map((ci,idx)=>`
-<tr style="cursor:pointer;" onclick="seleccionarCita('${ci.id}')">
+.map((ci,idx)=>{
+    // Calcular color de urgencia SOLO para citas agendadas
+    let rowStyle = 'cursor:pointer;';
+    if(tipoCitaFiltro === 'Agendadas') {
+        let hoy = new Date();
+        hoy.setHours(0,0,0,0);
+        let fechaCita = new Date(ci.fecha + 'T' + (ci.hora || '00:00'));
+        let diffMs = fechaCita - hoy;
+        let diffDias = diffMs / (1000 * 60 * 60 * 24);
+        if(diffDias <= 1) {
+            rowStyle = 'cursor:pointer; background:#fef2f2; border-left:4px solid #dc2626;';
+        } else if(diffDias <= 2) {
+            rowStyle = 'cursor:pointer; background:#fefce8; border-left:4px solid #ca8a04;';
+        } else {
+            rowStyle = 'cursor:pointer; background:#f0fdf4; border-left:4px solid #16a34a;';
+        }
+    }
+    return `
+<tr style="${rowStyle}" onclick="seleccionarCita('${ci.id}')">
 <td>${ci.nombre}</td>
 <td>${ci.puesto}</td>
 <td>${ci.tipo}</td>
@@ -795,7 +1506,8 @@ new Date(a.fecha+" "+(a.hora||"00:00"))
 <td>${ci.jefe_depto||'N/A'}</td>
 <td><span style="font-weight:bold;color:${ci.estado==='Realizada'?'green':ci.estado==='Cancelada'?'red':'#ca8a04'}">${ci.estado}</span></td>
 </tr>
-`).join('')}
+`;
+}).join('')}
 </tbody>
 </table>
 ${filtradas.length===0 ? '<div style="text-align:center;padding:20px;color:#6b7280;">No hay registros en esta categoría.</div>' : ''}
@@ -817,69 +1529,7 @@ if(v==="ficha_cita" && !citaSel){
 
 if(v==="ficha_cita" && citaSel){
 let ci = citaSel;
-html=`
-<div class="tabs">
-<div class="tab" onclick="mostrar('citas')">Agendar Citas</div>
-<div class="tab active" onclick="mostrar('ficha_cita')">Detalle de Cita</div>
-</div>
-<div class="rh-card"><h2>Cita: ${ci.nombre}</h2></div>
-<div class="ficha-wrap">
-<div class="col">
-<div class="rh-card">
-<h3>Datos de la Cita</h3>
-<div class="empleado-grid">
-<div><b>Nombre del aspirante</b><input value="${ci.nombre}" onchange="citaSel.nombre=this.value"></div>
-<div><b>Puesto deseado</b><input value="${ci.puesto}" onchange="citaSel.puesto=this.value"></div>
-<div><b>Sector</b><select onchange="citaSel.tipo=this.value" style="width:100%;padding:5px;border-radius:6px;border:1px solid #d1d5db;">
-    <option value="Trabajador" ${ci.tipo==='Trabajador'?'selected':''}>Trabajador</option>
-    <option value="Practicante" ${ci.tipo==='Practicante'?'selected':''}>Practicante</option>
-</select></div>
-<div><b>Fecha de cita</b><input type="date" value="${ci.fecha || ''}" onchange="citaSel.fecha=this.value"></div>
-<div><b>Hora</b><input type="time" value="${ci.hora}" onchange="citaSel.hora=this.value"></div>
-<div><b>Entrevistador RH</b><input value="${ci.entrevistador_rh}" onchange="citaSel.entrevistador_rh=this.value"></div>
-<div><b>Jefe Depto.</b><input value="${ci.jefe_depto}" onchange="citaSel.jefe_depto=this.value"></div>
-<div><b>Celular</b><input value="${ci.celular}" onchange="citaSel.celular=this.value"></div>
-<div><b>Correo</b><input value="${ci.correo}" onchange="citaSel.correo=this.value"></div>
-</div>
-</div>
-</div>
-<div class="col">
-<div class="rh-card">
-<h3>Notas previas</h3>
-<textarea style="width:100%;height:80px;padding:8px;border:1px solid #d1d5db;border-radius:6px;" onchange="citaSel.notas=this.value" placeholder="Observaciones preliminares...">${ci.notas||''}</textarea>
-</div>
-<div class="rh-card">
-<h3>CV Preliminar</h3>
-<button class="btn-ver" onclick="document.getElementById('fileUploadCita').click()" style="background:#3b82f6;">Subir Archivo</button>
-<input type="file" id="fileUploadCita" style="display:none" onchange="subirArchivoCita(this)">
-<hr>
-${(ci.documentos || []) && ((ci.documentos || []) || []).length > 0 ? `
-<div style="text-align:center;">
-${(ci.documentos || [])[0].tipo==='imagen' ? `<img src="${(ci.documentos || [])[0].url}" style="width:120px;cursor:pointer;" onclick="ver('${(ci.documentos || [])[0].url}')"><br>` : `<div style="padding:10px;background:#e5e7eb;font-weight:bold;">PDF</div>`}
-<small>${(ci.documentos || [])[0].nombre||'CV'}</small><br>
-<button class="btn-ver" onclick="descargarURL('${(ci.documentos || [])[0].url}')">Descargar</button>
-<button class="btn-ver" style="background:#ef4444;" onclick="eliminarCVCita()">✕</button>
-</div>
-` : '<p style="color:#6b7280;text-align:center;">Sin CV cargado</p>'}
-</div>
-</div>
-</div>
-<div class="rh-card sticky-acciones" style="margin-top:10px;">
-<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
-<div style="display:flex; gap:8px;">
-<button class="btn-ver" style="background:#3b82f6; padding:5px 10px; font-size:13px;" onclick="guardarCambiosFicha()">Guardar Cambios</button>
-<button class="btn-ver" style="background:#facc15; padding:5px 10px; font-size:13px; color:black;" onclick="citaSel.estado='Realizada';guardarCambiosFicha();mostrar('citas')">Marcar como Realizada</button>
-<button class="btn-ver" style="background:#ef4444; padding:5px 10px; font-size:13px;" onclick="eliminarRegistro('cita')">Eliminar Registro</button>
-<button 
-  class="btn-ver" 
-  style="background:#6b7280; margin:0; flex:1;" 
-  onclick="noSePresentoCita()">
-   No se presentó
-</button>
-</div>
-<button class="btn-ver" onclick="pasarFichaCitaACandidato()" style="background:#22c55e; padding:5px 12px; font-size:14px;">✅ Aprobar y Convertir a Candidato</button>
-</div>
-</div>`;
+html=`@include('administracion.recursos_humanos.agendar_cita_detalle')`;
 }
 
 
@@ -1070,155 +1720,7 @@ let diasTotales = registro ? registro.dias_totales : 0;
 let usados = vacEmp.reduce((a,v)=>a+v.dias,0);
 let disponibles = diasTotales - usados;
 
-html=`
-<div class="tabs">
-<div class="tab" onclick="mostrar('empleados')">Empleados</div>
-<div class="tab active" onclick="mostrar('ficha')">Ficha Detalle</div>
-</div>
-<div class="rh-card">
-<h2>${e.nombre} ${e.ap} ${e.am}</h2>
-</div>
-
-<div class="ficha-wrap">
-<div class="col">
-<div class="rh-card">
-<h3>Datos personales</h3>
-<div class="empleado-grid">
-<div><b>Nombre</b><input value="${e.nombre}" onchange="empSel.nombre=this.value"></div>
-<div><b>Apellido Paterno</b><input value="${e.ap}" onchange="empSel.ap=this.value"></div>
-<div><b>Apellido Materno</b><input value="${e.am}" onchange="empSel.am=this.value"></div>
-<div><b>NSS</b><input value="${e.nss}" onchange="empSel.nss=this.value"></div>
-<div><b>RFC</b><input value="${e.rfc}" onchange="empSel.rfc=this.value"></div>
-<div><b>CURP</b><input value="${e.curp}" onchange="empSel.curp=this.value"></div>
-<div><b>Género</b><div class="radio-group">
-<label><input type="radio" onchange="empSel.sexo='Hombre'" name="rSexo" ${e.sexo==="Hombre"?"checked":""}> Hombre</label>
-<label><input type="radio" onchange="empSel.sexo='Mujer'" name="rSexo" ${e.sexo==="Mujer"?"checked":""}> Mujer</label>
-</div></div>
-<div><b>Celular</b><input value="${e.celular}" onchange="empSel.celular=this.value"></div>
-<div><b>Dirección</b><input value="${e.direccion}" onchange="empSel.direccion=this.value"></div>
-<div><b>Estado civil</b><input value="${e.estado_civil}" onchange="empSel.estado_civil=this.value"></div>
-<div><b>Fecha nacimiento</b><input type="date" value="${e.nacimiento || ''}" onchange="empSel.nacimiento=this.value"></div>
-<div><b>Talla Uniforme</b><select onchange="empSel.talla_uniforme=this.value" style="width:100%;padding:5px;border-radius:6px;border:1px solid #d1d5db;">
-    <option value="S" ${e.talla_uniforme==='S'?'selected':''}>Chica (S)</option>
-    <option value="M" ${e.talla_uniforme==='M'?'selected':''}>Mediana (M)</option>
-    <option value="L" ${e.talla_uniforme==='L'?'selected':''}>Grande (L)</option>
-    <option value="XL" ${e.talla_uniforme==='XL'?'selected':''}>Extra Grande (XL)</option>
-</select></div>
-<div><b>Tipo de Sangre</b><input value="${e.tipo_sangre||''}" onchange="empSel.tipo_sangre=this.value" placeholder="O+"></div>
-<div><b>Alergias/Med.</b><input value="${e.alergias||''}" onchange="empSel.alergias=this.value" placeholder="Ninguna"></div>
-<div><b>Canal Captación</b><input value="${e.canal_captacion||''}" onchange="empSel.canal_captacion=this.value" placeholder="Facebook"></div>
-<div><b>CLABE Bancaria</b><input value="${e.clabe_bancaria||''}" onchange="empSel.clabe_bancaria=this.value"></div>
-</div>
-</div>
-
-<div class="rh-card">
-<h3>Contacto de emergencia</h3>
-<div class="empleado-grid">
-<div><b>Nombre</b><input value="${e.contacto_emergencia}" onchange="empSel.contacto_emergencia=this.value"></div>
-<div><b>Parentesco</b><input value="${e.parentesco}" onchange="empSel.parentesco=this.value"></div>
-<div><b>Teléfono 1</b><input value="${e.tel_emergencia1}" onchange="empSel.tel_emergencia1=this.value"></div>
-<div><b>Teléfono 2</b><input value="${e.tel_emergencia2}" onchange="empSel.tel_emergencia2=this.value"></div>
-</div>
-<h3>Contacto de emergencia 2</h3>
-<div class="empleado-grid">
-<div><b>Contacto 2</b><input value="${e.contacto_emergencia}" onchange="empSel.contacto_emergencia=this.value"></div>
-<div><b>Parentesco</b><input value="${e.parentesco}" onchange="empSel.parentesco=this.value"></div>
-<div><b>Teléfono 1</b><input value="${e.tel_emergencia1}" onchange="empSel.tel_emergencia1=this.value"></div>
-<div><b>Teléfono 2</b><input value="${e.tel_emergencia2}" onchange="empSel.tel_emergencia2=this.value"></div>
-</div>
-</div>
-
-<div class="rh-card">
-<h3>Historial de observaciones</h3>
-<textarea id="txtObservacion" style="width:100%;height:90px;padding:8px;border:1px solid #d1d5db;border-radius:6px;" placeholder="Escribe una observación..."></textarea>
-<div style="margin-top:10px;text-align:right;"><button class="btn-ver" onclick="guardarObservacion()">Guardar</button></div>
-<hr>
-<div class="obs-list">
-${(e.observaciones || []).length===0 ? `<div id="noObs">Sin observaciones registradas.</div>` : 
-(e.observaciones || []).map(o=>`<div class="obs-item"><div class="obs-fecha">${o.fecha}</div><div>${o.texto}</div></div>`).join('')}
-</div>
-</div>
-</div>
-
-<div class="col">
-<div class="rh-card">
-<h3>Datos laborales</h3>
-<div class="empleado-grid">
-<div><b>Puesto</b><input value="${e.puesto}" onchange="empSel.puesto=this.value"></div>
-<div><b>Empresa</b><input value="${e.empresa}" onchange="empSel.empresa=this.value" placeholder="Nombre de la empresa"></div>
-<div><b>Fecha inicio</b><input type="date" value="${e.fecha || ''}" onchange="empSel.fecha=this.value"></div>
-<div><b>Alta IMSS</b><input type="date" value="${e.alta_imss || ''}" onchange="empSel.alta_imss=this.value"></div>
-<div><b>Fecha egreso</b><input value="${e.egreso}" onchange="empSel.egreso=this.value" placeholder="YYYY-MM-DD"></div>
-<div><b>Motivo Egreso</b><input value="${e.motivo}" onchange="empSel.motivo=this.value"></div>
-<button class="btn-ver" style="background:#ef4444; margin-top:20px;" onclick="document.getElementById('modalBaja').style.display='flex'">
-    Dar de baja a este empleado
-</button>
-</div>
-</div>
-
-<div class="rh-card">
-<h3>Vacaciones</h3>
-<div style="margin-bottom:10px;">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
-<div><b>Año:</b><div class="radio-group">
-${aniosEmpleado.map(a=>`
-<label style="padding:6px 12px;border-radius:20px;border:1px solid #d1d5db;cursor:pointer;background:${e.anioSeleccionado==a ? '#1e3a8a' : '#fff'};color:${e.anioSeleccionado==a ? '#fff' : '#000'};">
-<input type="radio" name="anioVacaciones" value="${a}" onchange="cambiarAnio(this.value)" style="display:none" ${e.anioSeleccionado==a ? 'checked' : ''}>${a}
-</label>`).join('')}
-</div></div>
-<div><b>Días disponibles:</b> ${disponibles} / ${diasTotales}</div>
-</div>
-${disponibles<=0 ? `<div style="background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;margin-bottom:10px;">⚠ Ya no tiene días disponibles</div>` : ``}
-</div>
-
-<table class="rh-table">
-<thead><tr><th>Inicio contrato</th><th>Inicio</th><th>Fin</th><th>Días</th><th>Tipo</th><th>Estado</th><th>Cobertura</th><th>Acción</th></tr></thead>
-<tbody>
-${vacEmp.map(v=>`
-<tr>
-<td>${formatearFecha(e.fecha)}</td>
-<td>${formatearFecha(v.inicio)}</td>
-<td>${formatearFecha(v.fin)}</td>
-<td>${v.dias}</td>
-<td>${v.tipo}</td>
-<td><span style="padding:4px 8px;border-radius:6px;background:${v.estado==="Aprobadas"?"#22c55e":v.estado==="Pendiente"?"#facc15":"#ef4444"};color:white;font-size:12px;">${v.estado}</span></td>
-<td>${v.cobertura}</td>
-<td style="text-align:center;">
-<button class="btn-ver" onclick="aprobarVacacionFicha(${v.index})" ${disponibles<=0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>Aprobar</button>
-<button class="btn-ver" onclick="rechazarVacacionFicha(${v.index})" ${disponibles<=0 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>Rechazar</button>
-<button
-    class="btn-ver"
-    style="background:#ef4444;"
-    onclick="marcarNoPresentado()">
-     No se presentó
-</button>
-</td>
-</tr>`).join('')}
-</tbody>
-</table>
-</div>
-
-<div class="rh-card">
-<h3>Documentos</h3>
-<button class="btn-ver" onclick="escanear()">Escanear documento</button>
-<div id="dwtcontrolContainer"></div>
-<hr>
-${(e.documentos || []).length===0 ? "Sin documentos" : (e.documentos || []).map(d=>`
-<div style="display:inline-block;margin:5px;">
-<img src="${d.url}" onclick="ver('${d.url}')" style="width:120px;cursor:pointer;"><br>
-<button class="btn-ver" onclick="descargarPDF('${d.url}')">PDF</button>
-</div>`).join('')}
-</div>
-</div>
-</div>
-<div class="rh-card sticky-acciones" style="margin-top:10px;">
-<h3>Acciones de Ficha</h3>
-<div style="display:flex; gap:10px; flex-wrap:wrap;">
-<button class="btn-ver" style="background:#3b82f6; margin:0;" onclick="guardarBD()">Guardar Cambios</button>
-<button class="btn-ver" style="background:#ef4444; margin:0;" onclick="document.getElementById('modalBaja').style.display='flex'">Dar de Baja</button>
-</div>
-</div>
-`;
+html=`@include('administracion.recursos_humanos.empleados_detalle')`;
 }
 
 // VALIDACIÓN DE SELECCIÓN PARA FICHA PRACTICANTE
@@ -1238,90 +1740,7 @@ if(v==="ficha_practicante" && !practSel){
 // VISTA: FICHA DE PRACTICANTE
 if(v==="ficha_practicante" && practSel){
 let p = practSel;
-html = `
-<div class="tabs">
-<div class="tab" onclick="mostrar('practicantes')">Practicantes</div>
-<div class="tab active" onclick="mostrar('ficha_practicante')">Ficha Detalle</div>
-</div>
-<div class="rh-card"><h2>${p.nombre} ${p.ap} ${p.am}</h2></div>
-<div class="ficha-wrap">
-<div class="col">
-<div class="rh-card">
-<h3>Datos personales</h3>
-<div class="empleado-grid">
-<div><b>Nombre</b><input value="${p.nombre}" onchange="practSel.nombre=this.value"></div>
-<div><b>Apellido Paterno</b><input value="${p.ap}" onchange="practSel.ap=this.value"></div>
-<div><b>Apellido Materno</b><input value="${p.am}" onchange="practSel.am=this.value"></div>
-<div><b>NSS</b><input value="${p.nss}" onchange="practSel.nss=this.value"></div>
-<div><b>RFC</b><input value="${p.rfc}" onchange="practSel.rfc=this.value"></div>
-<div><b>CURP</b><input value="${p.curp}" onchange="practSel.curp=this.value"></div>
-<div><b>Celular</b><input value="${p.celular}" onchange="practSel.celular=this.value"></div>
-<div><b>Dirección</b><input value="${p.direccion}" onchange="practSel.direccion=this.value"></div>
-<div><b>Estado civil</b><input value="${p.estado_civil}" onchange="practSel.estado_civil=this.value"></div>
-<div><b>Fecha nacimiento</b><input type="date" value="${p.nacimiento}" onchange="practSel.nacimiento=this.value"></div>
-<div><b>Talla Uniforme</b><select onchange="practSel.talla_uniforme=this.value" style="width:100%;padding:5px;border-radius:6px;border:1px solid #d1d5db;">
-    <option value="S" ${p.talla_uniforme==='S'?'selected':''}>Chica (S)</option>
-    <option value="M" ${p.talla_uniforme==='M'?'selected':''}>Mediana (M)</option>
-    <option value="L" ${p.talla_uniforme==='L'?'selected':''}>Grande (L)</option>
-    <option value="XL" ${p.talla_uniforme==='XL'?'selected':''}>Extra Grande (XL)</option>
-</select></div>
-<div><b>Tipo de Sangre</b><input value="${p.tipo_sangre||''}" onchange="practSel.tipo_sangre=this.value"></div>
-<div><b>Alergias</b><input value="${p.alergias||''}" onchange="practSel.alergias=this.value"></div>
-<div><b>Nivel Inglés</b><input value="${p.nivel_ingles||''}" onchange="practSel.nivel_ingles=this.value"></div>
-</div>
-</div>
-</div>
-<div class="col">
-<div class="rh-card">
-<div class="rh-card">
-<h3>Control de horas</h3>
-<div class="empleado-grid">
-<div><b>Horas requeridas</b><input type="number" id="horasReqInput" value="${p.horas_requeridas}"></div>
-<div><b>Horas acumuladas</b><input type="number" id="horasInput" value="${p.horas_llevadas}"></div>
-</div>
-<div style="margin-top:10px;text-align:right;"><button class="btn-ver" onclick="guardarHoras()">Guardar horas</button></div>
-</div>
-<div class="rh-card">
-<h3>Periodo</h3>
-<div class="empleado-grid">
-<div><b>Escuela de procedencia</b><input value="${p.escuela_procedencia || ''}" onchange="practSel.escuela_procedencia=this.value"></div>
-<div><b>Fecha inicio</b><input type="date" value="${p.fecha_inicio || ''}" onchange="practSel.fecha_inicio=this.value"></div>
-<div><b>Fecha término</b><input type="date" value="${p.fecha_termino || ''}" onchange="practSel.fecha_termino=this.value"></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="rh-card" style="margin-top:20px; border-left: 5px solid #1e3a8a;">
-    <h3 style="margin-top:0;">📂 Documentos Digitales</h3>
-    <div style="display:flex; gap:10px; align-items:center; background:#f9fafb; padding:15px; border-radius:8px;">
-        <input type="text" id="docNombre" placeholder="Nombre (ej. CV, Acta)" style="padding:8px; border:1px solid #d1d5db; border-radius:4px; flex:1;">
-        <input type="file" id="docFile">
-        <button onclick="subirDocumento()" class="btn-ver" style="margin:0; background:#22c55e;">Subir Archivo</button>
-    </div>
-
-    <table class="rh-table" style="margin-top:15px;">
-        <thead>
-            <tr style="background:#3b82f6;">
-                <th style="color:white; padding:10px;">Nombre del Documento</th>
-                <th style="color:white; padding:10px; width:150px;">Acción</th>
-            </tr>
-        </thead>
-        <tbody id="listaDocumentos">
-            <!-- Se carga dinámicamente -->
-        </tbody>
-    </table>
-</div>
-<div class="rh-card sticky-acciones" style="margin-top:10px;">
-<h3>Acciones de Ficha</h3>
-<div style="display:flex; gap:10px; flex-wrap:wrap;">
-<button class="btn-ver" style="background:#3b82f6; margin:0;" onclick="guardarCambiosFicha()">Guardar Cambios</button>
-<button class="btn-ver" style="background:#eab308; margin:0;" onclick="exportarFichaPDF()">Exportar PDF</button>
-<button class="btn-ver" style="background:#ef4444; margin:0;" onclick="eliminarRegistro('practicante')">Eliminar Registro</button>
-
-<button class="btn-ver" style="background:#f97316; margin:0;" onclick="darDeBajaPracticante()">Dar de Baja</button>
-</div>
-</div>`;
+html = `@include('administracion.recursos_humanos.practicantes_detalle')`;
 document.getElementById("contenido").innerHTML = html;
 renderizarDocumentos();
 }
@@ -1343,105 +1762,7 @@ if(v==="ficha_candidato" && !candSel){
 // VISTA: FICHA DE CANDIDATO
 if(v==="ficha_candidato" && candSel){
 let c = candSel;
-html = `
-<div class="tabs">
-<div class="tab" onclick="mostrar('candidatos')">Candidatos</div>
-<div class="tab active" onclick="mostrar('ficha_candidato')">Ficha Detalle</div>
-</div>
-<div class="rh-card"><h2>Candidato: ${c.nombre} ${c.ap} ${c.am}</h2></div>
-<div class="ficha-wrap">
-<div class="col">
-<div class="rh-card">
-<h3>Datos personales</h3>
-<div class="empleado-grid">
-<div><b>Nombre</b><input value="${c.nombre}" onchange="candSel.nombre=this.value"></div>
-<div><b>Apellido Paterno</b><input value="${c.ap}" onchange="candSel.ap=this.value"></div>
-<div><b>Apellido Materno</b><input value="${c.am}" onchange="candSel.am=this.value"></div>
-<div><b>Celular</b><input value="${c.celular}" onchange="candSel.celular=this.value"></div>
-<div><b>Correo</b><input value="${c.correo}" onchange="candSel.correo=this.value"></div>
-<div><b>Nivel educativo</b><input value="${c.nivel_educativo}" onchange="candSel.nivel_educativo=this.value"></div>
-</div>
-</div>
-
-<div class="rh-card">
-<h3>Historial y Entrevistas</h3>
-<div class="empleado-grid">
-<div><b>Estatus Actual</b>
-<select onchange="candSel.estatus_reclutamiento=this.value; mostrar('ficha_candidato');" style="width:100%;padding:5px;border-radius:6px;border:1px solid #d1d5db;">
-    <option value="Pendiente" ${c.estatus_reclutamiento==='Pendiente'?'selected':''}>Pendiente</option>
-    <option value="En Entrevista" ${c.estatus_reclutamiento==='En Entrevista'?'selected':''}>En Entrevista</option>
-    <option value="Prueba Técnica" ${c.estatus_reclutamiento==='Prueba Técnica'?'selected':''}>Prueba Técnica</option>
-    <option value="Rechazado" ${c.estatus_reclutamiento==='Rechazado'?'selected':''}>Rechazado</option>
-    <option value="Contratado" ${c.estatus_reclutamiento==='Contratado'?'selected':''}>Contratado</option>
-</select>
-</div>
-<div><b>Calificación del perfil</b>
-<select onchange="candSel.calificacion=parseInt(this.value); mostrar('ficha_candidato');" style="width:100%;padding:5px;border-radius:6px;border:1px solid #d1d5db;">
-    <option value="0" ${c.calificacion===0?'selected':''}>0 Estrellas</option>
-    <option value="1" ${c.calificacion===1?'selected':''}>1 Estrella</option>
-    <option value="2" ${c.calificacion===2?'selected':''}>2 Estrellas</option>
-    <option value="3" ${c.calificacion===3?'selected':''}>3 Estrellas</option>
-    <option value="4" ${c.calificacion===4?'selected':''}>4 Estrellas</option>
-    <option value="5" ${c.calificacion===5?'selected':''}>5 Estrellas</option>
-</select>
-</div>
-</div>
-</div>
-
-<div class="rh-card">
-<h3>Notas de Entrevista (Observaciones)</h3>
-<textarea id="txtObservacion" style="width:100%;height:90px;padding:8px;border:1px solid #d1d5db;border-radius:6px;" placeholder="Escribe notas de la entrevista o del perfil..."></textarea>
-<div style="margin-top:10px;text-align:right;"><button class="btn-ver" onclick="guardarObservacionCand()">Guardar Nota</button></div>
-<hr>
-<div class="obs-list">
-${(c.observaciones || []).length===0 ? `<div id="noObs">Sin notas registradas.</div>` : 
-(c.observaciones || []).map(o=>`<div class="obs-item"><div class="obs-fecha">${o.fecha}</div><div>${o.texto}</div></div>`).join('')}
-</div>
-</div>
-</div>
-
-<div class="col">
-<div class="rh-card">
-<h3>Datos de la Vacante</h3>
-<div class="empleado-grid">
-<div><b>Tipo de vacante</b><input value="${c.tipo_candidatura}" readonly></div>
-<div><b>Puesto deseado</b><input value="${c.puesto_deseado}" onchange="candSel.puesto_deseado=this.value"></div>
-<div><b>Expectativa Salarial / Beca</b><input value="${c.expectativa_salarial}" onchange="candSel.expectativa_salarial=this.value"></div>
-<div><b>Fecha Primera Postulación</b><input type="date" value="${c.fecha_postulacion || ''}" readonly></div>
-<div><b>Fecha Agendado (Contacto)</b><input type="date" value="${c.fecha_agendado || ''}" onchange="candSel.fecha_agendado=this.value"></div>
-<div><b>Fecha de Cita Próxima</b><input type="date" value="${c.fecha_entrevista || ''}" onchange="candSel.fecha_entrevista=this.value"></div>
-</div>
-<div style="margin-top:10px;">
-<b>Horarios Posibles (Disponibilidad)</b>
-<textarea style="width:100%;height:60px;padding:8px;border:1px solid #d1d5db;border-radius:6px;margin-top:5px;" placeholder="Ej. Lunes a Viernes por las tardes" onchange="candSel.horarios_disponibles=this.value">${c.horarios_disponibles||''}</textarea>
-</div>
-</div>
-
-<div class="rh-card">
-<h3>Acuse Documental (CV, Portafolio)</h3>
-<button class="btn-ver" onclick="escanear()" style="margin-bottom:10px;">Escanear Físico</button>
-<button class="btn-ver" onclick="document.getElementById('fileUpload').click()" style="background:#3b82f6;">Subir Archivo (PDF/IMG)</button>
-<input type="file" id="fileUpload" style="display:none" onchange="subirArchivoCandidato(this)">
-<div id="dwtcontrolContainer"></div>
-<hr>
-${(c.documentos || []).length===0 ? "Sin documentos" : (c.documentos || []).map(d=>`
-<div style="display:inline-block;margin:5px;text-align:center;">
-${d.tipo==='imagen' ? `<img src="${d.url}" onclick="ver('${d.url}')" style="width:120px;cursor:pointer;"><br>` : `<div style="padding:20px;background:#e5e7eb;font-weight:bold;">PDF/DOC</div><br>`}
-<small>${d.nombre||''}</small><br>
-<button class="btn-ver" onclick="descargarURL('${d.url}')">Descargar</button>
-</div>`).join('')}
-</div>
-</div>
-</div>
-<div class="rh-card sticky-acciones" style="margin-top:10px;">
-<h3>Acciones de Ficha</h3>
-<button class="btn-ver" onclick="convertirCandidato()" style="background:#22c55e; width:100%; margin-bottom:10px; font-size:15px;">✅ Aprobar y Convertir a ${c.tipo_candidatura}</button>
-<div style="display:flex; gap:10px; flex-wrap:wrap;">
-<button class="btn-ver" style="background:#3b82f6; margin:0; flex:1;" onclick="guardarCambiosFicha()">Guardar Cambios</button>
-<button class="btn-ver" style="background:#eab308; margin:0; flex:1;" onclick="exportarFichaPDF()">Exportar PDF</button>
-<button class="btn-ver" style="background:#ef4444; margin:0; flex:1;" onclick="eliminarRegistro('candidato')">Eliminar Registro</button>
-</div>
-</div>`;
+html = `@include('administracion.recursos_humanos.candidatos_detalle')`;
 }
 
 // VISTA: GESTIÓN GENERAL DE VACACIONES
@@ -1677,25 +1998,165 @@ function convertirCandidato(){
 }
 
 function mostrarModalVacaciones(){
+    // Poblar el select de empleados con los empleados activos
+    let sel = document.getElementById('v_emp_id');
+    sel.innerHTML = '<option value="">-- Seleccionar empleado --</option>';
+    empleados
+        .filter(e => !e.egreso)
+        .sort((a,b) => (a.nombre+a.ap).localeCompare(b.nombre+b.ap))
+        .forEach(e => {
+            let opt = document.createElement('option');
+            opt.value = e.id;
+            opt.textContent = `${e.nombre} ${e.ap} ${e.am || ''}`.trim();
+            sel.appendChild(opt);
+        });
     document.getElementById('modalVacaciones').style.display='flex';
 }
 
 function guardarNuevaVacacion(){
     let empId = document.getElementById('v_emp_id').value;
-    if(!empId){ alert('ID requerido'); return; }
+    if(!empId){ alert('Debes seleccionar un empleado.'); return; }
     let emp = empleados.find(e=>e.id==empId);
-    if(!emp){ alert('No existe ese ID de empleado. Si es practicante, las vacaciones no aplican directamente.'); return; }
+    if(!emp){ alert('Empleado no encontrado.'); return; }
+    let inicio = document.getElementById('v_inicio').value;
+    let fin = document.getElementById('v_fin').value;
+    if(!inicio || !fin){ alert('Debes indicar las fechas de inicio y fin.'); return; }
     vacaciones.unshift({
         empleado_id: parseInt(empId),
-        inicio: document.getElementById('v_inicio').value,
-        fin: document.getElementById('v_fin').value,
+        inicio: inicio,
+        fin: fin,
         dias: parseInt(document.getElementById('v_dias').value) || 0,
         tipo: document.getElementById('v_tipo').value,
         estado: 'Pendiente',
         cobertura: document.getElementById('v_cobertura').value
     });
+    guardarBD();
     document.getElementById('modalVacaciones').style.display='none';
     mostrar('vacaciones');
+}
+
+function nuevoEmpleado(){
+    let hoy = new Date().toISOString().split('T')[0];
+    // Reset todos los campos del modal completo
+    ['ne_nombre','ne_ap','ne_am','ne_nss','ne_rfc','ne_curp','ne_celular','ne_correo',
+     'ne_direccion','ne_tipo_sangre','ne_alergias','ne_puesto','ne_empresa','ne_clabe',
+     'ne_canal','ne_contacto','ne_parentesco','ne_tel1','ne_tel2','ne_estado_civil'].forEach(id => {
+        let el = document.getElementById(id);
+        if(el) el.value = '';
+    });
+    document.getElementById('ne_fecha').value = hoy;
+    document.getElementById('ne_alta_imss').value = '';
+    document.getElementById('ne_nacimiento').value = '';
+    document.getElementById('ne_sexo').value = 'Indefinido';
+    document.getElementById('ne_talla').value = 'M';
+    document.getElementById('ne_canal').value = '';
+    document.getElementById('modalNuevoEmpleado').style.display = 'flex';
+}
+
+function guardarNuevoEmpleadoDirecto(){
+    let nombre = document.getElementById('ne_nombre').value.trim();
+    if(!nombre){ alert('El nombre es requerido.'); return; }
+    let nId = Date.now();
+    let fechaHoy = new Date().toISOString().split('T')[0];
+    let g = (id) => { let el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    let nuevoEmp = {
+        id: nId,
+        nombre: nombre,
+        ap: g('ne_ap'),
+        am: g('ne_am'),
+        nacimiento: g('ne_nacimiento'),
+        nss: g('ne_nss'),
+        rfc: g('ne_rfc'),
+        curp: g('ne_curp'),
+        sexo: g('ne_sexo') || 'Indefinido',
+        estado_civil: g('ne_estado_civil') || 'Soltero',
+        celular: g('ne_celular'),
+        correo: g('ne_correo'),
+        direccion: g('ne_direccion'),
+        tipo_sangre: g('ne_tipo_sangre'),
+        alergias: g('ne_alergias'),
+        talla_uniforme: g('ne_talla') || 'M',
+        puesto: g('ne_puesto'),
+        empresa: g('ne_empresa'),
+        fecha: g('ne_fecha') || fechaHoy,
+        alta_imss: g('ne_alta_imss'),
+        clabe_bancaria: g('ne_clabe'),
+        canal_captacion: g('ne_canal') || 'Directo',
+        contacto_emergencia: g('ne_contacto'),
+        parentesco: g('ne_parentesco'),
+        tel_emergencia1: g('ne_tel1'),
+        tel_emergencia2: g('ne_tel2'),
+        egreso: '', motivo: '',
+        documentos: [], observaciones: []
+    };
+    empleados.push(nuevoEmp);
+    crearAniosEmpleado(nId);
+    guardarBD();
+    document.getElementById('modalNuevoEmpleado').style.display = 'none';
+    empSel = nuevoEmp;
+    mostrar('ficha');
+}
+
+function nuevoPracticante(){
+    let hoy = new Date().toISOString().split('T')[0];
+    // Reset todos los campos del modal completo
+    ['np_nombre','np_ap','np_am','np_nss','np_rfc','np_curp','np_celular','np_correo',
+     'np_direccion','np_tipo_sangre','np_alergias','np_nivel_ingles','np_puesto',
+     'np_escuela','np_empresa','np_estado_civil'].forEach(id => {
+        let el = document.getElementById(id);
+        if(el) el.value = '';
+    });
+    document.getElementById('np_horas').value = '480';
+    document.getElementById('np_fecha_inicio').value = hoy;
+    document.getElementById('np_fecha_termino').value = '';
+    document.getElementById('np_nacimiento').value = '';
+    document.getElementById('np_talla').value = 'M';
+    let empEl = document.getElementById('np_empresa');
+    if(empEl) empEl.value = 'EuroMedica';
+    document.getElementById('modalNuevoPracticante').style.display = 'flex';
+}
+
+function guardarNuevoPracticanteDirecto(){
+    let nombre = document.getElementById('np_nombre').value.trim();
+    if(!nombre){ alert('El nombre es requerido.'); return; }
+    let nId = Date.now();
+    let fechaHoy = new Date().toISOString().split('T')[0];
+    let g = (id) => { let el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    let nuevoPract = {
+        id: nId,
+        nombre: nombre,
+        ap: g('np_ap'),
+        am: g('np_am'),
+        nacimiento: g('np_nacimiento'),
+        nss: g('np_nss'),
+        rfc: g('np_rfc'),
+        curp: g('np_curp'),
+        sexo: 'Indefinido',
+        estado_civil: g('np_estado_civil') || 'Soltero',
+        celular: g('np_celular'),
+        correo: g('np_correo'),
+        direccion: g('np_direccion'),
+        tipo_sangre: g('np_tipo_sangre'),
+        alergias: g('np_alergias'),
+        nivel_ingles: g('np_nivel_ingles'),
+        talla_uniforme: g('np_talla') || 'M',
+        escuela_procedencia: g('np_escuela'),
+        horas_requeridas: parseInt(g('np_horas')) || 480,
+        puesto_solicitado: g('np_puesto'),
+        puesto: g('np_puesto'),
+        empresa: g('np_empresa') || 'EuroMedica',
+        fecha_inicio: g('np_fecha_inicio') || fechaHoy,
+        fecha_termino: g('np_fecha_termino') || '',
+        horas_llevadas: 0,
+        egreso: '', motivo: '', destacado: false,
+        canal_captacion: 'Directo',
+        documentos: [], observaciones: []
+    };
+    practicantes.push(nuevoPract);
+    guardarBD();
+    document.getElementById('modalNuevoPracticante').style.display = 'none';
+    practSel = nuevoPract;
+    mostrar('ficha_practicante');
 }
 
 function guardarCambiosFicha(){
@@ -1777,7 +2238,47 @@ function nuevaCita(){
 function seleccionarCita(id){
     citaSel = citas.find(c=>c.id==id);
     empSel=null; practSel=null; candSel=null;
+    if (citaSel) {
+        citaSel.modo_actual = 'editar';
+    }
     mostrar("ficha_cita");
+}
+
+function cambiarModoVistaCita(modo) {
+    if (!citaSel) return;
+    citaSel.modo_actual = modo;
+    guardarEstadoNavegacionRH('ficha_cita');
+    
+    let vistaEdit = document.getElementById('vista_modo_editar_cita');
+    let vistaEnt = document.getElementById('vista_modo_entrevista_cita') || document.getElementById('vista_modo_empezar_cita');
+    let btnEdit = document.getElementById('btn_modo_editar');
+    let btnEnt = document.getElementById('btn_modo_entrevista') || document.getElementById('btn_modo_empezar');
+    
+    if (vistaEdit && vistaEnt) {
+        if (modo === 'entrevista' || modo === 'empezar') {
+            vistaEdit.style.display = 'none';
+            vistaEnt.style.display = 'block';
+            if (btnEdit) {
+                btnEdit.style.background = 'transparent';
+                btnEdit.style.color = '#ffffff';
+            }
+            if (btnEnt) {
+                btnEnt.style.background = '#16a34a';
+                btnEnt.style.color = '#ffffff';
+            }
+        } else {
+            vistaEdit.style.display = 'block';
+            vistaEnt.style.display = 'none';
+            if (btnEdit) {
+                btnEdit.style.background = '#ffffff';
+                btnEdit.style.color = '#1e3a8a';
+            }
+            if (btnEnt) {
+                btnEnt.style.background = 'transparent';
+                btnEnt.style.color = '#ffffff';
+            }
+        }
+    }
 }
 
 function subirArchivoCita(input){
@@ -1894,8 +2395,10 @@ function exportarFichaPDF(){
 
 
 
-// Inicialización por defecto
-mostrar("citas");
+// Inicialización por defecto con restauración de estado (F5)
+if (!restaurarEstadoNavegacionRH()) {
+    mostrar("citas");
+}
 
 /**
  * Aprueba una solicitud de vacaciones validando disponibilidad de días

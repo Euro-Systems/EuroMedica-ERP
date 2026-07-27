@@ -49,11 +49,12 @@
 </div>
 </div>
 </div>
-<div class="rh-card sticky-acciones" style="margin-top:10px;">
-<h3>Acciones de Ficha</h3>
+<div class="rh-card sticky-acciones" style="margin-top:14px;">
+<h3 style="border:none; padding:0; margin-bottom:10px;"><i class="bi bi-gear-fill me-2"></i>Acciones de Ficha</h3>
 <div style="display:flex; gap:10px; flex-wrap:wrap;">
-<button class="btn-ver" style="background:#3b82f6; margin:0;" onclick="guardarCambiosFicha()">Guardar Cambios</button>
-<button class="btn-ver" style="background:#eab308; margin:0;" onclick="exportarFichaPDF()">Exportar PDF</button>
-<button class="btn-ver" style="background:#ef4444; margin:0;" onclick="eliminarRegistro('practicante')">Eliminar Registro</button>
+<button class="btn-ver" style="background:#2563eb; flex:1;" onclick="guardarCambiosFicha()"><i class="bi bi-floppy-fill me-1"></i> Guardar Cambios</button>
+<button class="btn-ver" style="background:#0284c7; flex:1;" onclick="exportarFichaPDF()"><i class="bi bi-file-earmark-pdf-fill me-1"></i> Exportar PDF</button>
+<button class="btn-ver" style="background:#d97706; flex:1;" onclick="darDeBajaPracticante()"><i class="bi bi-person-x-fill me-1"></i> Dar de Baja</button>
+${esAdminRH ? `<button class="btn-ver" style="background:#1e1e2e; flex:1; border:1px solid #dc2626;" onclick="eliminarRegistro('practicante')" title="Solo administradores"><i class="bi bi-trash3-fill me-1"></i> Eliminar Registro</button>` : ''}
 </div>
 </div>

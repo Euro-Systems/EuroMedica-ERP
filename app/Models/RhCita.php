@@ -15,5 +15,6 @@ class RhCita extends Model
 
     protected $casts = [
         'documentos' => 'array',
+        'evaluacion' => 'array',
     ];
 }
