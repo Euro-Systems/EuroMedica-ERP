@@ -765,47 +765,24 @@ function seleccionarFormularioEvaluacion(tipo) {
     if (!citaSel) return;
     if (!citaSel.evaluacion) citaSel.evaluacion = {};
     citaSel.evaluacion.tipo = tipo;
-    
-    let bloquePrac = document.getElementById('bloque_form_practicante');
-    if (bloquePrac) {
-        bloquePrac.style.display = (tipo === 'Practicante') ? 'block' : 'none';
-    }
-}
 
-function actualizarEvaluacionCampo(campo, valor) {
-    if (!citaSel) return;
-    if (!citaSel.evaluacion) citaSel.evaluacion = { tipo: 'Practicante' };
-    citaSel.evaluacion[campo] = valor;
-}
+    // Ocultar todos los bloques
+    let bloques = ['bloque_form_practicante', 'bloque_form_enfermero', 'bloque_form_medico'];
+    bloques.forEach(id => {
+        let el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
 
-function actualizarEvaluacionCheck(campo, check) {
-    if (!citaSel) return;
-    if (!citaSel.evaluacion) citaSel.evaluacion = { tipo: 'Practicante' };
-    citaSel.evaluacion[campo] = check;
-}
-
-function toggleTranspMueven(check) {
-    if (!citaSel) return;
-    actualizarEvaluacionCheck('transp_check_mueven', check);
-    let wrap = document.getElementById('wrapper_transp_mueven');
-    if (wrap) wrap.style.display = check ? 'block' : 'none';
-}
-
-function toggleTranspOtro(check) {
-    if (!citaSel) return;
-    actualizarEvaluacionCheck('transp_check_otro', check);
-    let wrap = document.getElementById('wrapper_transp_otro');
-    if (wrap) wrap.style.display = check ? 'block' : 'none';
-}
-
-function toggleHijosOp(val) {
-    if (!citaSel) return;
-    actualizarEvaluacionCampo('tiene_hijos', val);
-    let wrap = document.getElementById('wrapper_hijos_detalle');
-    if (wrap) wrap.style.display = (val === 'si') ? 'block' : 'none';
-    if (val === 'si') {
-        let num = parseInt(citaSel.evaluacion?.hijos_num || 1);
-        renderizarCamposHijos(num);
+    // Mostrar el seleccionado
+    if (tipo === 'Practicante') {
+        let el = document.getElementById('bloque_form_practicante');
+        if (el) el.style.display = 'block';
+    } else if (tipo === 'Enfermero') {
+        let el = document.getElementById('bloque_form_enfermero');
+        if (el) el.style.display = 'block';
+    } else if (tipo === 'Medico') {
+        let el = document.getElementById('bloque_form_medico');
+        if (el) el.style.display = 'block';
     }
 }
 
@@ -832,6 +809,8 @@ function renderizarCamposHijos(num) {
     }
     cont.innerHTML = html;
 }
+
+
 
 function actualizarHijoItem(index, campo, valor) {
     if (!citaSel) return;
@@ -866,6 +845,76 @@ function actualizarEvaluacionPsicometrica(prueba, campo, valor) {
 // ================================================================
 // FUNCIONES EXCLUSIVAS DEL FORMULARIO ENFERMERÍA
 // ================================================================
+
+
+// ================================================================
+// FUNCIONES EXCLUSIVAS DEL FORMULARIO MÉDICO
+// ================================================================
+
+function toggleMedTranspMueven(check) {
+    if (!citaSel) return;
+    actualizarEvaluacionCheck('med_transp_mueven_chk', check);
+    let wrap = document.getElementById('med_wrapper_mueven');
+    if (wrap) wrap.style.display = check ? 'block' : 'none';
+}
+
+function toggleMedTranspOtro(check) {
+    if (!citaSel) return;
+    actualizarEvaluacionCheck('med_transp_otro_chk', check);
+    let wrap = document.getElementById('med_wrapper_otro');
+    if (wrap) wrap.style.display = check ? 'block' : 'none';
+}
+
+function toggleMedHijos(val) {
+    if (!citaSel) return;
+    actualizarEvaluacionCampo('med_tiene_hijos', val);
+    let wrap = document.getElementById('med_wrapper_hijos');
+    if (wrap) wrap.style.display = (val === 'si') ? 'block' : 'none';
+    if (val === 'si') {
+        let num = parseInt(citaSel.evaluacion?.med_hijos_num || 1);
+        renderizarCamposHijosMed(num);
+    }
+}
+
+function renderizarCamposHijosMed(num) {
+    if (!citaSel) return;
+    num = Math.max(1, Math.min(10, num));
+    if (!citaSel.evaluacion) citaSel.evaluacion = {};
+    citaSel.evaluacion.med_hijos_num = num;
+    if (!citaSel.evaluacion.med_hijos_lista) citaSel.evaluacion.med_hijos_lista = [];
+
+    let cont = document.getElementById('med_hijos_lista');
+    if (!cont) return;
+
+    let html = '';
+    for (let i = 0; i < num; i++) {
+        let item = citaSel.evaluacion.med_hijos_lista[i] || { nombre: '', edad: '' };
+        html += `
+            <div style="display:flex; gap:10px; align-items:center; background:#fff; padding:8px 12px; border-radius:6px; border:1px solid #cbd5e1;">
+                <b style="min-width:65px; color:#4338ca; font-size:12px;">Hijo ${i+1}:</b>
+                <input type="text" placeholder="Nombre completo" value="${item.nombre || ''}" onchange="actualizarHijoItemMed(${i}, 'nombre', this.value)" style="flex:2; padding:5px 8px; font-size:12px;">
+                <input type="text" placeholder="Edad (ej. 5 años)" value="${item.edad || ''}" onchange="actualizarHijoItemMed(${i}, 'edad', this.value)" style="flex:1; padding:5px 8px; font-size:12px;">
+            </div>
+        `;
+    }
+    cont.innerHTML = html;
+}
+
+function actualizarHijoItemMed(index, campo, valor) {
+    if (!citaSel) return;
+    if (!citaSel.evaluacion) citaSel.evaluacion = {};
+    if (!citaSel.evaluacion.med_hijos_lista) citaSel.evaluacion.med_hijos_lista = [];
+    if (!citaSel.evaluacion.med_hijos_lista[index]) citaSel.evaluacion.med_hijos_lista[index] = { nombre: '', edad: '' };
+    citaSel.evaluacion.med_hijos_lista[index][campo] = valor;
+}
+
+function actualizarEvaluacionPsicometricaMed(prueba, campo, valor) {
+    if (!citaSel) return;
+    if (!citaSel.evaluacion) citaSel.evaluacion = { tipo: 'Medico' };
+    if (!citaSel.evaluacion.med_psicometricas) citaSel.evaluacion.med_psicometricas = {};
+    if (!citaSel.evaluacion.med_psicometricas[prueba]) citaSel.evaluacion.med_psicometricas[prueba] = {};
+    citaSel.evaluacion.med_psicometricas[prueba][campo] = valor;
+}
 
 function toggleEnfTranspMueven(check) {
     if (!citaSel) return;
@@ -942,7 +991,7 @@ function seleccionarFormularioEvaluacion(tipo) {
     citaSel.evaluacion.tipo = tipo;
 
     // Ocultar todos los bloques
-    let bloques = ['bloque_form_practicante', 'bloque_form_enfermero'];
+    let bloques = ['bloque_form_practicante', 'bloque_form_enfermero', 'bloque_form_medico'];
     bloques.forEach(id => {
         let el = document.getElementById(id);
         if (el) el.style.display = 'none';
@@ -954,6 +1003,9 @@ function seleccionarFormularioEvaluacion(tipo) {
         if (el) el.style.display = 'block';
     } else if (tipo === 'Enfermero') {
         let el = document.getElementById('bloque_form_enfermero');
+        if (el) el.style.display = 'block';
+    } else if (tipo === 'Medico') {
+        let el = document.getElementById('bloque_form_medico');
         if (el) el.style.display = 'block';
     }
 }

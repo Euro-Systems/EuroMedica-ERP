@@ -99,7 +99,7 @@
                     <option value="">-- Seleccionar Formulario --</option>
                     <option value="Practicante" ${(ci.evaluacion && ci.evaluacion.tipo==='Practicante') || ci.tipo==='Practicante' ? 'selected' : ''}>📋 Practicante (Ficha Técnica)</option>
                     <option value="Enfermero" ${ci.evaluacion && ci.evaluacion.tipo==='Enfermero' ? 'selected' : ''}>🧑‍⚕️ Enfermería (Ficha Técnica)</option>
-                    <option value="Medico" disabled style="color:#94a3b8;">👨‍⚕️ Médico (Pendiente)</option>
+                    <option value="Medico" ${ci.evaluacion && ci.evaluacion.tipo==='Medico' ? 'selected' : ''}>👨‍⚕️ Médico (Ficha Técnica)</option>
                 </select>
             </div>
         </div>
@@ -490,6 +490,202 @@
         </table>
     </div>
 </div>
+   
+<!-- ========================================================= -->
+<!-- VISTA 2C: FORMULARIO MÉDICO -->
+<!-- ========================================================= -->
+<div id="bloque_form_medico" style="display: ${ ci.evaluacion && ci.evaluacion.tipo==='Medico' ? 'block' : 'none' }; background:#f8fafc; padding:20px; border-radius:10px; border:1px solid #cbd5e1; margin-top:15px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:2px solid #4338ca; padding-bottom:10px;">
+        <div>
+            <h2 style="margin:0; font-size:18px; color:#4338ca; font-weight:bold; text-transform:uppercase;">FICHA TÉCNICA</h2>
+            <span style="font-size:14px; font-style:italic; color:#475569;">Área de la Salud — MÉDICO</span>
+        </div>
+        <div>
+            <button class="btn-ver" onclick="alert('Impresión de Médico en desarrollo')" style="background:#4338ca; font-weight:bold;">
+                <i class="bi bi-printer me-1"></i> Imprimir / Descargar PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- I. DATOS DE CONTROL Y ENTREVISTA -->
+    <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
+        <h4 style="margin:0 0 10px; color:#4338ca; font-size:14px; font-weight:bold;">I. DATOS DE CONTROL Y ENTREVISTA</h4>
+        <div class="empleado-grid" style="grid-template-columns: repeat(4, 1fr); gap:10px;">
+            <div><b>Candidato para:</b><input type="text" id="med_candidato_para" value="${ci.evaluacion?.med_candidato_para || ci.puesto || ''}" onchange="actualizarEvaluacionCampo('med_candidato_para', this.value)"></div>
+            <div><b>Entrevista #:</b><input type="text" id="med_entrevista_num" value="${ci.evaluacion?.med_entrevista_num || '1'}" onchange="actualizarEvaluacionCampo('med_entrevista_num', this.value)"></div>
+            <div><b>Por:</b><input type="text" id="med_por" value="${ci.evaluacion?.med_por || ci.entrevistador_rh || ''}" onchange="actualizarEvaluacionCampo('med_por', this.value)"></div>
+            <div><b>Fecha:</b><input type="date" id="med_fecha" value="${ci.evaluacion?.med_fecha || ci.fecha || ''}" onchange="actualizarEvaluacionCampo('med_fecha', this.value)"></div>
+            <div><b>Sueldo propuesto:</b><input type="text" id="med_sueldo_propuesto" value="${ci.evaluacion?.med_sueldo_propuesto || ''}" placeholder="$" onchange="actualizarEvaluacionCampo('med_sueldo_propuesto', this.value)"></div>
+            <div><b>Días:</b><input type="text" id="med_dias" value="${ci.evaluacion?.med_dias || ''}" placeholder="Ej: Lun-Vie" onchange="actualizarEvaluacionCampo('med_dias', this.value)"></div>
+            <div><b>Horario:</b><input type="text" id="med_horario" value="${ci.evaluacion?.med_horario || ''}" placeholder="Ej: 8:00-14:00" onchange="actualizarEvaluacionCampo('med_horario', this.value)"></div>
+            <div><b>Disponibilidad:</b><input type="text" id="med_disponibilidad" value="${ci.evaluacion?.med_disponibilidad || ''}" placeholder="Ej: Inmediata" onchange="actualizarEvaluacionCampo('med_disponibilidad', this.value)"></div>
+        </div>
+    </div>
+
+    <!-- II. DATOS PERSONALES Y FAMILIARES -->
+    <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
+        <h4 style="margin:0 0 10px; color:#4338ca; font-size:14px; font-weight:bold;">II. DATOS PERSONALES Y FAMILIARES</h4>
+        <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:12px;">
+            <div><b>Edad:</b><input type="text" id="med_edad" value="${ci.evaluacion?.med_edad || ''}" onchange="actualizarEvaluacionCampo('med_edad', this.value)"></div>
+            <div><b>A qué se dedica papá:</b><input type="text" id="med_papa_dedica" value="${ci.evaluacion?.med_papa_dedica || ''}" onchange="actualizarEvaluacionCampo('med_papa_dedica', this.value)"></div>
+            <div><b>Vive en:</b><input type="text" id="med_vive_en" value="${ci.evaluacion?.med_vive_en || ''}" placeholder="Colonia / Zona" onchange="actualizarEvaluacionCampo('med_vive_en', this.value)"></div>
+            <div><b>A qué se dedica mamá:</b><input type="text" id="med_mama_dedica" value="${ci.evaluacion?.med_mama_dedica || ''}" onchange="actualizarEvaluacionCampo('med_mama_dedica', this.value)"></div>
+            <div><b>Vive con:</b><input type="text" id="med_vive_con" value="${ci.evaluacion?.med_vive_con || ''}" placeholder="Padres, pareja, solo..." onchange="actualizarEvaluacionCampo('med_vive_con', this.value)"></div>
+            <div><b>Hermanos (A qué se dedican):</b><input type="text" id="med_hermanos_dedican" value="${ci.evaluacion?.med_hermanos_dedican || ''}" onchange="actualizarEvaluacionCampo('med_hermanos_dedican', this.value)"></div>
+            <div>
+                <b>Estado Civil:</b>
+                <select id="med_estado_civil" onchange="actualizarEvaluacionCampo('med_estado_civil', this.value)">
+                    <option value="Soltero(a)" ${ci.evaluacion?.med_estado_civil==='Soltero(a)'?'selected':''}>Soltero(a)</option>
+                    <option value="Casado(a)" ${ci.evaluacion?.med_estado_civil==='Casado(a)'?'selected':''}>Casado(a)</option>
+                    <option value="Unión Libre" ${ci.evaluacion?.med_estado_civil==='Unión Libre'?'selected':''}>Unión Libre</option>
+                    <option value="Otro" ${ci.evaluacion?.med_estado_civil==='Otro'?'selected':''}>Otro</option>
+                </select>
+            </div>
+            <div></div>
+
+            <!-- MEDIO DE TRANSPORTE -->
+            <div style="grid-column: span 2; background:#f8fafc; padding:12px 16px; border-radius:8px; border:1px solid #cbd5e1;">
+                <div style="display:flex; align-items:center; flex-wrap:wrap; gap:16px; font-size:13px;">
+                    <b style="color:#4338ca;">Medio de transporte:</b>
+                    <label style="cursor:pointer; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="med_transp_auto" ${ci.evaluacion?.med_transp_auto ? 'checked' : ''} onchange="actualizarEvaluacionCheck('med_transp_auto', this.checked)"> Auto propio</label>
+                    <label style="cursor:pointer; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="med_transp_uber" ${ci.evaluacion?.med_transp_uber ? 'checked' : ''} onchange="actualizarEvaluacionCheck('med_transp_uber', this.checked)"> Uber/Didi</label>
+                    <label style="cursor:pointer; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="med_transp_publico" ${ci.evaluacion?.med_transp_publico ? 'checked' : ''} onchange="actualizarEvaluacionCheck('med_transp_publico', this.checked)"> Transp. Público</label>
+                    <label style="cursor:pointer; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="med_transp_mueven_chk" ${ci.evaluacion?.med_transp_mueven_chk ? 'checked' : ''} onchange="toggleMedTranspMueven(this.checked)"> Lo mueven</label>
+                    <label style="cursor:pointer; display:flex; align-items:center; gap:4px;"><input type="checkbox" id="med_transp_otro_chk" ${ci.evaluacion?.med_transp_otro_chk ? 'checked' : ''} onchange="toggleMedTranspOtro(this.checked)"> Otro</label>
+                    
+                    <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+                        <b style="color:#4338ca; white-space:nowrap;">Tiempo para llegar:</b>
+                        <input type="text" id="med_tiempo_llegar" value="${ci.evaluacion?.med_tiempo_llegar || ''}" placeholder="Ej: 30 min" style="width:130px; padding:5px 8px;" onchange="actualizarEvaluacionCampo('med_tiempo_llegar', this.value)">
+                    </div>
+                </div>
+                <!-- Campos dinámicos de transporte -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:10px;">
+                    <div id="med_wrapper_mueven" style="display:${ci.evaluacion?.med_transp_mueven_chk ? 'block' : 'none'};">
+                        <b style="color:#4338ca;">¿Quién lo mueve?</b>
+                        <input type="text" id="med_transp_mueven_quien" value="${ci.evaluacion?.med_transp_mueven_quien || ''}" placeholder="Escribe quién..." onchange="actualizarEvaluacionCampo('med_transp_mueven_quien', this.value)">
+                    </div>
+                    <div id="med_wrapper_otro" style="display:${ci.evaluacion?.med_transp_otro_chk ? 'block' : 'none'};">
+                        <b style="color:#4338ca;">Especificar otro:</b>
+                        <input type="text" id="med_transp_otro_txt" value="${ci.evaluacion?.med_transp_otro_txt || ''}" placeholder="Especificar..." onchange="actualizarEvaluacionCampo('med_transp_otro_txt', this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- HIJOS -->
+            <div style="grid-column: span 2; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #cbd5e1;">
+                <b>Hijos:</b>
+                <div style="display:flex; gap:20px; margin-top:6px; font-size:13px;">
+                    <label style="cursor:pointer;"><input type="radio" name="med_hijos_radio" value="no" ${!ci.evaluacion?.med_tiene_hijos || ci.evaluacion?.med_tiene_hijos==='no' ? 'checked' : ''} onchange="toggleMedHijos('no')"> No</label>
+                    <label style="cursor:pointer;"><input type="radio" name="med_hijos_radio" value="si" ${ci.evaluacion?.med_tiene_hijos==='si' ? 'checked' : ''} onchange="toggleMedHijos('si')"> Sí</label>
+                </div>
+                <div id="med_wrapper_hijos" style="display:${ci.evaluacion?.med_tiene_hijos==='si' ? 'block' : 'none'}; margin-top:10px;">
+                    <div style="max-width:220px; margin-bottom:10px;">
+                        <b style="color:#4338ca;">¿Cuántos hijos?</b>
+                        <input type="number" min="1" max="10" id="med_hijos_num" value="${ci.evaluacion?.med_hijos_num || 1}" onchange="renderizarCamposHijosMed(parseInt(this.value)||1)" oninput="renderizarCamposHijosMed(parseInt(this.value)||1)">
+                    </div>
+                    <div id="med_hijos_lista" style="display:flex; flex-direction:column; gap:8px;"></div>
+                </div>
+            </div>
+
+            <!-- SUELDOS Y MOTIVO -->
+            <div><b>Sueldo esperado:</b><input type="text" id="med_sueldo_esperado" value="${ci.evaluacion?.med_sueldo_esperado || ''}" placeholder="$" onchange="actualizarEvaluacionCampo('med_sueldo_esperado', this.value)"></div>
+            <div><b>Sueldo último trabajo:</b><input type="text" id="med_sueldo_ultimo" value="${ci.evaluacion?.med_sueldo_ultimo || ''}" placeholder="$" onchange="actualizarEvaluacionCampo('med_sueldo_ultimo', this.value)"></div>
+            <div style="grid-column: span 2;"><b>Motivo de salida:</b><input type="text" id="med_motivo_salida" value="${ci.evaluacion?.med_motivo_salida || ''}" onchange="actualizarEvaluacionCampo('med_motivo_salida', this.value)"></div>
+        </div>
+    </div>
+
+    <!-- III. PERFIL PROFESIONAL Y ESPECÍFICO -->
+    <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
+        <h4 style="margin:0 0 10px; color:#4338ca; font-size:14px; font-weight:bold;">III. PERFIL PROFESIONAL Y ESPECÍFICO</h4>
+        <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:12px;">
+
+            <!-- Título y Cédula -->
+            <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                <b>Título:</b>
+                <div style="display:flex; gap:16px; margin-top:6px; font-size:13px;">
+                    <label style="cursor:pointer;"><input type="radio" name="med_titulo_radio" value="si" ${ci.evaluacion?.med_titulo==='si'?'checked':''} onchange="actualizarEvaluacionCampo('med_titulo', 'si')"> Sí</label>
+                    <label style="cursor:pointer;"><input type="radio" name="med_titulo_radio" value="no" ${ci.evaluacion?.med_titulo==='no'?'checked':''} onchange="actualizarEvaluacionCampo('med_titulo', 'no')"> No</label>
+                    <label style="cursor:pointer;"><input type="radio" name="med_titulo_radio" value="tramite" ${ci.evaluacion?.med_titulo==='tramite'?'checked':''} onchange="actualizarEvaluacionCampo('med_titulo', 'tramite')"> En trámite</label>
+                </div>
+            </div>
+
+            <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                <b>Cédula:</b>
+                <div style="display:flex; gap:16px; margin-top:6px; font-size:13px;">
+                    <label style="cursor:pointer;"><input type="radio" name="med_cedula_radio" value="si" ${ci.evaluacion?.med_cedula==='si'?'checked':''} onchange="actualizarEvaluacionCampo('med_cedula', 'si')"> Sí</label>
+                    <label style="cursor:pointer;"><input type="radio" name="med_cedula_radio" value="no" ${ci.evaluacion?.med_cedula==='no'?'checked':''} onchange="actualizarEvaluacionCampo('med_cedula', 'no')"> No</label>
+                    <label style="cursor:pointer;"><input type="radio" name="med_cedula_radio" value="tramite" ${ci.evaluacion?.med_cedula==='tramite'?'checked':''} onchange="actualizarEvaluacionCampo('med_cedula', 'tramite')"> En trámite</label>
+                </div>
+            </div>
+
+            <div><b>Universidad:</b><input type="text" id="med_universidad" value="${ci.evaluacion?.med_universidad || ''}" onchange="actualizarEvaluacionCampo('med_universidad', this.value)"></div>
+            <div><b>Fecha de llegada aprox. (si aplica):</b><input type="date" id="med_fecha_llegada" value="${ci.evaluacion?.med_fecha_llegada || ''}" onchange="actualizarEvaluacionCampo('med_fecha_llegada', this.value)"></div>
+            <div style="grid-column: span 2;"><b>Terminó estudios el:</b><input type="text" id="med_termino_estudios" value="${ci.evaluacion?.med_termino_estudios || ''}" placeholder="Mes / Año" onchange="actualizarEvaluacionCampo('med_termino_estudios', this.value)"></div>
+
+            <hr style="grid-column: span 2; margin:10px 0; border:0; border-top:1px solid #e2e8f0;">
+
+            <!-- Internado y Servicio Social -->
+            <div style="grid-column: span 2; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
+                <h5 style="margin:0 0 8px; color:#4338ca; font-weight:bold;">Internado:</h5>
+                <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div><b>Lugar:</b><input type="text" value="${ci.evaluacion?.med_internado_lugar || ''}" onchange="actualizarEvaluacionCampo('med_internado_lugar', this.value)"></div>
+                    <div style="display:flex; gap:10px;">
+                        <div style="flex:1;"><b>De:</b><input type="date" value="${ci.evaluacion?.med_internado_de || ''}" onchange="actualizarEvaluacionCampo('med_internado_de', this.value)"></div>
+                        <div style="flex:1;"><b>A:</b><input type="date" value="${ci.evaluacion?.med_internado_a || ''}" onchange="actualizarEvaluacionCampo('med_internado_a', this.value)"></div>
+                    </div>
+                    <div style="grid-column: span 2;"><b>Actividades:</b><input type="text" value="${ci.evaluacion?.med_internado_actividades || ''}" onchange="actualizarEvaluacionCampo('med_internado_actividades', this.value)"></div>
+                </div>
+            </div>
+
+            <div style="grid-column: span 2; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
+                <h5 style="margin:0 0 8px; color:#4338ca; font-weight:bold;">Servicio Social:</h5>
+                <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div><b>Lugar:</b><input type="text" value="${ci.evaluacion?.med_ss_lugar || ''}" onchange="actualizarEvaluacionCampo('med_ss_lugar', this.value)"></div>
+                    <div style="display:flex; gap:10px;">
+                        <div style="flex:1;"><b>De:</b><input type="date" value="${ci.evaluacion?.med_ss_de || ''}" onchange="actualizarEvaluacionCampo('med_ss_de', this.value)"></div>
+                        <div style="flex:1;"><b>A:</b><input type="date" value="${ci.evaluacion?.med_ss_a || ''}" onchange="actualizarEvaluacionCampo('med_ss_a', this.value)"></div>
+                    </div>
+                    <div style="grid-column: span 2;"><b>Actividades:</b><input type="text" value="${ci.evaluacion?.med_ss_actividades || ''}" onchange="actualizarEvaluacionCampo('med_ss_actividades', this.value)"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IV. EXPERIENCIAS LABORALES -->
+    <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
+        <h4 style="margin:0 0 10px; color:#4338ca; font-size:14px; font-weight:bold;">IV. EXPERIENCIAS LABORALES</h4>
+        <textarea id="med_exp_laboral" rows="4" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px; resize:vertical; box-sizing:border-box;" placeholder="Detalla empleos anteriores..." onchange="actualizarEvaluacionCampo('med_exp_laboral', this.value)">${ci.evaluacion?.med_exp_laboral || ''}</textarea>
+    </div>
+
+    <!-- V. RESULTADOS DE PRUEBAS PSICOMÉTRICAS -->
+    <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1;">
+        <h4 style="margin:0 0 10px; color:#4338ca; font-size:14px; font-weight:bold;">V. RESULTADOS DE PRUEBAS PSICOMÉTRICAS</h4>
+        <table class="rh-table" style="width:100%;">
+            <thead>
+                <tr>
+                    <th style="padding:10px; width:110px;">Prueba</th>
+                    <th style="padding:10px; width:130px;">Tiempo</th>
+                    <th style="padding:10px;">Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${ ['DFH', 'PBL', 'Familia', 'Árbol', 'Casa'].map(prueba => {
+                    let pKey = 'med_' + prueba.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    let pData = ci.evaluacion?.med_psicometricas?.[pKey] || {};
+                    return `
+                    <tr>
+                        <td style="font-weight:bold; padding:10px; vertical-align:middle;">${prueba}</td>
+                        <td style="padding:8px;"><input type="text" value="${pData.tiempo || ''}" placeholder="Ej: 15 min" onchange="actualizarEvaluacionPsicometricaMed('${pKey}', 'tiempo', this.value)"></td>
+                        <td style="padding:8px;"><input type="text" style="width:100%; box-sizing:border-box;" value="${pData.obs || ''}" placeholder="Observaciones de ${prueba}..." onchange="actualizarEvaluacionPsicometricaMed('${pKey}', 'obs', this.value)"></td>
+                    </tr>
+                    `;
+                }).join('') }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
 
 </div>
 </div>
