@@ -1,0 +1,32 @@
+# Indica que este es el archivo de configuración raíz. El editor dejará de buscar otros archivos .editorconfig en las carpetas superiores.
+root = true
+
+# Configuración global aplicable a todos los archivos del proyecto
+[*]
+# Define la codificación de caracteres en UTF-8 (el estándar recomendado)
+charset = utf-8
+# Fuerza el uso de caracteres de salto de línea estilo Unix (LF / \n) en lugar de Windows (CRLF)
+end_of_line = lf
+# Establece el tamaño de la indentación en 4 espacios
+indent_size = 4
+# Utiliza espacios en lugar de tabuladores físicos para la indentación
+indent_style = space
+# Asegura que los archivos terminen siempre con una línea en blanco al final
+insert_final_newline = true
+# Elimina automáticamente cualquier espacio en blanco innecesario al final de las líneas (al guardar)
+trim_trailing_whitespace = true
+
+# Configuración específica para archivos Markdown (.md)
+[*.md]
+# Desactiva la eliminación de espacios al final de la línea, ya que en Markdown dos espacios seguidos significan un salto de línea manual (<br>)
+trim_trailing_whitespace = false
+
+# Configuración específica para archivos estructurados en formato YAML
+[*.{yml,yaml}]
+# Reduce el tamaño de la indentación a 2 espacios (estándar común de sintaxis para YAML)
+indent_size = 2
+
+# Configuración específica para el archivo de Docker Compose
+[compose.yaml]
+# Fuerza a que la indentación en este archivo en particular regrese a ser de 4 espacios
+indent_size = 4
