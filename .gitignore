@@ -1,3 +1,7 @@
+ HEAD
+*
+!data/
+!.gitignore
 *.log
 .DS_Store
 .env
@@ -27,3 +31,4 @@ Thumbs.db
 /storage/get_html_output.html
 /storage/render_route.php
 /storage/show_sessions.php
+ 2f1c2ff4ba90ed6aa2395ac9e74acda8f69d4eae
