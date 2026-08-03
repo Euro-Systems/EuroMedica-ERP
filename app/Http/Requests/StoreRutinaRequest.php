@@ -23,6 +23,17 @@ class StoreRutinaRequest extends FormRequest
             'veces_al_dia'       => 'nullable|integer|min:1',
             '_rutina_compartida' => 'nullable|string',
             'rutina_compartidos' => 'nullable|array',
+            'empleados_asig_checkboxes' => 'nullable|array',
+            'permitir_registro_avance' => 'nullable',
+            'dirigido_a_id'      => 'nullable',
+            'hora_inicio'        => 'nullable|string',
+            'hora_fin'           => 'nullable|string',
+            'acciones_realizadas'=> 'nullable|string',
+            'dependencia_area'   => 'nullable|string',
+            'dependencia_responsable' => 'nullable|string',
+            'dependencia_motivo' => 'nullable|string',
+            'observaciones'      => 'nullable|string',
+            'comentarios_dirigido' => 'nullable|string',
         ];
     }
 

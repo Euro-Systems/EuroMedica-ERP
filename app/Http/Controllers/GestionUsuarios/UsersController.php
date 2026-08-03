@@ -34,11 +34,11 @@ class UsersController extends Controller
         $currentUser = Auth::user();
 
         if ($currentUser->rol === 'admin') {
-            // El administrador puede ver a todos los usuarios
-            $users = User::with(['jefe', 'area'])->get();
+            // El administrador puede ver a todos los usuarios ordenados alfabéticamente
+            $users = User::with(['jefe', 'area'])->orderBy('name', 'asc')->get();
         } else {
-            // El jefe solo puede ver a sus subordinados a cargo
-            $users = User::with(['jefe', 'area'])->where('jefe_id', $currentUser->id)->get();
+            // El jefe solo puede ver a sus subordinados ordenados alfabéticamente
+            $users = User::with(['jefe', 'area'])->where('jefe_id', $currentUser->id)->orderBy('name', 'asc')->get();
         }
 
         return view('gestion_usuarios.index', compact('users'));
@@ -54,6 +54,9 @@ class UsersController extends Controller
         // Obtener los jefes disponibles
         $jefes = User::where('rol', 'jefe')->get();
 
+        Area::firstOrCreate(['nombre' => 'Enfermería'], ['activo' => true]);
+        Area::firstOrCreate(['nombre' => 'Nómina'], ['activo' => true]);
+
         // Obtener las áreas disponibles
         $areas = Area::where('activo', true)->get();
 
@@ -66,7 +69,7 @@ class UsersController extends Controller
         }
 
         // Obtener subordinados libres (sin jefe)
-        $subordinados = User::whereIn('rol', ['empleado', 'practicante'])->whereNull('jefe_id')->get();
+        $subordinados = User::whereIn('rol', ['empleado', 'practicante'])->whereNull('jefe_id')->with('area')->get();
 
         return view('gestion_usuarios.create', compact('jefes', 'availableModules', 'areas', 'subordinados'));
     }
@@ -202,7 +205,7 @@ class UsersController extends Controller
         $subordinados = User::whereIn('rol', ['empleado', 'practicante'])
                             ->where(function($q) use ($user) {
                                 $q->whereNull('jefe_id')->orWhere('jefe_id', $user->id);
-                            })->get();
+                            })->with('area')->get();
 
         return view('gestion_usuarios.edit', compact('user', 'jefes', 'availableModules', 'userPermissions', 'areas', 'subordinados'));
     }

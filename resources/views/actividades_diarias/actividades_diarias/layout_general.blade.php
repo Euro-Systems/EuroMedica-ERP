@@ -78,13 +78,6 @@ html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,Arial;ove
     <aside class="rh-menu">
         <h2><i class="bi bi-calendar2-week me-1"></i> Actividades</h2>
 
-        @if(Auth::user()->hasPermission('actividades_tablero') || Auth::user()->hasPermission('actividades'))
-        <a href="{{ session('active_area_id') ? route('actividades.area.workspace', session('active_area_id')) : route('actividades.area.workspace', 1) }}"
-           class="rh-nav {{ Request::routeIs('actividades.area.workspace') ? 'active' : '' }}">
-            <i class="bi bi-calendar-check"></i> Actividades Diarias
-        </a>
-        @endif
-
         @if(Auth::user()->hasPermission('actividades_resumen') || Auth::user()->hasPermission('actividades'))
         <a href="{{ route('actividades.resumen') }}"
            class="rh-nav {{ Request::routeIs('actividades.resumen') ? 'active' : '' }}">
@@ -141,5 +134,41 @@ html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,Arial;ove
 <script>
 window.isBoss = @json($isJefeAdmin);
 var isBoss = window.isBoss;
+
+// Navegación Dinámica (SPA)
+document.addEventListener('click', function(e) {
+    let link = e.target.closest('a.rh-nav');
+    if (link) {
+        let url = link.getAttribute('href');
+        // Permitir navegación normal para Regresar a Inicio y Regresar a Áreas
+        if (url === '{{ url('/') }}' || url === '{{ route('actividades.index') }}') {
+            return;
+        }
+
+        e.preventDefault();
+        
+        // Poner estado de carga visual
+        document.getElementById('contenido').innerHTML = '<div style="padding:50px; text-align:center; color:#64748b;"><i class="bi bi-arrow-repeat" style="font-size:30px; display:inline-block; animation: spin 1s linear infinite;"></i><p style="margin-top:10px;">Cargando información...</p></div><style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>';
+        
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById('contenido').innerHTML = html;
+            window.history.pushState({}, '', url);
+            
+            // Actualizar clase activa en el menú
+            document.querySelectorAll('a.rh-nav').forEach(el => el.classList.remove('active'));
+            link.classList.add('active');
+        })
+        .catch(err => {
+            console.error('Error cargando la vista:', err);
+            document.getElementById('contenido').innerHTML = '<div style="padding:50px; text-align:center; color:#ef4444;"><i class="bi bi-exclamation-triangle-fill" style="font-size:30px;"></i><p style="margin-top:10px;">Hubo un error cargando la información.</p></div>';
+        });
+    }
+});
 </script>
 @endsection

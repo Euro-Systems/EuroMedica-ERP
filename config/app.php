@@ -64,7 +64,7 @@ return [
     | mayoria de los casos de uso 
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'America/Mexico_City',
 
     /*
     |--------------------------------------------------------------------------

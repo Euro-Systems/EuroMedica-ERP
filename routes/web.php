@@ -36,6 +36,12 @@ Route::middleware(['auth'])->group(function () {
         return view('inicio');
     })->name('inicio');
 
+    // Ruta temporal para limpiar caché de vistas (puedes borrarla después)
+    Route::get('/limpiar-cache-vistas', function() {
+        \Illuminate\Support\Facades\Artisan::call('view:clear');
+        return 'Caché de vistas limpiada con éxito. ¡Ya puedes regresar a la página anterior y recargar!';
+    });
+
     // Módulo de Vehículos
     Route::middleware(['permission:vehiculos'])->group(function () {
         Route::resource('vehiculos', VehiculosController::class);
@@ -120,6 +126,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('actividades-imprevistas/{id}/aprobar', [ActividadesImprevistasController::class, 'aprobarRapido'])->name('actividades-imprevistas.aprobar');
         Route::post('actividades/{id}/reabrir', [ActividadesController::class, 'reabrirRapido'])->name('actividades.reabrir');
         Route::post('actividades-imprevistas/{id}/reabrir', [ActividadesImprevistasController::class, 'reabrirRapido'])->name('actividades-imprevistas.reabrir');
+        Route::post('actividades/{id}/devolver', [ActividadesController::class, 'devolver'])->name('actividades.devolver');
+        Route::post('actividades-imprevistas/{id}/devolver', [ActividadesImprevistasController::class, 'devolver'])->name('actividades-imprevistas.devolver');
+        Route::post('rutinas/{id}/devolver', [RutinasController::class, 'devolver'])->name('rutinas.devolver');
         Route::resource('actividades', ActividadesController::class);
         Route::resource('avances-actividad', AvancesActividadController::class);
         Route::resource('actividades-imprevistas', ActividadesImprevistasController::class);

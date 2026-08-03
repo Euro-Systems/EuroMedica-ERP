@@ -1,8 +1,8 @@
-@extends('actividades_diarias.actividades_diarias.layout_general')
+@extends(request()->ajax() ? 'actividades_diarias.actividades_diarias.layout_ajax' : 'actividades_diarias.actividades_diarias.layout_general')
 
 @section('title', 'Directorio de Bitácoras')
 
-@section('module-content')
+@section('actividades-content')
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
     <div>
         <h2 style="margin:0; color:#1e3a8a; font-size:20px; font-weight:800;">

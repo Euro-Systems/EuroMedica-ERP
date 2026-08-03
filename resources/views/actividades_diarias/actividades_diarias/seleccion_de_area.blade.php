@@ -114,6 +114,28 @@
         .btn-entrar:hover {
             background: #f8fafc;
         }
+        .btn-ver-todas-areas {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #ffffff;
+            border: 1.5px solid #334155;
+            padding: 9px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13.5px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(15,23,42,0.2);
+            transition: all 0.25s ease;
+        }
+        .btn-ver-todas-areas:hover {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: #ffffff;
+            border-color: #38bdf8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(56,189,248,0.25);
+        }
     </style>
 </head>
 <body>
@@ -125,9 +147,14 @@
             <h1 class="header-title">Áreas de la Empresa</h1>
             <p class="header-subtitle">Gestione las actividades, flujos de trabajo y personal por departamento</p>
         </div>
-        <div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <!-- BOTÓN DE TODAS LAS ÁREAS ACTUALIZADO -->
+            <a href="{{ route('actividades.area.select', 'todas') }}" class="btn-ver-todas-areas">
+                <i class="bi bi-globe-americas" style="font-size: 16px; color: #38bdf8;"></i>
+                <span>Ver Todas las Áreas!</span>
+            </a>
             <a href="{{ url('/') }}" class="btn-regresar">
-                <i class="bi bi-arrow-left"></i> Regresar
+                <i class="bi bi-arrow-left"></i> Volver al Inicio
             </a>
         </div>
     </div>
@@ -136,77 +163,39 @@
 
     <!-- Areas cards grid -->
     <div class="areas-grid">
-        <!-- Administrativos -->
-        @if(Auth::user()->canViewArea(1))
-        <a href="{{ route('actividades.area.select', 1) }}" class="area-card" style="background: #2563eb;">
-            <div style="display:flex; flex-direction:column; align-items:center; flex-grow:1;">
-                <div class="area-icon">💼</div>
-                <h3 class="area-name">Administrativos</h3>
-                <p class="area-desc">Gestión y control del personal administrativo, finanzas y operaciones generales.</p>
-            </div>
-            <div class="btn-entrar" style="color: #2563eb;">Entrar al área</div>
-        </a>
-        @endif
+        @php
+            $areaColors = [
+                'administrativos' => ['color' => '#2563eb', 'icon' => '💼', 'desc' => 'Gestión y control del personal administrativo, finanzas y operaciones generales.'],
+                'sistemas' => ['color' => '#0d9488', 'icon' => '💻', 'desc' => 'Soporte técnico, desarrollo de software, mantenimiento de infraestructura y base de datos.'],
+                'marketing' => ['color' => '#e11d48', 'icon' => '📢', 'desc' => 'Publicidad, diseño gráfico, gestión de redes sociales y estrategias de crecimiento.'],
+                'mkt' => ['color' => '#e11d48', 'icon' => '📢', 'desc' => 'Publicidad, diseño gráfico, gestión de redes sociales y estrategias de crecimiento.'],
+                'administración de empresas' => ['color' => '#6d28d9', 'icon' => '📊', 'desc' => 'Planeación estratégica, optimización de recursos y coordinación de procesos directivos.'],
+                'análisis de datos' => ['color' => '#4f46e5', 'icon' => '📈', 'desc' => 'Procesamiento de información, modelos estadísticos y análisis de indicadores clave.'],
+                'recursos humanos' => ['color' => '#ea580c', 'icon' => '👥', 'desc' => 'Reclutamiento, gestión del talento, capacitación y control de asistencia laboral.'],
+                'nómina' => ['color' => '#059669', 'icon' => '💵', 'desc' => 'Cálculo de sueldos, percepciones, deducciones y pagos del personal.'],
+                'enfermería' => ['color' => '#dc2626', 'icon' => '🩺', 'desc' => 'Atención médica, cuidado de pacientes y gestión de salud ocupacional.'],
+                'add' => ['color' => '#0284c7', 'icon' => '📂', 'desc' => 'Administración y procesamiento digital de documentos.'],
+                'ade' => ['color' => '#7c3aed', 'icon' => '🏢', 'desc' => 'Administración de la estructura empresarial y procesos internos.'],
+                'operaciones' => ['color' => '#d97706', 'icon' => '⚙️', 'desc' => 'Coordinación, ejecución y supervisión de las operaciones operativas diarias.']
+            ];
+        @endphp
 
-        <!-- Sistemas -->
-        @if(Auth::user()->canViewArea(2))
-        <a href="{{ route('actividades.area.select', 2) }}" class="area-card" style="background: #0d9488;">
-            <div style="display:flex; flex-direction:column; align-items:center; flex-grow:1;">
-                <div class="area-icon">💻</div>
-                <h3 class="area-name">Sistemas</h3>
-                <p class="area-desc">Soporte técnico, desarrollo de software, mantenimiento de infraestructura y base de datos.</p>
-            </div>
-            <div class="btn-entrar" style="color: #0d9488;">Entrar al área</div>
-        </a>
-        @endif
-
-        <!-- Marketing -->
-        @if(Auth::user()->canViewArea(3))
-        <a href="{{ route('actividades.area.select', 3) }}" class="area-card" style="background: #e11d48;">
-            <div style="display:flex; flex-direction:column; align-items:center; flex-grow:1;">
-                <div class="area-icon">📢</div>
-                <h3 class="area-name">Marketing</h3>
-                <p class="area-desc">Publicidad, diseño gráfico, gestión de redes sociales y estrategias de crecimiento.</p>
-            </div>
-            <div class="btn-entrar" style="color: #e11d48;">Entrar al área</div>
-        </a>
-        @endif
-
-        <!-- Administración de empresas -->
-        @if(Auth::user()->canViewArea(4))
-        <a href="{{ route('actividades.area.select', 4) }}" class="area-card" style="background: #6d28d9;">
-            <div style="display:flex; flex-direction:column; align-items:center; flex-grow:1;">
-                <div class="area-icon">📊</div>
-                <h3 class="area-name">Administración de empresas</h3>
-                <p class="area-desc">Planeación estratégica, optimización de recursos y coordinación de procesos directivos.</p>
-            </div>
-            <div class="btn-entrar" style="color: #6d28d9;">Entrar al área</div>
-        </a>
-        @endif
-
-        <!-- Análisis de datos -->
-        @if(Auth::user()->canViewArea(5))
-        <a href="{{ route('actividades.area.select', 5) }}" class="area-card" style="background: #4f46e5;">
-            <div style="display:flex; flex-direction:column; align-items:center; flex-grow:1;">
-                <div class="area-icon">📈</div>
-                <h3 class="area-name">Análisis de datos</h3>
-                <p class="area-desc">Procesamiento de información, modelos estadísticos y análisis de indicadores clave.</p>
-            </div>
-            <div class="btn-entrar" style="color: #4f46e5;">Entrar al área</div>
-        </a>
-        @endif
-
-        <!-- Recursos Humanos -->
-        @if(Auth::user()->canViewArea(6))
-        <a href="{{ route('actividades.area.select', 6) }}" class="area-card" style="background: #ea580c;">
-            <div style="display:flex; flex-direction:column; align-items:center; flex-grow:1;">
-                <div class="area-icon">👥</div>
-                <h3 class="area-name">Recursos Humanos</h3>
-                <p class="area-desc">Reclutamiento, gestión del talento, capacitación y control de asistencia laboral.</p>
-            </div>
-            <div class="btn-entrar" style="color: #ea580c;">Entrar al área</div>
-        </a>
-        @endif
+        @foreach($areas as $area)
+            @if(Auth::user()->canViewArea($area->id))
+                @php
+                    $key = strtolower(trim($area->nombre));
+                    $meta = $areaColors[$key] ?? ['color' => '#3b82f6', 'icon' => '🏢', 'desc' => 'Gestión de actividades y flujo de trabajo del área ' . $area->nombre];
+                @endphp
+                <a href="{{ route('actividades.area.select', $area->id) }}" class="area-card" style="background: {{ $meta['color'] }};">
+                    <div style="display:flex; flex-direction:column; align-items:center; flex-grow:1;">
+                        <div class="area-icon">{{ $meta['icon'] }}</div>
+                        <h3 class="area-name">{{ $area->nombre }}</h3>
+                        <p class="area-desc">{{ $meta['desc'] }}</p>
+                    </div>
+                    <div class="btn-entrar" style="color: {{ $meta['color'] }};">Entrar al área</div>
+                </a>
+            @endif
+        @endforeach
     </div>
 </div>
 

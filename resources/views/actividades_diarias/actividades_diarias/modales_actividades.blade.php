@@ -1,6 +1,8 @@
 @php
+    $currentUser = auth()->user();
+    $isBossOrAdmin = $currentUser && in_array($currentUser->rol, ['jefe', 'admin', 'directivo']);
+
     if (!isset($empleadosRH)) {
-        $currentUser = auth()->user();
         if ($currentUser && $currentUser->rol === 'jefe') {
             $empleadosRH = \App\Models\User::where('jefe_id', $currentUser->id)->orWhere('id', $currentUser->id)->get();
         } else {
@@ -14,300 +16,87 @@
         });
     }
 @endphp
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <!-- ============================================== -->
-<!-- MODAL: NUEVA ACTIVIDAD -->
+<!-- MODAL UNIFICADO: CREAR ACTIVIDAD -->
 <!-- ============================================== -->
-<div id="modalNueva" class="rh-modal">
-    <div class="rh-modal-content">
-        <span class="rh-modal-close" onclick="cerrarModal('modalNueva')">&times;</span>
-        <h2 style="margin-bottom: 20px; margin-top:0;"><i class="bi bi-journal-plus me-2"></i>Asignar Nueva Actividad</h2>
-        <form action="{{ route('actividades.store') }}" method="POST" id="formNuevaActividad">
+<div id="modalCrearActividad" class="rh-modal">
+    <div class="rh-modal-content" id="modalCrearContent" style="max-width: 680px; background: #f0fdf4; border: 3px solid #15803d; box-shadow: 0 10px 25px rgba(0,0,0,0.25); transition: all 0.3s;">
+        <span class="rh-modal-close" onclick="cerrarModal('modalCrearActividad')">&times;</span>
+        
+        <div style="margin-bottom: 20px;">
+            <h2 style="margin: 0 0 8px 0; color: #166534; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 10px;" id="crearModalHeaderTitle">
+                <i class="bi bi-check2-circle" id="crearModalHeaderIcon" style="color: #15803d;"></i> Nueva Actividad Asignada
+            </h2>
+            <p style="margin: 0; font-size: 13px; color: #334155; font-weight: 600;" id="crearModalSubtitle">
+                {{ $isBossOrAdmin ? 'Selecciona el tipo de actividad que asignarás a tu personal:' : 'Selecciona el tipo de actividad que registrarás en tu jornada:' }}
+            </p>
+        </div>
+
+        <!-- Selector de Tipo de Actividad -->
+        <div id="box_selector_tipo_actividad" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 22px;">
+            <button type="button" id="btnTipoAsignada" onclick="seleccionarTipoCreacion('asignada')"
+                    style="padding: 12px; border-radius: 10px; border: 3px solid #15803d; background: #dcfce7; color: #166534; font-weight: 800; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 13px; transition: all 0.2s;">
+                <span><i class="bi bi-check2-circle me-1"></i> Asignada</span>
+                <span style="font-size: 10px; font-weight: 600; opacity: 0.85;">{{ $isBossOrAdmin ? 'Asignar a un empleado' : 'Tarea individual' }}</span>
+            </button>
+            <button type="button" id="btnTipoImprevista" onclick="seleccionarTipoCreacion('imprevista')"
+                    style="padding: 12px; border-radius: 10px; border: 2px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 800; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 13px; transition: all 0.2s;">
+                <span><i class="bi bi-person-fill me-1"></i> Personal</span>
+                <span style="font-size: 10px; font-weight: 600; opacity: 0.85;">Actividad propia</span>
+            </button>
+            <button type="button" id="btnTipoRutinaria" onclick="seleccionarTipoCreacion('rutinaria')"
+                    style="padding: 12px; border-radius: 10px; border: 2px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 800; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 13px; transition: all 0.2s;">
+                <span><i class="bi bi-arrow-repeat me-1"></i> Rutinaria</span>
+                <span style="font-size: 10px; font-weight: 600; opacity: 0.85;">Tarea periódica / diaria</span>
+            </button>
+        </div>
+
+        <form action="{{ route('actividades.store') }}" method="POST" id="formCrearActividad">
             @csrf
+            <input type="hidden" name="tipo_actividad_form" id="crear_tipo_actividad" value="asignada">
 
-            <!-- PREGUNTA 1: ¿Es sencilla? -->
-            <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:16px 20px; margin-bottom:16px;">
-                <p style="margin:0 0 10px; font-weight:700; font-size:15px; color:#075985;">
-                    <i class="bi bi-question-circle-fill me-1"></i> ¿Es una actividad sencilla?
-                </p>
-                <div style="display:flex; gap:10px;">
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:8px 18px; border-radius:8px; border:2px solid #bae6fd; font-weight:600; background:#fff; transition:all 0.15s;">
-                        <input type="radio" name="_sencilla" value="si" onchange="toggleSencilla('si')" style="accent-color:#0284c7;"> Sí
+            <!-- Responsable(s) y Dirigido a -->
+            <div id="container_top_responsables_dirigido" style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px;">
+                <div>
+                    <label style="font-weight: 800; font-size: 13px; color: #166534; display: block; margin-bottom: 6px;" id="labelEmpleadoCrear">
+                        {{ $isBossOrAdmin ? '¿A quién le asignas esta actividad? *' : 'Empleado Responsable *' }}
                     </label>
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:8px 18px; border-radius:8px; border:2px solid #bae6fd; font-weight:600; background:#fff; transition:all 0.15s;">
-                        <input type="radio" name="_sencilla" value="no" onchange="toggleSencilla('no')" style="accent-color:#0284c7;"> No
-                    </label>
-                </div>
-            </div>
 
-            <!-- Título y Descripción (siempre visibles una vez respondido) -->
-            <div id="bloque_base" style="display:none;">
-                <div class="empleado-grid">
-                    <div style="grid-column: span 2;">
-                        <b>Empleado Asignado *</b>
-                        <select name="empleado_id" id="nueva_empleado_id" required>
-                            <option value="">Selecciona un empleado</option>
+                    <!-- SELECCIÓN MÚLTIPLE DE EMPLEADOS (PARA ASIGNADAS) -->
+                    <div id="box_multiselect_empleados_asig">
+                        <input type="hidden" name="empleado_id" id="crear_empleado_id" value="{{ auth()->id() }}">
+                        <input type="hidden" name="_colaboro_asig_radio" id="crear_colaboro_asig_radio" value="no">
+
+                        <div id="bloque_seleccion_empleados_asig" style="background: #ffffff; border: 2px solid #15803d; border-radius: 8px; padding: 10px; max-height: 140px; overflow-y: auto;">
+                            <span id="spanHeaderMultiselect" style="font-size: 11px; font-weight: 800; color: #166534; display: block; margin-bottom: 6px;">Marca los empleados asignados:</span>
                             @if(auth()->check())
-                                <option value="{{ auth()->id() }}" data-area="{{ auth()->user()->area_id ?? '' }}" style="font-weight:bold;color:#1e3a8a;">YO ({{ auth()->user()->name }})</option>
+                                <label class="asig-emp-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; cursor: pointer; font-size: 13px; color: #166534; font-weight: 700;">
+                                    <input type="checkbox" name="empleados_asig_checkboxes[]" value="{{ auth()->id() }}" checked onchange="actualizarSeleccionEmpleadosAsig()" class="asig-emp-input" style="accent-color: #15803d; width: 16px; height: 16px;">
+                                    YO ({{ auth()->user()->name }})
+                                </label>
                             @endif
                             @foreach ($empleadosRH as $emp)
                                 @if(($emp['id'] ?? $emp->id) !== auth()->id())
-                                    <option value="{{ $emp['id'] ?? $emp->id }}" data-area="{{ $emp['area_id'] ?? $emp->area_id ?? '' }}">
+                                    <label class="asig-emp-label" style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; cursor: pointer; font-size: 13px; color: #166534; font-weight: 600;">
+                                        <input type="checkbox" name="empleados_asig_checkboxes[]" value="{{ $emp['id'] ?? $emp->id }}" onchange="actualizarSeleccionEmpleadosAsig()" class="asig-emp-input" style="accent-color: #15803d; width: 16px; height: 16px;">
                                         {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
-                                    </option>
+                                    </label>
                                 @endif
                             @endforeach
-                        </select>
-                    </div>
-                    <div style="grid-column: span 2; margin-top: 10px;">
-                        <b>Título de la Actividad *</b>
-                        <input type="text" name="titulo" required placeholder="Ej: Revisión de teléfonos">
-                    </div>
-                    <div style="grid-column: span 2;">
-                        <b>Descripción *</b>
-                        <textarea name="descripcion" rows="3" required placeholder="Describe a detalle lo que se debe hacer..."></textarea>
-                    </div>
-                </div>
-
-                <!-- Campos adicionales solo si NO es sencilla -->
-                <div id="bloque_completo" style="display:none; margin-top:10px;">
-
-                    <!-- PREGUNTA 2: ¿Es compartida? -->
-                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:16px 20px; margin:14px 0;">
-                        <p style="margin:0 0 10px; font-weight:700; font-size:15px; color:#166534;">
-                            <i class="bi bi-question-circle-fill me-1"></i> ¿Es una actividad compartida?
-                        </p>
-                        <div style="display:flex; gap:10px;">
-                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:8px 18px; border-radius:8px; border:2px solid #bbf7d0; font-weight:600; background:#fff; transition:all 0.15s;">
-                                <input type="radio" name="_compartida" value="si" onchange="toggleCompartida('si')" style="accent-color:#16a34a;"> Sí
-                            </label>
-                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:8px 18px; border-radius:8px; border:2px solid #bbf7d0; font-weight:600; background:#fff; transition:all 0.15s;">
-                                <input type="radio" name="_compartida" value="no" onchange="toggleCompartida('no')" style="accent-color:#16a34a;"> No
-                            </label>
                         </div>
+                        <div id="container_hidden_empleados_compartidos"></div>
                     </div>
 
-                    <!-- Lista de empleados adicionales (si es compartida) -->
-                    <div id="bloque_compartida" style="display:none; margin-bottom:10px;">
-                        <b>Empleados adicionales que participarán *</b>
-                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; max-height:160px; overflow-y:auto; margin-top:4px;">
-                            @foreach ($empleadosRH as $emp)
-                                <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:pointer; font-size:14px;">
-                                    <input type="checkbox" name="empleados_compartidos[]" value="{{ $emp['id'] ?? $emp->id }}" style="accent-color:#16a34a; width:16px; height:16px;">
-                                    {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
-                                </label>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <!-- Prioridad -->
-                    <div class="empleado-grid" style="margin-bottom:10px;">
-                        <div>
-                            <b>Prioridad *</b>
-                            <select name="prioridad" required>
-                                <option value="baja">Baja</option>
-                                <option value="media" selected>Media</option>
-                                <option value="alta">Alta</option>
-                                <option value="urgente">Urgente</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- PREGUNTA 3: ¿Tardará más de un día? -->
-                    <div style="background:#fefce8; border:1px solid #fde68a; border-radius:10px; padding:16px 20px; margin:14px 0;">
-                        <p style="margin:0 0 10px; font-weight:700; font-size:15px; color:#92400e;">
-                            <i class="bi bi-question-circle-fill me-1"></i> ¿Tardará más de un día?
-                        </p>
-                        <div style="display:flex; gap:10px;">
-                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:8px 18px; border-radius:8px; border:2px solid #fde68a; font-weight:600; background:#fff; transition:all 0.15s;">
-                                <input type="radio" name="_mas_un_dia" value="si" onchange="toggleDuracion('si')" style="accent-color:#d97706;"> Sí
-                            </label>
-                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:8px 18px; border-radius:8px; border:2px solid #fde68a; font-weight:600; background:#fff; transition:all 0.15s;">
-                                <input type="radio" name="_mas_un_dia" value="no" onchange="toggleDuracion('no')" style="accent-color:#d97706;"> No
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- 3 bloques PLANOS e independientes -->
-                    <input type="hidden" name="modalidad" id="nueva_modalidad_hidden" value="un_dia">
-
-                    <div id="bloque_fecha_inicio" style="display:none; margin-bottom:10px;">
-                        <b>Fecha de Inicio *</b>
-                        <input type="date" name="fecha_inicio" id="nueva_fecha_inicio" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;">
-                    </div>
-
-                    <div id="bloque_fecha_fin" style="display:none; margin-bottom:10px;">
-                        <b>Fecha Estimada Fin *</b>
-                        <input type="date" name="fecha_estimada_fin" id="nueva_fecha_fin" disabled style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;">
-                    </div>
-
-                    <div id="bloque_tiempo" style="display:none; margin-bottom:10px;">
-                        <b>Tiempo Estimado <span style="font-weight:400;color:#6b7280;">(Opcional)</span></b>
-                        <input type="text" name="tiempo_estimado" id="nueva_tiempo_estimado" disabled placeholder="Ej: 2 horas, 30 min" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;">
-                    </div>
-
-                </div>
-
-                <!-- Botones siempre visibles en bloque_base -->
-                <div id="bloque_acciones" style="margin-top: 25px; text-align: right;">
-                    <button type="button" class="btn-ver" style="background:#6b7280; margin-right:10px;" onclick="cerrarModal('modalNueva')">Cancelar</button>
-                    <button type="submit" class="btn-form" id="btn_asignar" style="display:none;">Asignar Actividad</button>
-                    <button type="submit" class="btn-form" id="btn_asignar_sencilla" style="display:none;">Asignar Actividad</button>
-                </div>
-            </div>
-
-        </form>
-    </div>
-</div>
-
-<script>
-window.APP_BASE_URL = "{{ url('/') }}";
-window.authId = {{ auth()->id() ?? 0 }};
-var authId = window.authId;
-
-function toggleSencilla(val) {
-    document.getElementById('bloque_base').style.display = 'block';
-    const completo    = document.getElementById('bloque_completo');
-    const btnSencilla = document.getElementById('btn_asignar_sencilla');
-    const btnCompleto = document.getElementById('btn_asignar');
-
-    if (val === 'si') {
-        completo.style.display = 'none';
-        completo.querySelectorAll('input,select,textarea').forEach(el => {
-            el.disabled = true;
-        });
-        btnSencilla.style.display = 'inline-block';
-        btnCompleto.style.display = 'none';
-    } else {
-        completo.style.display = 'block';
-        completo.querySelectorAll('input,select,textarea').forEach(el => el.disabled = false);
-        // Ocultar los 3 bloques de fecha hasta que el usuario responda Q3
-        document.getElementById('bloque_fecha_inicio').style.display = 'none';
-        document.getElementById('bloque_fecha_fin').style.display    = 'none';
-        document.getElementById('bloque_tiempo').style.display       = 'none';
-        document.getElementById('nueva_fecha_inicio').disabled  = true;
-        document.getElementById('nueva_fecha_fin').disabled     = true;
-        document.getElementById('nueva_tiempo_estimado').disabled = true;
-        btnSencilla.style.display = 'none';
-        btnCompleto.style.display = 'none';
-    }
-}
-
-function toggleCompartida(val) {
-    const bloque = document.getElementById('bloque_compartida');
-    bloque.style.display = val === 'si' ? 'block' : 'none';
-    bloque.querySelectorAll('input').forEach(el => el.disabled = val !== 'si');
-}
-
-function toggleDuracion(val) {
-    const btn = document.getElementById('btn_asignar');
-    const hidden = document.getElementById('nueva_modalidad_hidden');
-
-    if (val === 'si') {
-        // Sí: mostrar fecha inicio + fecha fin
-        document.getElementById('bloque_fecha_inicio').style.display = 'block';
-        document.getElementById('nueva_fecha_inicio').disabled        = false;
-        document.getElementById('bloque_fecha_fin').style.display    = 'block';
-        document.getElementById('nueva_fecha_fin').disabled           = false;
-        document.getElementById('bloque_tiempo').style.display        = 'none';
-        document.getElementById('nueva_tiempo_estimado').disabled     = true;
-        if (hidden) hidden.value = 'varios_dias';
-    } else {
-        // No: SOLO tiempo estimado, sin fechas
-        document.getElementById('bloque_fecha_inicio').style.display = 'none';
-        document.getElementById('nueva_fecha_inicio').disabled        = true;
-        document.getElementById('bloque_fecha_fin').style.display    = 'none';
-        document.getElementById('nueva_fecha_fin').disabled           = true;
-        document.getElementById('bloque_tiempo').style.display        = 'block';
-        document.getElementById('nueva_tiempo_estimado').disabled     = false;
-        if (hidden) hidden.value = 'un_dia';
-    }
-
-    btn.style.display = 'inline-block';
-}
-
-function enableBlock(id) {
-    document.getElementById(id).querySelectorAll('input,select,textarea').forEach(el => el.disabled = false);
-}
-function disableBlock(id) {
-    document.getElementById(id).querySelectorAll('input,select,textarea').forEach(el => el.disabled = true);
-}
-
-// Edit Modal Toggles
-function toggleEditSencilla(val) {
-    document.getElementById('edit_bloque_base').style.display = 'block';
-    const completo = document.getElementById('edit_bloque_completo');
-    if (val === 'si') {
-        completo.style.display = 'none';
-        completo.querySelectorAll('input,select,textarea').forEach(el => el.disabled = true);
-    } else {
-        completo.style.display = 'block';
-        completo.querySelectorAll('input,select,textarea').forEach(el => el.disabled = false);
-    }
-}
-
-function toggleEditCompartida(val) {
-    const bloque = document.getElementById('edit_bloque_compartida');
-    bloque.style.display = val === 'si' ? 'block' : 'none';
-    bloque.querySelectorAll('input').forEach(el => el.disabled = val !== 'si');
-}
-
-function toggleEditDuracion(val) {
-    const hidden = document.getElementById('edit_modalidad_hidden');
-    if (val === 'si') {
-        document.getElementById('edit_bloque_fecha_inicio').style.display = 'block';
-        document.getElementById('edit_fecha_inicio').disabled = false;
-        document.getElementById('edit_bloque_fecha_fin').style.display = 'block';
-        document.getElementById('edit_fecha_fin').disabled = false;
-        document.getElementById('edit_bloque_tiempo').style.display = 'none';
-        document.getElementById('edit_tiempo_estimado').disabled = true;
-        if (hidden) hidden.value = 'varios_dias';
-    } else {
-        document.getElementById('edit_bloque_fecha_inicio').style.display = 'none';
-        document.getElementById('edit_fecha_inicio').disabled = true;
-        document.getElementById('edit_bloque_fecha_fin').style.display = 'none';
-        document.getElementById('edit_fecha_fin').disabled = true;
-        document.getElementById('edit_bloque_tiempo').style.display = 'block';
-        document.getElementById('edit_tiempo_estimado').disabled = false;
-        if (hidden) hidden.value = 'un_dia';
-    }
-}
-</script>
-
-<!-- ============================================== -->
-<!-- MODAL: EDITAR ACTIVIDAD -->
-<!-- ============================================== -->
-<div id="modalEditar" class="rh-modal">
-    <div class="rh-modal-content">
-        <span class="rh-modal-close" onclick="cerrarModal('modalEditar')">&times;</span>
-        <h2 style="margin-bottom: 20px; margin-top:0;"><i class="bi bi-pencil-square me-2"></i>Editar Actividad</h2>
-        <form id="formEditar" action="" method="POST">
-            @csrf
-            @method('PUT')
-
-            <!-- PREGUNTA 1: ¿Es sencilla? -->
-            <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:16px 20px; margin-bottom:16px;">
-                <p style="margin:0 0 10px; font-weight:700; font-size:15px; color:#075985;">
-                    <i class="bi bi-question-circle-fill me-1"></i> ¿Es una actividad sencilla?
-                </p>
-                <div style="display:flex; gap:10px;">
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:8px 18px; border-radius:8px; border:2px solid #bae6fd; font-weight:600; background:#fff; transition:all 0.15s;">
-                        <input type="radio" name="_sencilla_edit" id="edit_sencilla_si" value="si" onchange="toggleEditSencilla('si')" style="accent-color:#0284c7;"> Sí
-                    </label>
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:8px 18px; border-radius:8px; border:2px solid #bae6fd; font-weight:600; background:#fff; transition:all 0.15s;">
-                        <input type="radio" name="_sencilla_edit" id="edit_sencilla_no" value="no" onchange="toggleEditSencilla('no')" style="accent-color:#0284c7;"> No
-                    </label>
-                </div>
-            </div>
-
-            <!-- Título y Descripción -->
-            <div id="edit_bloque_base" style="display:block;">
-                <div class="empleado-grid">
-                    <div style="grid-column: span 2;">
-                        <b>Empleado Asignado *</b>
-                        <select name="empleado_id" id="edit_empleado" required>
+                    <!-- SELECT ÚNICO (PARA ACTIVIDADES PERSONALES / IMPREVISTAS Y RUTINAS) -->
+                    <div id="box_single_select_empleado" style="display: none;">
+                        <select id="crear_empleado_id_single" onchange="document.getElementById('crear_empleado_id').value = this.value" style="width: 100%; padding: 10px; border: 2px solid #15803d; border-radius: 8px; font-family: inherit; background: white; font-weight: 700; color: #1e293b;">
                             <option value="">Selecciona un empleado</option>
                             @if(auth()->check())
-                                <option value="{{ auth()->id() }}" style="font-weight:bold;color:#1e3a8a;">YO ({{ auth()->user()->name }})</option>
+                                <option value="{{ auth()->id() }}" selected style="font-weight: bold; color: #1e3a8a;">YO ({{ auth()->user()->name }})</option>
                             @endif
                             @foreach ($empleadosRH as $emp)
                                 @if(($emp['id'] ?? $emp->id) !== auth()->id())
@@ -318,706 +107,1007 @@ function toggleEditDuracion(val) {
                             @endforeach
                         </select>
                     </div>
-                    <div style="grid-column: span 2; margin-top: 10px;">
-                        <b>Título de la Actividad *</b>
-                        <input type="text" name="titulo" id="edit_titulo" required placeholder="Ej: Revisión de teléfonos">
-                    </div>
-                    <div style="grid-column: span 2;">
-                        <b>Descripción *</b>
-                        <textarea name="descripcion" id="edit_descripcion" rows="3" required placeholder="Describe a detalle lo que se debe hacer..."></textarea>
+                </div>
+                <div id="box_col_dirigido_a">
+                    <label style="font-weight: 800; font-size: 13px; color: #166534; display: block; margin-bottom: 6px;" id="labelDirigidoCrear">
+                        Dirigido a (Jefe / Destinatario)
+                    </label>
+                    <select name="dirigido_a_id" id="crear_dirigido_a_id" style="width: 100%; padding: 10px; border: 2px solid #15803d; border-radius: 8px; font-family: inherit; background: white; font-weight: 700; color: #1e293b;">
+                        <option value="">Selecciona destinatario (opcional)</option>
+                        @foreach ($empleadosRH as $emp)
+                            <option value="{{ $emp['id'] ?? $emp->id }}">
+                                {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <!-- CAMPOS ESPECÍFICOS PARA ASIGNADAS -->
+            <div id="seccion_campos_asignada">
+                <!-- 2. ¿Es una actividad sencilla? (Va primero) -->
+                <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;" id="boxPreguntaSencilla">
+                    <label style="font-weight: 800; font-size: 14px; color: #166534; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                        <i class="bi bi-question-circle-fill" style="color: #15803d; font-size: 16px;"></i> ¿Es una actividad sencilla?
+                    </label>
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #166534;">
+                            <input type="radio" name="_sencilla" id="crear_sencilla_si" value="si" checked onchange="toggleSencillaNueva('si')" style="accent-color: #15803d; width: 16px; height: 16px;"> Sí, registrar solo título y descripción
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #166534;">
+                            <input type="radio" name="_sencilla" id="crear_sencilla_no" value="no" onchange="toggleSencillaNueva('no')" style="accent-color: #15803d; width: 16px; height: 16px;"> No, desplegar configuración avanzada
+                        </label>
                     </div>
                 </div>
 
-                <!-- Campos adicionales solo si NO es sencilla -->
-                <div id="edit_bloque_completo" style="margin-top:10px;">
+                <!-- 3. Título y Descripción de la actividad -->
+                <div style="margin-bottom: 16px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #166534; display: block; margin-bottom: 6px;" id="labelTituloCrear">Tarea / Título de la Actividad *</label>
+                    <input type="text" name="titulo" id="crear_titulo" required placeholder="Ej: Capacitación del nuevo practicante de Sistemas"
+                           style="width: 100%; padding: 10px; border: 2px solid #15803d; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 600; color: #1e293b;">
+                </div>
 
-                    <!-- PREGUNTA 2: ¿Es compartida? -->
-                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:16px 20px; margin:14px 0;">
-                        <p style="margin:0 0 10px; font-weight:700; font-size:15px; color:#166534;">
-                            <i class="bi bi-question-circle-fill me-1"></i> ¿Es una actividad compartida?
-                        </p>
-                        <div style="display:flex; gap:10px;">
-                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:8px 18px; border-radius:8px; border:2px solid #bbf7d0; font-weight:600; background:#fff; transition:all 0.15s;">
-                                <input type="radio" name="_compartida_edit" id="edit_compartida_si" value="si" onchange="toggleEditCompartida('si')" style="accent-color:#16a34a;"> Sí
-                            </label>
-                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:8px 18px; border-radius:8px; border:2px solid #bbf7d0; font-weight:600; background:#fff; transition:all 0.15s;">
-                                <input type="radio" name="_compartida_edit" id="edit_compartida_no" value="no" onchange="toggleEditCompartida('no')" style="accent-color:#16a34a;"> No
-                            </label>
+                <div id="seccion_descripcion_comun" style="margin-bottom: 16px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #166534; display: block; margin-bottom: 6px;" id="label_descripcion">Descripción de la actividad *</label>
+                    <textarea name="descripcion" id="crear_descripcion" rows="3" required placeholder="Explica detalladamente el objetivo o alcance de esta actividad..."
+                              style="width: 100%; padding: 10px; border: 2px solid #15803d; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 500; color: #1e293b;"></textarea>
+                </div>
+
+                <!-- BLOQUE DESPLEGABLE: Configuración Avanzada (Pasos 4 a 7) -->
+                <div id="bloque_avanzado_asignada" style="display: none; background: #ffffff; border: 2px solid #15803d; border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+                    <h4 style="margin: 0 0 14px 0; color: #166534; font-size: 14px; font-weight: 800; border-bottom: 1px dashed #86efac; padding-bottom: 6px;">
+                        <i class="bi bi-sliders me-1"></i> Configuración Avanzada de la Actividad
+                    </h4>
+
+                    <!-- 4. Acciones a realizar y Notas y Observaciones -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                        <div>
+                            <label style="font-weight: 800; font-size: 12px; color: #166534; display: block; margin-bottom: 4px;" id="labelAccionesRealizadas">Acciones a realizar</label>
+                            <textarea name="acciones_realizadas" id="crear_acciones_realizadas" rows="2" placeholder="Acciones específicas a ejecutar..."
+                                      style="width: 100%; padding: 8px; border: 1.5px solid #15803d; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
                         </div>
-                    </div>
-
-                    <div id="edit_bloque_compartida" style="display:none; margin-bottom:10px;">
-                        <b>Empleados adicionales que participarán *</b>
-                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; max-height:160px; overflow-y:auto; margin-top:4px;">
-                            @foreach ($empleadosRH as $emp)
-                                <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:pointer; font-size:14px;">
-                                    <input type="checkbox" name="empleados_compartidos[]" class="edit_emp_compartido" value="{{ $emp['id'] ?? $emp->id }}" style="accent-color:#16a34a; width:16px; height:16px;">
-                                    {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
-                                </label>
-                            @endforeach
+                        <div id="boxObservaciones">
+                            <label style="font-weight: 800; font-size: 12px; color: #166534; display: block; margin-bottom: 4px;" id="labelObservaciones">Notas y Observaciones</label>
+                            <textarea name="observaciones" id="crear_observaciones" rows="2" placeholder="Notas u observaciones relevantes..."
+                                      style="width: 100%; padding: 8px; border: 1.5px solid #15803d; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
                         </div>
                     </div>
 
                     <!-- Prioridad -->
-                    <div class="empleado-grid" style="margin-bottom:10px;">
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-weight: 800; font-size: 13px; color: #166534; display: block; margin-bottom: 6px;">Prioridad *</label>
+                        <select name="prioridad" id="crear_prioridad" required style="width: 100%; padding: 9px; border: 2px solid #15803d; border-radius: 8px; background: white; font-weight: 700; color: #166534;">
+                            <option value="" disabled selected>-- Selecciona Prioridad * --</option>
+                            <option value="baja">Baja</option>
+                            <option value="media">Media</option>
+                            <option value="alta">Alta</option>
+                            <option value="urgente">Urgente</option>
+                        </select>
+                    </div>
+
+                    <!-- 5. PREGUNTA: ¿Tiene plazo la actividad? -->
+                    <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;" id="boxPreguntaTienePlazo">
+                        <label style="font-weight: 800; font-size: 13px; color: #166534; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;" id="labelPreguntaTienePlazo">
+                            <i class="bi bi-clock-history" style="color: #15803d;" id="iconPreguntaTienePlazo"></i> ¿Tiene plazo la actividad? *
+                        </label>
+                        <div style="display: flex; gap: 16px; margin-bottom: 8px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #166534;" id="labelPlazoSi">
+                                <input type="radio" name="tiene_plazo" id="crear_plazo_si" value="si" onchange="toggleTienePlazo(this.value)" style="accent-color: #15803d; width: 16px; height: 16px;"> Sí, tiene plazo definido
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #166534;" id="labelPlazoNo">
+                                <input type="radio" name="tiene_plazo" id="crear_plazo_no" value="no" onchange="toggleTienePlazo(this.value)" style="accent-color: #15803d; width: 16px; height: 16px;"> No, sin plazo (cuando se pueda)
+                            </label>
+                        </div>
+
+                        <!-- SI MARCA SÍ: PREGUNTA SUB-TIPO (FECHA U HORA) -->
+                        <div id="sub_box_tipo_plazo" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #86efac;">
+                            <label style="font-weight: 800; font-size: 12px; color: #166534; display: block; margin-bottom: 6px;">
+                                <i class="bi bi-calendar2-range me-1"></i> ¿El plazo es por Fecha o por Horario? *
+                            </label>
+                            <div style="display: flex; gap: 14px; margin-bottom: 10px; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; font-weight: 700; color: #166534; background: #ffffff; padding: 6px 12px; border-radius: 6px; border: 1px solid #86efac;">
+                                    <input type="radio" name="tipo_plazo" id="plazo_tipo_fecha" value="fecha" onchange="toggleTipoPlazoSub(this.value)" style="accent-color: #15803d;"> Por Fecha (Días)
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; font-weight: 700; color: #166534; background: #ffffff; padding: 6px 12px; border-radius: 6px; border: 1px solid #86efac;">
+                                    <input type="radio" name="tipo_plazo" id="plazo_tipo_hora" value="hora" onchange="toggleTipoPlazoSub(this.value)" style="accent-color: #15803d;"> Por Horario (Horas)
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; font-weight: 700; color: #166534; background: #ffffff; padding: 6px 12px; border-radius: 6px; border: 1px solid #86efac;">
+                                    <input type="radio" name="tipo_plazo" id="plazo_tipo_ambos" value="ambos" onchange="toggleTipoPlazoSub(this.value)" style="accent-color: #15803d;"> Ambos (Fecha y Horario)
+                                </label>
+                            </div>
+
+                            <!-- CAMPOS DE FECHA -->
+                            <div id="seccion_fechas_asignada" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid #86efac; margin-bottom: 8px;">
+                                <div>
+                                    <label style="font-weight: 800; font-size: 12px; color: #166534; display: block; margin-bottom: 4px;">Fecha de Inicio *</label>
+                                    <input type="date" name="fecha_inicio" id="crear_fecha_inicio" value="{{ date('Y-m-d') }}" style="width: 100%; padding: 8px; border: 1.5px solid #15803d; border-radius: 6px; background: white; font-weight: 700; color: #1e293b;">
+                                </div>
+                                <div>
+                                    <label style="font-weight: 800; font-size: 12px; color: #166534; display: block; margin-bottom: 4px;">Fecha Estimada de Término *</label>
+                                    <input type="date" name="fecha_estimada_fin" id="crear_fecha_fin" value="{{ date('Y-m-d') }}" style="width: 100%; padding: 8px; border: 1.5px solid #15803d; border-radius: 6px; background: white; font-weight: 700; color: #1e293b;">
+                                </div>
+                            </div>
+
+                            <!-- CAMPOS DE HORARIO -->
+                            <div id="boxHorarioEstimado" style="display: none; grid-template-columns: 1fr 1fr; gap: 14px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1.5px solid #86efac;">
+                                <div>
+                                    <label style="font-weight: 800; font-size: 12px; color: #166534; display: block; margin-bottom: 4px;" id="labelHoraInicio">
+                                        <i class="bi bi-clock me-1"></i> Horario Estimado - INICIO
+                                    </label>
+                                    <input type="time" name="hora_inicio" id="crear_hora_inicio" value="09:00" onchange="calcularDiferenciaHorasCreacion()" oninput="calcularDiferenciaHorasCreacion()"
+                                           style="width: 100%; padding: 8px; border: 1.5px solid #15803d; border-radius: 6px; font-weight: 700; color: #1e293b; background: white;">
+                                </div>
+                                <div>
+                                    <label style="font-weight: 800; font-size: 12px; color: #166534; display: block; margin-bottom: 4px;" id="labelHoraFin">
+                                        <i class="bi bi-clock-history me-1"></i> Horario Estimado - TÉRMINO
+                                    </label>
+                                    <input type="time" name="hora_fin" id="crear_hora_fin" value="10:00" onchange="calcularDiferenciaHorasCreacion()" oninput="calcularDiferenciaHorasCreacion()"
+                                           style="width: 100%; padding: 8px; border: 1.5px solid #15803d; border-radius: 6px; font-weight: 700; color: #1e293b; background: white;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 7. PREGUNTA: ¿Se depende de alguien? -->
+                    <div style="background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                        <label style="font-weight: 800; font-size: 13px; color: #166534; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                            <i class="bi bi-person-badge-fill" style="color: #15803d;"></i> ¿Se depende de alguien?
+                        </label>
+                        <div style="display: flex; gap: 16px; margin-bottom: 8px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #166534;">
+                                <input type="radio" name="_depende_asig_radio" id="crear_depende_no" value="no" onchange="toggleDependenciaAsig('no')" style="accent-color: #15803d; width: 16px; height: 16px;"> No
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #166534;">
+                                <input type="radio" name="_depende_asig_radio" id="crear_depende_si" value="si" onchange="toggleDependenciaAsig('si')" style="accent-color: #15803d; width: 16px; height: 16px;"> Sí, especificar responsable y motivo
+                            </label>
+                        </div>
+
+                        <!-- Si es SÍ: Despliega Dependencia Responsable y Motivo -->
+                        <div id="bloque_dependencia_asig" style="display: none; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1.5px solid #15803d;">
+                            <div>
+                                <label style="font-weight: 800; font-size: 12px; color: #166534; display: block; margin-bottom: 4px;" id="labelDepResp">
+                                    Dependencia - Responsable
+                                </label>
+                                <input type="text" name="dependencia_responsable" id="crear_dependencia_responsable" placeholder="Ej: Ing. Juan Pérez..."
+                                       style="width: 100%; padding: 9px; border: 1.5px solid #15803d; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
+                                <input type="hidden" name="dependencia_area" id="crear_dependencia_area" value="">
+                            </div>
+                            <div>
+                                <label style="font-weight: 800; font-size: 12px; color: #166534; display: block; margin-bottom: 4px;" id="labelDepMotivo">
+                                    Motivo / Razón
+                                </label>
+                                <input type="text" name="dependencia_motivo" id="crear_dependencia_motivo" placeholder="Ej: Entrega de reporte, firma de autorización..."
+                                       style="width: 100%; padding: 9px; border: 1.5px solid #15803d; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- CAMPOS ESPECÍFICOS: IMPREVISTA / PERSONAL -->
+            <div id="seccion_campos_imprevista" style="display: none;">
+                
+                <!-- 1. Empleado asignado / responsable * (Fijo e inamovible) -->
+                <div style="margin-bottom: 16px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">
+                        Empleado asignado / responsable *
+                    </label>
+                    <div style="background: #fff7ed; border: 2px solid #fed7aa; border-radius: 8px; padding: 10px 14px; font-weight: 800; color: #9a3412; display: flex; align-items: center; justify-content: space-between;">
+                        <span><i class="bi bi-person-fill me-1" style="color: #c2410c;"></i> YO ({{ auth()->user()->name ?? 'Usuario' }})</span>
+                        <span style="font-size: 11px; font-weight: 700; color: #ea580c; background: #ffedd5; padding: 2px 8px; border-radius: 6px; border: 1px solid #fed7aa;">Fijo / Inamovible</span>
+                    </div>
+                </div>
+
+                <!-- 2. Dirigido a (Jefe / Destinatario) -->
+                <div style="margin-bottom: 16px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">
+                        Dirigido a (Jefe / Destinatario)
+                    </label>
+                    <select name="dirigido_a_id" id="crear_dirigido_a_id_imp" style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; background: white; font-weight: 700; color: #1e293b;">
+                        <option value="">Selecciona destinatario (opcional)</option>
+                        @foreach ($empleadosRH as $emp)
+                            <option value="{{ $emp['id'] ?? $emp->id }}">
+                                {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- 3. ¿Hubo colaboradores en esta actividad personal? -->
+                <div style="background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                        <i class="bi bi-people-fill" style="color: #c2410c;"></i> ¿Hubo / Habrá colaboradores en esta actividad personal?
+                    </label>
+                    <div style="display: flex; gap: 16px; margin-bottom: 8px; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
+                            <input type="radio" name="_colaboro_imp_radio" id="crear_colaboro_imp_no" value="no" onchange="toggleColaboradoresImp('no')" style="accent-color: #c2410c; width: 16px; height: 16px;"> No
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
+                            <input type="radio" name="_colaboro_imp_radio" id="crear_colaboro_imp_si" value="si" onchange="toggleColaboradoresImp('si')" style="accent-color: #c2410c; width: 16px; height: 16px;"> Sí, hubo colaboradores
+                        </label>
+                    </div>
+
+                    <div id="bloque_lista_colaboradores_imp" style="display: none; margin-top: 10px; background: #ffffff; border: 2px solid #c2410c; border-radius: 8px; padding: 10px; max-height: 140px; overflow-y: auto;">
+                        <span style="font-size: 12px; font-weight: 800; color: #9a3412; display: block; margin-bottom: 6px;">Selecciona quiénes colaboraron:</span>
+                        @foreach ($empleadosRH as $emp)
+                            @if(($emp['id'] ?? $emp->id) !== auth()->id())
+                                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; cursor: pointer; font-size: 13px; color: #9a3412; font-weight: 600;">
+                                    <input type="checkbox" name="empleados_compartidos[]" value="{{ $emp['id'] ?? $emp->id }}" style="accent-color: #c2410c; width: 16px; height: 16px;">
+                                    {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
+                                </label>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- 4. PREGUNTA: ¿Se realizó / comenzó o está pendiente? -->
+                <div style="background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                    <label style="font-weight: 800; font-size: 14px; color: #9a3412; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                        <i class="bi bi-question-circle-fill" style="color: #c2410c; font-size: 16px;"></i> ¿Se realizó / comenzó o está pendiente? *
+                    </label>
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
+                            <input type="radio" name="estado_personal_radio" value="realizada" onchange="toggleEstadoPersonal(this.value)" style="accent-color: #c2410c; width: 16px; height: 16px;"> Realizó / Comenzó
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
+                            <input type="radio" name="estado_personal_radio" value="pendiente" onchange="toggleEstadoPersonal(this.value)" style="accent-color: #c2410c; width: 16px; height: 16px;"> Pendiente
+                        </label>
+                    </div>
+                    <input type="hidden" name="estado" id="crear_estado_imprevisto" value="pendiente">
+                </div>
+
+                <!-- A) SI MARCA "Realizó / Comenzó" -->
+                <div id="bloque_personal_realizada" style="display: none;">
+                    <!-- Tarea / Título de la Actividad * -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Tarea / Título de la Actividad *</label>
+                        <input type="text" name="motivo" id="crear_motivo" placeholder="Indica el título de esta actividad personal..."
+                               style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 600; color: #1e293b;">
+                    </div>
+
+                    <!-- Descripción de la actividad * -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Descripción de la actividad *</label>
+                        <textarea name="descripcion_imp_realizada" id="crear_descripcion_imp_realizada" rows="3" placeholder="Explica detalladamente la actividad realizada o en proceso..."
+                                  style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
+                    </div>
+
+                    <!-- Porcentaje de Completitud -->
+                    <div style="background: #ffffff; border: 2px solid #c2410c; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: flex; align-items: center; gap: 6px; margin: 0;">
+                                <i class="bi bi-graph-up-arrow" style="color: #c2410c;"></i> Porcentaje de Completitud *
+                            </label>
+                            <span style="font-weight: 900; font-size: 15px; color: #c2410c;" id="display_porcentaje_imprevisto">100%</span>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <input type="range" name="porcentaje_avance" id="crear_porcentaje_imprevisto" min="0" max="100" step="5" value="100"
+                                   oninput="updateImprevistoPorcentajeDisplay(this.value)"
+                                   style="width: 100%; accent-color: #c2410c; cursor: pointer; height: 8px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; font-weight: 700; margin-top: 4px;">
+                                <span>0% (Sin empezar)</span>
+                                <span>1-99% (En proceso)</span>
+                                <span>100% (Completada)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Acciones realizadas y Notas / Observaciones -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
                         <div>
-                            <b>Prioridad *</b>
-                            <select name="prioridad" id="edit_prioridad" required>
+                            <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Acciones a realizar</label>
+                            <textarea name="acciones_realizadas" id="crear_acciones_realizadas_imp" rows="2" placeholder="Acciones ejecutadas..."
+                                      style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
+                        </div>
+                        <div>
+                            <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Notas y Observaciones</label>
+                            <textarea name="observaciones" id="crear_observaciones_imp" rows="2" placeholder="Notas u observaciones..."
+                                      style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Tiempo Invertido (Horas) -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Tiempo Invertido (Horas) *</label>
+                        <input type="number" step="0.5" min="0.1" name="horas_invertidas" id="crear_horas_invertidas" value="1.0"
+                               style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; background: white; font-weight: 700; color: #1e293b;">
+                    </div>
+
+                    <!-- Resultado Obtenido -->
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Resultado Obtenido</label>
+                        <textarea name="resultado_obtenido" id="crear_resultado_obtenido" rows="2" placeholder="¿Cuál fue el resultado obtenido o solución realizada?"
+                                  style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 500; color: #1e293b;"></textarea>
+                    </div>
+
+                    <!-- ¿Se depende de alguien? -->
+                    <div style="background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                        <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                            <i class="bi bi-person-badge-fill" style="color: #c2410c;"></i> ¿Se depende de alguien?
+                        </label>
+                        <div style="display: flex; gap: 16px; margin-bottom: 8px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
+                                <input type="radio" name="_depende_imp_radio" value="no" onchange="toggleDependenciaImp('no')" style="accent-color: #c2410c; width: 16px; height: 16px;"> No
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
+                                <input type="radio" name="_depende_imp_radio" value="si" onchange="toggleDependenciaImp('si')" style="accent-color: #c2410c; width: 16px; height: 16px;"> Sí, especificar responsable y motivo
+                            </label>
+                        </div>
+
+                        <div id="bloque_dependencia_imp" style="display: none; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1.5px solid #c2410c;">
+                            <div>
+                                <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Dependencia - Responsable</label>
+                                <input type="text" name="dependencia_responsable" id="crear_dependencia_responsable_imp" placeholder="Nombre de la persona..."
+                                       style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
+                            </div>
+                            <div>
+                                <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Motivo / Razón</label>
+                                <input type="text" name="dependencia_motivo" id="crear_dependencia_motivo_imp" placeholder="Ej: Entrega de reporte..."
+                                       style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- B) SI MARCA "Pendiente" -->
+                <div id="bloque_personal_pendiente" style="display: none;">
+                    <!-- Pregunta ¿Es una actividad sencilla? -->
+                    <div style="background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                        <label style="font-weight: 800; font-size: 14px; color: #9a3412; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                            <i class="bi bi-question-circle-fill" style="color: #c2410c; font-size: 16px;"></i> ¿Es una actividad sencilla?
+                        </label>
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
+                                <input type="radio" name="_sencilla_imp" value="si" onchange="toggleSencillaImp('si')" style="accent-color: #c2410c; width: 16px; height: 16px;"> Sí
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
+                                <input type="radio" name="_sencilla_imp" value="no" onchange="toggleSencillaImp('no')" style="accent-color: #c2410c; width: 16px; height: 16px;"> No
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- SI MARCA SÍ EN SENCILLA (Título y Descripción únicamente) -->
+                    <div id="bloque_sencilla_imp_si" style="display: none; background: #ffffff; border: 2px solid #c2410c; border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Tarea / Título de la Actividad *</label>
+                            <input type="text" name="titulo_imp_sencilla" id="crear_titulo_imp_sencilla" placeholder="Ej: Revisar correo del cliente"
+                                   style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; background: white; font-weight: 600; color: #1e293b;">
+                        </div>
+                        <div>
+                            <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Descripción de la actividad *</label>
+                            <textarea name="descripcion_imp_sencilla" id="crear_descripcion_imp_sencilla" rows="3" placeholder="Explica detalladamente la actividad..."
+                                      style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- SI MARCA NO EN SENCILLA (Configuración Avanzada) -->
+                    <div id="bloque_avanzado_imp_pendiente" style="display: none; background: #ffffff; border: 2px solid #c2410c; border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+                        <h4 style="margin: 0 0 14px 0; color: #9a3412; font-size: 14px; font-weight: 800; border-bottom: 1px dashed #fed7aa; padding-bottom: 6px;">
+                            <i class="bi bi-sliders me-1"></i> Configuración Avanzada de la Actividad
+                        </h4>
+
+                        <!-- Tarea / Título de la Actividad * -->
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Tarea / Título de la Actividad *</label>
+                            <input type="text" name="titulo_imp_avanzada" id="crear_titulo_imp_avanzada" placeholder="Indica el título de esta actividad..."
+                                   style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 600; color: #1e293b;">
+                        </div>
+
+                        <!-- Descripción de la actividad * -->
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Descripción de la actividad *</label>
+                            <textarea name="descripcion_imp_avanzada" id="crear_descripcion_imp_avanzada" rows="3" placeholder="Explica detalladamente la actividad..."
+                                      style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
+                        </div>
+
+                        <!-- Acciones a realizar & Notas y Observaciones -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                            <div>
+                                <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Acciones a realizar</label>
+                                <textarea name="acciones_realizadas_pend" rows="2" placeholder="Acciones específicas a ejecutar..."
+                                          style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
+                            </div>
+                            <div>
+                                <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Notas y Observaciones</label>
+                                <textarea name="observaciones_pend" rows="2" placeholder="Notas u observaciones relevantes..."
+                                          style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Prioridad -->
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Prioridad *</label>
+                            <select name="prioridad_pend" style="width: 100%; padding: 9px; border: 2px solid #c2410c; border-radius: 8px; background: white; font-weight: 700; color: #9a3412;">
+                                <option value="" disabled selected>-- Selecciona Prioridad * --</option>
                                 <option value="baja">Baja</option>
                                 <option value="media">Media</option>
                                 <option value="alta">Alta</option>
                                 <option value="urgente">Urgente</option>
                             </select>
                         </div>
-                    </div>
 
-                    <!-- PREGUNTA 3: ¿Tardará más de un día? -->
-                    <div style="background:#fefce8; border:1px solid #fde68a; border-radius:10px; padding:16px 20px; margin:14px 0;">
-                        <p style="margin:0 0 10px; font-weight:700; font-size:15px; color:#92400e;">
-                            <i class="bi bi-question-circle-fill me-1"></i> ¿Tardará más de un día?
-                        </p>
-                        <div style="display:flex; gap:10px;">
-                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:8px 18px; border-radius:8px; border:2px solid #fde68a; font-weight:600; background:#fff; transition:all 0.15s;">
-                                <input type="radio" name="_mas_un_dia_edit" id="edit_mas_un_dia_si" value="si" onchange="toggleEditDuracion('si')" style="accent-color:#d97706;"> Sí
+                        <!-- Plazo (Fecha u Hora) -->
+                        <div style="background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                            <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                <i class="bi bi-clock-history" style="color: #c2410c;"></i> ¿Tiene plazo la actividad? *
                             </label>
-                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:8px 18px; border-radius:8px; border:2px solid #fde68a; font-weight:600; background:#fff; transition:all 0.15s;">
-                                <input type="radio" name="_mas_un_dia_edit" id="edit_mas_un_dia_no" value="no" onchange="toggleEditDuracion('no')" style="accent-color:#d97706;"> No
+                            <div style="display: flex; gap: 16px; margin-bottom: 8px; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
+                                    <input type="radio" name="tiene_plazo_imp" value="si" onchange="toggleTienePlazoImp(this.value)" style="accent-color: #c2410c; width: 16px; height: 16px;"> Sí, tiene plazo definido
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
+                                    <input type="radio" name="tiene_plazo_imp" value="no" onchange="toggleTienePlazoImp(this.value)" style="accent-color: #c2410c; width: 16px; height: 16px;"> No, sin plazo (cuando se pueda)
+                                </label>
+                            </div>
+
+                            <div id="sub_box_tipo_plazo_imp" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #fed7aa;">
+                                <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 6px;">
+                                    <i class="bi bi-calendar2-range me-1"></i> ¿El plazo es por Fecha o por Horario? *
+                                </label>
+                                <div style="display: flex; gap: 14px; margin-bottom: 10px; flex-wrap: wrap;">
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; font-weight: 700; color: #9a3412; background: #ffffff; padding: 6px 12px; border-radius: 6px; border: 1px solid #fed7aa;">
+                                        <input type="radio" name="tipo_plazo_imp" value="fecha" onchange="toggleTipoPlazoSubImp(this.value)" style="accent-color: #c2410c;"> Por Fecha (Días)
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; font-weight: 700; color: #9a3412; background: #ffffff; padding: 6px 12px; border-radius: 6px; border: 1px solid #fed7aa;">
+                                        <input type="radio" name="tipo_plazo_imp" value="hora" onchange="toggleTipoPlazoSubImp(this.value)" style="accent-color: #c2410c;"> Por Horario (Horas)
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; font-weight: 700; color: #9a3412; background: #ffffff; padding: 6px 12px; border-radius: 6px; border: 1px solid #fed7aa;">
+                                        <input type="radio" name="tipo_plazo_imp" value="ambos" onchange="toggleTipoPlazoSubImp(this.value)" style="accent-color: #c2410c;"> Ambos (Fecha y Horario)
+                                    </label>
+                                </div>
+
+                                <div id="seccion_fechas_imp" style="display: none; grid-template-columns: 1fr 1fr; gap: 14px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid #fed7aa; margin-bottom: 8px;">
+                                    <div>
+                                        <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Fecha de Inicio *</label>
+                                        <input type="date" name="fecha_inicio_imp" value="{{ date('Y-m-d') }}" style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 6px; background: white; font-weight: 700; color: #1e293b;">
+                                    </div>
+                                    <div>
+                                        <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Fecha Estimada de Término *</label>
+                                        <input type="date" name="fecha_estimada_fin_imp" value="{{ date('Y-m-d') }}" style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 6px; background: white; font-weight: 700; color: #1e293b;">
+                                    </div>
+                                </div>
+
+                                <div id="boxHorario_imp" style="display: none; grid-template-columns: 1fr 1fr; gap: 14px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1.5px solid #fed7aa;">
+                                    <div>
+                                        <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Horario Estimado - INICIO</label>
+                                        <input type="time" name="hora_inicio_imp" value="09:00" style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 6px; font-weight: 700; color: #1e293b; background: white;">
+                                    </div>
+                                    <div>
+                                        <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Horario Estimado - TÉRMINO</label>
+                                        <input type="time" name="hora_fin_imp" value="10:00" style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 6px; font-weight: 700; color: #1e293b; background: white;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ¿Se depende de alguien? -->
+                        <div style="background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                            <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                <i class="bi bi-person-badge-fill" style="color: #c2410c;"></i> ¿Se depende de alguien?
                             </label>
+                            <div style="display: flex; gap: 16px; margin-bottom: 8px; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
+                                    <input type="radio" name="_depende_imp_pend_radio" value="no" onchange="toggleDependenciaImpPend('no')" style="accent-color: #c2410c; width: 16px; height: 16px;"> No
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
+                                    <input type="radio" name="_depende_imp_pend_radio" value="si" onchange="toggleDependenciaImpPend('si')" style="accent-color: #c2410c; width: 16px; height: 16px;"> Sí, especificar responsable y motivo
+                                </label>
+                            </div>
+
+                            <div id="bloque_dependencia_imp_pend" style="display: none; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1.5px solid #c2410c;">
+                                <div>
+                                    <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Dependencia - Responsable</label>
+                                    <input type="text" name="dependencia_responsable_pend" placeholder="Nombre de la persona..."
+                                           style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
+                                </div>
+                                <div>
+                                    <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Motivo / Razón</label>
+                                    <input type="text" name="dependencia_motivo_pend" placeholder="Ej: Entrega de reporte..."
+                                           style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <input type="hidden" name="modalidad" id="edit_modalidad_hidden" value="un_dia">
-
-                    <div id="edit_bloque_fecha_inicio" style="display:none; margin-bottom:10px;">
-                        <b>Fecha de Inicio *</b>
-                        <input type="date" name="fecha_inicio" id="edit_fecha_inicio" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;">
-                    </div>
-
-                    <div id="edit_bloque_fecha_fin" style="display:none; margin-bottom:10px;">
-                        <b>Fecha Estimada Fin *</b>
-                        <input type="date" name="fecha_estimada_fin" id="edit_fecha_fin" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;">
-                    </div>
-
-                    <div id="edit_bloque_tiempo" style="display:none; margin-bottom:10px;">
-                        <b>Tiempo Estimado <span style="font-weight:400;color:#6b7280;">(Opcional)</span></b>
-                        <input type="text" name="tiempo_estimado" id="edit_tiempo_estimado" placeholder="Ej: 2 horas, 30 min" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;">
-                    </div>
-
+            <!-- CAMPOS ESPECÍFICOS: RUTINARIA -->
+            <div id="seccion_campos_rutinaria" style="display: none;">
+                <!-- 3. Tarea / Título de la Actividad * -->
+                <div style="margin-bottom: 16px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #1e3a8a; display: block; margin-bottom: 6px;">Tarea / Título de la Actividad *</label>
+                    <input type="text" name="titulo_rutinaria" id="crear_titulo_rutinaria" placeholder="Ej: Limpieza y desinfección diaria de estación de trabajo"
+                           style="width: 100%; padding: 10px; border: 2px solid #1e40af; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 600; color: #1e293b;">
                 </div>
 
-                <!-- Botones y Estado del Edit -->
-                <div style="margin-top: 15px; border-top:1px solid #e2e8f0; padding-top:15px;">
-                    <div style="margin-bottom:15px;">
-                        <b>Estado *</b>
-                        <select name="estado" id="edit_estado" required style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+                <!-- 4. Descripción de la actividad * -->
+                <div style="margin-bottom: 16px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #1e3a8a; display: block; margin-bottom: 6px;">Descripción de la actividad *</label>
+                    <textarea name="descripcion_rutinaria" id="crear_descripcion_rutinaria" rows="3" placeholder="Explica detalladamente el objetivo de esta rutina..."
+                              style="width: 100%; padding: 10px; border: 2px solid #1e40af; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 500; color: #1e293b;"></textarea>
+                </div>
+
+                <!-- 5 & 6. Acciones a realizar y Notas y Observaciones -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                    <div>
+                        <label style="font-weight: 800; font-size: 12px; color: #1e3a8a; display: block; margin-bottom: 4px;">Acciones a realizar</label>
+                        <textarea name="acciones_realizadas_rutinaria" id="crear_acciones_realizadas_rutinaria" rows="2" placeholder="Acciones específicas a ejecutar..."
+                                  style="width: 100%; padding: 8px; border: 1.5px solid #1e40af; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
+                    </div>
+                    <div>
+                        <label style="font-weight: 800; font-size: 12px; color: #1e3a8a; display: block; margin-bottom: 4px;">Notas y Observaciones</label>
+                        <textarea name="observaciones_rutinaria" id="crear_observaciones_rutinaria" rows="2" placeholder="Notas u observaciones relevantes..."
+                                  style="width: 100%; padding: 8px; border: 1.5px solid #1e40af; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
+                    </div>
+                </div>
+
+                <!-- 7. ¿Cuántas veces al día debe repetirse esta rutina? * -->
+                <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;">
+                    <label style="font-weight: 800; font-size: 13px; color: #1e3a8a; margin: 0;">
+                        <i class="bi bi-arrow-repeat me-1" style="color: #1e40af;"></i> ¿Cuántas veces al día debe repetirse esta rutina? *
+                    </label>
+                    <input type="number" name="veces_al_dia" id="crear_veces_al_dia" min="1" max="20" value="1"
+                           style="width: 90px; padding: 6px 10px; border: 2px solid #1e40af; border-radius: 8px; box-sizing: border-box; background: white; font-weight: 800; font-size: 15px; color: #1e3a8a; text-align: center;">
+                </div>
+            </div>
+
+            <!-- CONFIGURACIÓN DE PERMISO DE REGISTRO DE AVANCE (SOLO ASIGNADAS, DESMARCADO POR DEFECTO) -->
+            @if($isBossOrAdmin)
+                <div id="boxPermitirAvance" style="background: #ffffff; border: 2px solid #cbd5e1; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #1e293b; display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-shield-lock-fill" style="color: #2563eb;"></i> ¿Permitir que el empleado registre avances de porcentaje y notas?
+                        </span>
+                        <input type="checkbox" name="permitir_registro_avance" id="crear_permitir_registro_avance" value="1" style="width: 18px; height: 18px; accent-color: #2563eb; cursor: pointer;">
+                    </label>
+                </div>
+            @endif
+
+            <div style="margin-top: 24px; text-align: right; border-top: 2px solid #cbd5e1; padding-top: 16px;">
+                <button type="button" class="btn-ver" style="background: #64748b; color: white; margin-right: 10px; font-weight: 700; padding: 10px 18px; border-radius: 8px;" onclick="cerrarModal('modalCrearActividad')">Cancelar</button>
+                <button type="button" class="btn-form" id="btnSubmitCrear" onclick="guardarNuevaActividad(event)" style="background: #15803d; color: white; padding: 10px 24px; font-size: 14px; font-weight: 800; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer;">Guardar Actividad</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL UNIFICADO: EDITAR ACTIVIDAD (EDITAR DATOS) -->
+<!-- ============================================== -->
+<div id="modalEditarActividad" class="rh-modal">
+    <div class="rh-modal-content" id="modalEditarContent" style="max-width: 650px; background: #f0fdf4; border: 3px solid #15803d; box-shadow: 0 10px 25px rgba(0,0,0,0.25); transition: all 0.3s;">
+        <span class="rh-modal-close" onclick="cerrarModal('modalEditarActividad')">&times;</span>
+        
+        <div style="margin-bottom: 20px;">
+            <h2 style="margin: 0 0 6px 0; color: #166534; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 10px;" id="tituloModalEditar">
+                <i class="bi bi-pencil-square" id="iconEditModalTitle" style="color: #15803d;"></i> Editar Actividad
+            </h2>
+            <p style="margin: 0; font-size: 13px; color: #334155; font-weight: 600;" id="subtituloModalEditar">Modifica los detalles generales de la actividad seleccionada.</p>
+        </div>
+
+        <form action="" method="POST" id="formEditarActividad">
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="editar_tipo" id="edit_tipo_hidden" value="asignada">
+
+            <!-- Empleado Asignado -->
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 800; font-size: 13px; color: #334155; display: block; margin-bottom: 6px;" id="labelEditEmpleado">Empleado Asignado / Responsable *</label>
+                <select name="empleado_id" id="edit_empleado_id" required style="width: 100%; padding: 10px; border: 2px solid #15803d; border-radius: 8px; font-family: inherit; background: white; font-weight: 700; color: #1e293b;">
+                    <option value="">Selecciona un empleado</option>
+                    @if(auth()->check())
+                        <option value="{{ auth()->id() }}" style="font-weight: bold; color: #1e3a8a;">YO ({{ auth()->user()->name }})</option>
+                    @endif
+                    @foreach ($empleadosRH as $emp)
+                        @if(($emp['id'] ?? $emp->id) !== auth()->id())
+                            <option value="{{ $emp['id'] ?? $emp->id }}">
+                                {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
+                            </option>
+                        @endif
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Título -->
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 800; font-size: 13px; color: #334155; display: block; margin-bottom: 6px;" id="labelEditTitulo">Título de la Actividad *</label>
+                <input type="text" name="titulo" id="edit_titulo" required style="width: 100%; padding: 10px; border: 2px solid #15803d; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 600; color: #1e293b;">
+            </div>
+
+            <!-- Descripción (para asignadas y rutinas) -->
+            <div id="edit_bloque_descripcion" style="margin-bottom: 16px;">
+                <label style="font-weight: 800; font-size: 13px; color: #334155; display: block; margin-bottom: 6px;" id="labelEditDescripcion">Descripción Detallada</label>
+                <textarea name="descripcion" id="edit_descripcion" rows="3" style="width: 100%; padding: 10px; border: 2px solid #15803d; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 500; color: #1e293b;"></textarea>
+            </div>
+
+            <!-- CAMPOS EDITAR: ASIGNADA -->
+            <div id="edit_seccion_asignada">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                    <div>
+                        <label style="font-weight: 800; font-size: 13px; color: #334155; display: block; margin-bottom: 6px;">Estado General</label>
+                        <select name="estado" id="edit_estado" style="width: 100%; padding: 10px; border: 2px solid #15803d; border-radius: 8px; background: white; font-weight: 700; color: #1e293b;">
                             <option value="pendiente">Pendiente</option>
                             <option value="en_proceso">En Proceso</option>
-                            <option value="en_pausa">En Pausa</option>
                             <option value="finalizada">Finalizada</option>
                             <option value="atrasada">Atrasada</option>
-                            <option value="cancelada">Cancelada</option>
                         </select>
                     </div>
-
-                    <div style="text-align: right;">
-                        <button type="button" class="btn-ver" style="background:#6b7280; margin-right:10px;" onclick="cerrarModal('modalEditar')">Cancelar</button>
-                        <button type="submit" class="btn-form">Guardar Cambios</button>
+                    <div>
+                        <label style="font-weight: 800; font-size: 13px; color: #334155; display: block; margin-bottom: 6px;">Prioridad</label>
+                        <select name="prioridad" id="edit_prioridad" style="width: 100%; padding: 10px; border: 2px solid #15803d; border-radius: 8px; background: white; font-weight: 700; color: #1e293b;">
+                            <option value="baja">Baja</option>
+                            <option value="media">Media</option>
+                            <option value="alta">Alta</option>
+                            <option value="urgente">Urgente</option>
+                        </select>
                     </div>
                 </div>
+            </div>
+
+            <!-- CAMPOS EDITAR: IMPREVISTA -->
+            <div id="edit_seccion_imprevista" style="display: none;">
+                <div style="margin-bottom: 16px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Descripción Detallada *</label>
+                    <textarea name="descripcion_detallada" id="edit_descripcion_detallada" rows="3" style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 500; color: #1e293b;"></textarea>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Motivo / Justificación *</label>
+                    <input type="text" name="motivo" id="edit_motivo" style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; box-sizing: border-box; background: white; font-weight: 600; color: #1e293b;">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Resultado Obtenido *</label>
+                    <textarea name="resultado_obtenido" id="edit_resultado_obtenido" rows="2" style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; box-sizing: border-box; background: white; font-weight: 500; color: #1e293b;"></textarea>
+                </div>
+            </div>
+
+            <!-- CAMPOS EDITAR: RUTINARIA -->
+            <div id="edit_seccion_rutinaria" style="display: none;">
+                <div style="margin-bottom: 16px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #1e3a8a; display: block; margin-bottom: 6px;">Veces al día *</label>
+                    <input type="number" name="veces_al_dia" id="edit_veces_al_dia" min="1" max="20" style="width: 100%; padding: 10px; border: 2px solid #1e40af; border-radius: 8px; box-sizing: border-box; background: white; font-weight: 700; color: #1e293b;">
+                </div>
+            </div>
+
+            <div style="margin-top: 24px; text-align: right; border-top: 2px solid #cbd5e1; padding-top: 16px;">
+                <button type="button" class="btn-ver" style="background: #64748b; color: white; margin-right: 10px; font-weight: 700; padding: 10px 18px; border-radius: 8px;" onclick="cerrarModal('modalEditarActividad')">Cancelar</button>
+                <button type="submit" class="btn-form" id="btnSubmitEditar" style="background: #15803d; color: white; padding: 10px 24px; font-size: 14px; font-weight: 800; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">Actualizar Cambios</button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- ============================================== -->
-<!-- MODAL: VER FICHA Y AVANCES (SHOW) -->
+<!-- MODAL UNIVERSAL: REGISTRAR AVANCE Y NOTA (ASIGNADA, IMPREVISTA, RUTINARIA) -->
 <!-- ============================================== -->
-<div id="modalFicha" class="rh-modal">
-    <div class="rh-modal-content" style="max-width: 900px; padding: 30px;">
-        <span class="rh-modal-close" onclick="cerrarModal('modalFicha')">&times;</span>
+<div id="modalActualizarAvanceGenerico" class="rh-modal">
+    <div class="rh-modal-content" id="contentModalAvanceGen" style="max-width: 540px; background: #fff7ed; border: 3px solid #c2410c; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); padding: 22px;">
+        <span class="rh-modal-close" onclick="cerrarModal('modalActualizarAvanceGenerico')">&times;</span>
         
-        <div style="display:flex; gap:15px; align-items:flex-start; margin-top:10px;">
-            <!-- FICHA ACTIVIDAD -->
-            <div class="rh-card" style="flex:1; margin-bottom:0; box-shadow:none; padding:0;">
-                <h2 style="margin-bottom: 20px; font-size:22px; font-weight:bold;">
-                    Ficha de la Actividad
-                </h2>
-                <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
-                    <p style="margin:0; display:flex; align-items:center; gap:10px;">
-                        <span id="ficha_prioridad" style="background:#1e3a8a;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;"></span>
-                        <select id="ficha_estado_select" onchange="actualizarEstadoRapido(this.value)" style="padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold; border:1px solid #cbd5e1; outline:none; cursor:pointer;" {{ auth()->check() && in_array(auth()->user()->rol, ['jefe', 'admin']) ? '' : 'disabled' }}>
-                            <option value="pendiente">PENDIENTE</option>
-                            <option value="en_proceso">EN PROCESO</option>
-                            <option value="en_pausa">EN PAUSA</option>
-                            <option value="finalizada">TERMINADA</option>
-                            <option value="atrasada">ATRASADA</option>
-                            <option value="cancelada">CANCELADA</option>
-                        </select>
-                    </p>
-                    <h3 id="ficha_titulo" style="margin:10px 0; font-size:20px;"></h3>
-                    <p id="ficha_descripcion" style="color:#475569;margin-bottom:15px;font-size:14px;"></p>
-                    
-                    <div class="empleado-grid" style="grid-template-columns: 1fr; gap:10px;">
-                        <div><b style="font-size:12px;">Impacto</b><p id="ficha_impacto" style="margin:0;font-size:14px;"></p></div>
-                        <div><b style="font-size:12px;">Fechas</b><p id="ficha_fechas" style="margin:0;font-size:14px;"></p></div>
-                        <div style="grid-column: span 2;">
-                            <form action="" method="POST" id="form-slider-avance" style="margin:0;">
-                                @csrf
-                                @method('PUT')
-                                <b style="font-size:12px; color:#475569;">Avance General: <span id="ficha_avance_text_val">0</span>%</b>
-                                <input type="range" name="porcentaje_avance" id="slider_avance" min="0" max="100" style="width:100%; margin-top:5px; accent-color:#22c55e;" oninput="document.getElementById('ficha_avance_text_val').textContent=this.value" onchange="updatePorcentaje(this)" {{ auth()->check() && in_array(auth()->user()->rol, ['jefe', 'admin']) ? '' : 'disabled' }}>
-                            </form>
-                            
-                            @if(auth()->check() && in_array(auth()->user()->rol, ['jefe', 'admin']))
-                            <div style="margin-top: 15px;">
-                                <button type="button" id="ficha_btn_completar" class="btn-ver" style="background:#10b981; color:white; border:none; width:100%; padding:8px; font-size:14px; font-weight:bold; border-radius:6px; cursor:pointer;" onclick="aprobarActividadDesdeFicha()">
-                                    <i class="bi bi-check-circle me-1"></i> Completada
-                                </button>
-                                <button type="button" id="ficha_btn_reabrir" class="btn-ver" style="background:#6b7280; color:white; border:none; width:100%; padding:8px; font-size:14px; font-weight:bold; border-radius:6px; cursor:pointer; display:none;" onclick="reabrirActividadDesdeFicha()">
-                                    <i class="bi bi-arrow-counterclockwise me-1"></i> Reabrir
-                                </button>
-                            </div>
-                            @endif
-
-                            <div style="display:flex; justify-content:space-between; margin-top:15px; gap:10px;">
-                                <button type="button" id="ficha_btn_editar" class="btn-ver" style="background:#10b981; color:#fff; flex:1; font-weight:bold; border-radius:6px; padding:8px;" onclick="openEditModal(this)">
-                                    <i class="bi bi-pencil-square me-1"></i> Editar
-                                </button>
-                                <form action="" method="POST" id="form_delete_actividad" style="margin:0; flex:1;" onsubmit="return confirm('¿Seguro que deseas eliminar esta actividad definitivamente?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn-ver" style="background:#ef4444; color:#fff; width:100%; font-weight:bold; border-radius:6px; padding:8px;">
-                                        <i class="bi bi-trash-fill me-1"></i> Eliminar
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- REGISTRAR AVANCE -->
-            <div class="rh-card" style="flex:1.5; margin-bottom:0; box-shadow:none; padding:0; padding-left:15px; border-left:1px solid #e2e8f0; border-radius:0;">
-                <h2 style="color:#16a34a; margin-bottom:10px; font-size:18px;"><i class="bi bi-plus-circle-fill me-2"></i>Registrar Nuevo Avance</h2>
-                <form action="{{ route('avances-actividad.store') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="actividad_id" id="avance_actividad_id">
-                    <div class="empleado-grid" style="gap:10px;">
-                        <div style="grid-column: span 2;">
-                            <b style="font-size:12px;">¿Qué se hizo exactamente? *</b>
-                            <textarea name="que_se_hizo" rows="4" required style="padding:6px; font-family:inherit; border-radius:6px; border:1px solid #d1d5db;"></textarea>
-                        </div>
-                        
-                        <div style="grid-column: span 2;">
-                            <b style="font-size:12px;">Problema Detectado / Acciones Reales</b>
-                            <textarea name="acciones_realizadas" rows="2" style="padding:6px;"></textarea>
-                        </div>
-
-                        <div style="grid-column: span 2;">
-                            <b style="font-size:12px;">Resultado Final / Observaciones *</b>
-                            <textarea name="resultado_final" rows="2" required style="padding:6px;"></textarea>
-                        </div>
-                    </div>
-                    
-                    <div style="text-align: right; margin-top:20px;">
-                        <button type="submit" style="background:#2563eb; color:#fff; border:none; border-radius:6px; padding:10px 20px; font-weight:bold; cursor:pointer; font-size:14px; transition:background 0.2s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'"><i class="bi bi-save2-fill me-1"></i> Guardar Avance en Historial</button>
-                    </div>
-                </form>
-            </div>
+        <div style="margin-bottom: 18px;">
+            <h2 style="margin: 0 0 6px 0; color: #9a3412; font-size: 19px; font-weight: 800; display: flex; align-items: center; gap: 8px;" id="titleAvanceGenHeader">
+                <i class="bi bi-graph-up-arrow" style="color: #c2410c;"></i> Registrar Avance de Actividad
+            </h2>
+            <p id="avanceGenTituloText" style="margin: 0; font-size: 13px; color: #475569; font-weight: 700;">Título de la actividad</p>
         </div>
 
-        <div style="display:flex; gap:15px; margin-top:15px;">
-            <!-- HISTORIAL DE AVANCES -->
-            <div class="rh-card" style="flex:1; margin-bottom:0; box-shadow:none; border:1px solid #e2e8f0; padding:15px;">
-                <h3 style="font-size:16px; margin-top:0; margin-bottom:15px; text-align:center;"><i class="bi bi-clock-history me-1"></i> Historial de Avances</h3>
-                <div style="max-height: 250px; overflow-y:auto; border-radius:6px; border: 1px solid #e2e8f0;">
-                    <table class="rh-table" style="font-size:13px; margin:0; width:100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background:#1e3a8a; color:white;">
-                                <th style="padding:8px 12px; font-weight:bold; border:none; text-align:center;">Fecha</th>
-                                <th style="padding:8px 12px; font-weight:bold; border:none;">Descripción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla_avances" style="background:white;">
-                            <!-- Llenado vía JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ============================================== -->
-<!-- MODAL: NUEVA RUTINA -->
-<!-- ============================================== -->
-<div id="modalNuevaRutina" class="rh-modal">
-    <div class="rh-modal-content">
-        <span class="rh-modal-close" onclick="cerrarModal('modalNuevaRutina')">&times;</span>
-        <h2 style="margin-bottom:20px; margin-top:0;"><i class="bi bi-arrow-repeat me-2"></i>Crear Nueva Rutina Diaria</h2>
-        <form action="{{ route('rutinas.store') }}" method="POST">
-            @csrf
-            <input type="hidden" name="frecuencia" value="diaria">
-
-            <!-- Título -->
-            <div style="margin-bottom:12px;">
-                <b>Título de la Rutina *</b>
-                <input type="text" name="titulo" required placeholder="Ej: Respaldo de Base de Datos"
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
-            </div>
-
-            <!-- Descripción -->
-            <div style="margin-bottom:12px;">
-                <b>Descripción</b>
-                <textarea name="descripcion" rows="3" placeholder="Describe la rutina a detalle..."
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;"></textarea>
-            </div>
-
-            <!-- Empleado Responsable -->
-            <div style="margin-bottom:14px;">
-                <b>Empleado Responsable *</b>
-                <select name="empleado_id" required
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
-                    <option value="">Selecciona un empleado</option>
-                    @if(auth()->check())
-                        <option value="{{ auth()->id() }}" style="font-weight:bold;color:#1e3a8a;">YO ({{ auth()->user()->name }})</option>
-                    @endif
-                    @foreach ($empleadosRH as $emp)
-                        @if(($emp['id'] ?? $emp->id) !== auth()->id())
-                            <option value="{{ $emp['id'] ?? $emp->id }}">
-                                {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
-                            </option>
-                        @endif
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- ¿Es compartida? -->
-            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px 18px; margin-bottom:14px;">
-                <p style="margin:0 0 10px; font-weight:700; font-size:14px; color:#166534;">
-                    <i class="bi bi-question-circle-fill me-1"></i> ¿Es una rutina compartida?
-                </p>
-                <div style="display:flex; gap:10px;">
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:7px 16px; border-radius:8px; border:2px solid #bbf7d0; font-weight:600; background:#fff;">
-                        <input type="radio" name="_rutina_compartida" value="si" onchange="toggleRutinaCompartida('si')" style="accent-color:#16a34a;"> Sí
-                    </label>
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:7px 16px; border-radius:8px; border:2px solid #bbf7d0; font-weight:600; background:#fff;">
-                        <input type="radio" name="_rutina_compartida" value="no" onchange="toggleRutinaCompartida('no')" style="accent-color:#16a34a;"> No
-                    </label>
-                </div>
-            </div>
-
-            <!-- Lista de compañeros (si es compartida) -->
-            <div id="bloque_rutina_compartida" style="display:none; margin-bottom:14px;">
-                <b>¿Con quién(es) la compartirás?</b>
-                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; max-height:140px; overflow-y:auto; margin-top:6px;">
-                    @foreach ($empleadosRH as $emp)
-                        <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:pointer; font-size:14px;">
-                            <input type="checkbox" name="rutina_compartidos[]" value="{{ $emp['id'] ?? $emp->id }}" disabled style="accent-color:#16a34a; width:15px; height:15px;">
-                            {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
-                        </label>
-                    @endforeach
-                </div>
-            </div>
-
-            <!-- ¿Se hará más de una vez al día? -->
-            <div style="background:#fefce8; border:1px solid #fde68a; border-radius:10px; padding:14px 18px; margin-bottom:14px;">
-                <p style="margin:0 0 10px; font-weight:700; font-size:14px; color:#92400e;">
-                    <i class="bi bi-question-circle-fill me-1"></i> ¿Se hará más de una vez al día?
-                </p>
-                <div style="display:flex; gap:10px;">
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:7px 16px; border-radius:8px; border:2px solid #fde68a; font-weight:600; background:#fff;">
-                        <input type="radio" name="_rutina_repetida" value="si" onchange="toggleRutinaRepetida('si')" style="accent-color:#d97706;"> Sí
-                    </label>
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:7px 16px; border-radius:8px; border:2px solid #fde68a; font-weight:600; background:#fff;">
-                        <input type="radio" name="_rutina_repetida" value="no" onchange="toggleRutinaRepetida('no')" style="accent-color:#d97706;"> No
-                    </label>
-                </div>
-            </div>
-
-            <!-- Cuántas veces al día (si es repetida) -->
-            <div id="bloque_rutina_veces" style="display:none; margin-bottom:14px;">
-                <b>¿Cuántas veces al día? *</b>
-                <input type="number" name="veces_al_dia" id="rutina_veces_input" min="2" max="20" placeholder="Ej: 3" disabled
-                    style="width:100%;padding:8px;border:1px solid #fde68a;border-radius:6px;box-sizing:border-box;margin-top:4px;">
-            </div>
-
-            <div style="margin-top:20px; text-align:right;">
-                <button type="button" class="btn-ver" style="background:#6b7280; margin-right:10px;" onclick="cerrarModal('modalNuevaRutina')">Cancelar</button>
-                <button type="submit" class="btn-form">Crear Rutina</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script>
-function toggleRutinaCompartida(val) {
-    const bloque = document.getElementById('bloque_rutina_compartida');
-    bloque.style.display = val === 'si' ? 'block' : 'none';
-    bloque.querySelectorAll('input[type=checkbox]').forEach(el => el.disabled = val !== 'si');
-}
-
-function toggleRutinaRepetida(val) {
-    const bloque = document.getElementById('bloque_rutina_veces');
-    const input  = document.getElementById('rutina_veces_input');
-    bloque.style.display = val === 'si' ? 'block' : 'none';
-    input.disabled = val !== 'si';
-    if (val !== 'si') input.value = '';
-}
-</script>
-
-
-<!-- ============================================== -->
-<!-- MODAL: NUEVA ACTIVIDAD IMPREVISTA -->
-<!-- ============================================== -->
-<div id="modalNuevaImprevista" class="rh-modal">
-    <div class="rh-modal-content">
-        <span class="rh-modal-close" onclick="cerrarModal('modalNuevaImprevista')">&times;</span>
-        <h2 style="margin-bottom: 20px; margin-top:0; color:#d97706;"><i class="bi bi-lightning-fill me-2"></i>Registrar Actividad Imprevista</h2>
-        <form action="{{ route('actividades-imprevistas.store') }}" method="POST">
-            @csrf
-
-            <!-- Título -->
-            <div style="margin-bottom:12px;">
-                <b>Título *</b>
-                <input type="text" name="titulo" required placeholder="Ej: Falla de internet masiva"
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
-            </div>
-
-            <!-- Descripción Detallada -->
-            <div style="margin-bottom:12px;">
-                <b>Descripción Detallada *</b>
-                <textarea name="descripcion_detallada" rows="3" required placeholder="¿Qué pasó exactamente?"
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;"></textarea>
-            </div>
-
-            <!-- Motivo -->
-            <div style="margin-bottom:12px;">
-                <b>Motivo *</b>
-                <input type="text" name="motivo" required placeholder="¿Por qué tuviste que atenderlo?"
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
-            </div>
-
-            <!-- Resultado Obtenido -->
-            <div style="margin-bottom:12px;">
-                <b>Resultado Obtenido *</b>
-                <textarea name="resultado_obtenido" rows="2" required placeholder="Ej: El internet regresó a la normalidad en todo el piso"
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;"></textarea>
-            </div>
-
-            <!-- Estado -->
-            <div style="margin-bottom:12px;">
-                <b>Estado *</b>
-                <select name="estado" required style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
-                    <option value="finalizada" selected>Terminada / Completada al momento</option>
-                    <option value="pendiente">Se quedó pendiente de terminar</option>
-                    <option value="en_proceso">Sigue en proceso de atención</option>
-                </select>
-            </div>
-
-            <!-- Empleado Asignado -->
-            <div style="margin-bottom:12px;">
-                <b>Empleado Asignado *</b>
-                <select name="empleado_id" required
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
-                    <option value="">Selecciona un empleado</option>
-                    @if(auth()->check())
-                        <option value="{{ auth()->id() }}" style="font-weight:bold;color:#1e3a8a;">YO ({{ auth()->user()->name }})</option>
-                    @endif
-                    @foreach ($empleadosRH as $emp)
-                        @if(($emp['id'] ?? $emp->id) !== auth()->id())
-                            <option value="{{ $emp['id'] ?? $emp->id }}">
-                                {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
-                            </option>
-                        @endif
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- ¿Alguien más colaboró? -->
-            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px 18px; margin-bottom:14px;">
-                <p style="margin:0 0 10px; font-weight:700; font-size:14px; color:#166534;">
-                    <i class="bi bi-question-circle-fill me-1"></i> ¿Alguien más colaboró?
-                </p>
-                <div style="display:flex; gap:10px;">
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:7px 16px; border-radius:8px; border:2px solid #bbf7d0; font-weight:600; background:#fff;">
-                        <input type="radio" name="_colaboro" value="si" onchange="toggleColaboradores('si')" style="accent-color:#16a34a;"> Sí
-                    </label>
-                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; padding:7px 16px; border-radius:8px; border:2px solid #bbf7d0; font-weight:600; background:#fff;">
-                        <input type="radio" name="_colaboro" value="no" onchange="toggleColaboradores('no')" style="accent-color:#16a34a;"> No
-                    </label>
-                </div>
-            </div>
-
-            <!-- Lista de colaboradores (si respondió Sí) -->
-            <div id="bloque_colaboradores" style="display:none; margin-bottom:14px;">
-                <b>¿Quién(es) te ayudaron?</b>
-                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; max-height:140px; overflow-y:auto; margin-top:6px;">
-                    @foreach ($empleadosRH as $emp)
-                        <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; cursor:pointer; font-size:14px;">
-                            <input type="checkbox" name="colaboradores[]" value="{{ $emp['id'] ?? $emp->id }}" style="accent-color:#16a34a; width:15px; height:15px;">
-                            {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
-                        </label>
-                    @endforeach
-                </div>
-            </div>
-
-            <!-- Hora Inicio / Hora Fin / Tiempo calculado -->
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:8px;">
-                <div>
-                    <b>Hora Inicio</b>
-                    <input type="time" name="hora_inicio" id="imp_hora_inicio" oninput="calcImpTime()"
-                        style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;margin-top:4px;">
-                </div>
-                <div>
-                    <b>Hora Fin</b>
-                    <input type="time" name="hora_fin" id="imp_hora_fin" oninput="calcImpTime()"
-                        style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;margin-top:4px;">
-                </div>
-            </div>
-            <!-- Tiempo calculado automáticamente -->
-            <div style="margin-bottom:14px; font-size:13px; color:#6b7280; display:flex; align-items:center; gap:6px;">
-                <i class="bi bi-stopwatch"></i>
-                <span id="imp_tiempo_calc">Configura las horas para calcular el tiempo invertido...</span>
-            </div>
-            <!-- Hidden: horas_invertidas calculadas -->
-            <input type="hidden" name="horas_invertidas" id="imp_horas_hidden" value="0">
-
-            <div style="margin-top:20px; text-align:right;">
-                <button type="button" class="btn-ver" style="background:#6b7280; margin-right:10px;" onclick="cerrarModal('modalNuevaImprevista')">Cancelar</button>
-                <button type="submit" class="btn-form" style="background:#f59e0b; color:#1a1a1a;">Guardar Imprevisto</button>
-            </div>
-        </form>
-    </div>
-<!-- ============================================== -->
-<!-- MODAL: EDITAR RUTINA -->
-<!-- ============================================== -->
-<div id="modalEditarRutina" class="rh-modal">
-    <div class="rh-modal-content">
-        <span class="rh-modal-close" onclick="cerrarModal('modalEditarRutina')">&times;</span>
-        <h2 style="margin-bottom:20px; margin-top:0;"><i class="bi bi-pencil-square me-2"></i>Editar Rutina Diaria</h2>
-        <form action="" method="POST" id="formEditarRutina">
+        <form action="" method="POST" id="formAvanceGenerico" enctype="multipart/form-data">
             @csrf
             @method('PUT')
-
-            <!-- Título -->
-            <div style="margin-bottom:12px;">
-                <b>Título de la Rutina *</b>
-                <input type="text" name="titulo" id="edit_rutina_titulo" required
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
-            </div>
-
-            <!-- Descripción -->
-            <div style="margin-bottom:12px;">
-                <b>Descripción</b>
-                <textarea name="descripcion" id="edit_rutina_descripcion" rows="3" placeholder="Describe la rutina..."
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;"></textarea>
-            </div>
-
-            <!-- Veces al día -->
-            <div style="margin-bottom:12px;">
-                <b>¿Cuántas veces al día se repetirá? *</b>
-                <input type="number" name="veces_al_dia" id="edit_rutina_veces" min="1" max="20" required
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;margin-top:4px;">
-            </div>
+            <input type="hidden" name="_tipo_actividad_gen" id="avance_tipo_gen_hidden" value="asignada">
             
-            <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
-                <button type="button" onclick="confirmDeleteRutinaModal()" class="btn-ver" style="background:#ef4444; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; cursor:pointer;">
-                    <i class="bi bi-trash-fill me-1"></i> Eliminar Rutina
-                </button>
-                <div>
-                    <button type="button" class="btn-ver" style="background:#6b7280; margin-right:10px;" onclick="cerrarModal('modalEditarRutina')">Cancelar</button>
-                    <button type="submit" class="btn-form">Guardar Cambios</button>
+            <!-- PANEL SELECCIÓN DE PORCENTAJE (DESLIZANTE PARA ASIGNADAS/IMPREVISTAS) -->
+            <div id="boxAvanceSliderGen" style="background: #ffffff; border: 2px solid #c2410c; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: flex; align-items: center; gap: 6px; margin: 0;" id="labelPorcentajeAvanceGen">
+                        <i class="bi bi-percent" style="color: #c2410c;" id="iconPorcentajeAvanceGen"></i> Porcentaje de Avance
+                    </label>
+                    <span style="font-weight: 900; font-size: 16px; color: #c2410c;" id="display_avance_gen_val">50%</span>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <input type="range" name="porcentaje_avance" id="input_avance_gen_range" min="0" max="100" step="5" value="50"
+                           oninput="updateAvanceGenDisplay(this.value)"
+                           style="width: 100%; accent-color: #c2410c; cursor: pointer; height: 8px;">
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+                    <button type="button" class="quick-btn-avance" onclick="setAvanceGenQuickVal(25)" style="padding: 6px; font-size: 11px; font-weight: 800; border-radius: 6px; border: 1px solid #fed7aa; background: #fff7ed; color: #9a3412; cursor: pointer;">25%</button>
+                    <button type="button" class="quick-btn-avance" onclick="setAvanceGenQuickVal(50)" style="padding: 6px; font-size: 11px; font-weight: 800; border-radius: 6px; border: 1px solid #fed7aa; background: #fff7ed; color: #9a3412; cursor: pointer;">50%</button>
+                    <button type="button" class="quick-btn-avance" onclick="setAvanceGenQuickVal(75)" style="padding: 6px; font-size: 11px; font-weight: 800; border-radius: 6px; border: 1px solid #fed7aa; background: #fff7ed; color: #9a3412; cursor: pointer;">75%</button>
+                    <button type="button" class="quick-btn-avance" onclick="setAvanceGenQuickVal(100)" style="padding: 6px; font-size: 11px; font-weight: 800; border-radius: 6px; border: 1px solid #ea580c; background: #ea580c; color: #ffffff; cursor: pointer;">100% ✓</button>
                 </div>
             </div>
-        </form>
 
-        <form action="" method="POST" id="formEliminarRutina" style="display:none;">
-            @csrf
-            @method('DELETE')
+            <!-- PANEL RUTINAS: SELECCIÓN DIVIDIDA DE EJECUCIONES -->
+            <div id="boxAvanceRutinaDividido" style="display: none; background: #ffffff; border: 2px solid #1e40af; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                <label style="font-weight: 800; font-size: 13px; color: #1e3a8a; display: block; margin-bottom: 8px;" id="labelRutinaAvanceHeader">
+                    <i class="bi bi-arrow-repeat me-1"></i> Seleccionar Ejecución Realizada de la Rutina:
+                </label>
+                <div id="containerOpcionesRutinaDiv" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Opciones generadas por JS -->
+                </div>
+            </div>
+
+            <!-- HORAS COMPUTADAS / INVERTIDAS EN EL AVANCE (SOLO ASIGNADAS) -->
+            <div id="boxHorasTrabajadasGen" style="margin-bottom: 16px;">
+                <label style="font-weight: 800; font-size: 13px; color: #166534; display: block; margin-bottom: 6px;" id="labelHorasTrabajadasGen">
+                    <i class="bi bi-clock-history me-1"></i> Horas Computadas / Invertidas (Horas) *
+                </label>
+                <input type="number" step="0.5" min="0.1" name="horas_trabajadas" id="input_avance_gen_horas" value="1.0"
+                       style="width: 100%; padding: 9px; border: 2px solid #15803d; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 700; color: #1e293b;">
+            </div>
+
+            <!-- NOTA EXPLICATIVA O COMENTARIO DEL AVANCE -->
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;" id="labelNotaAvanceGen">
+                    Notas del Avance / Explicación del Trabajo Realizado *
+                </label>
+                <textarea name="comentario_avance" id="input_avance_gen_resultado" rows="3" placeholder="Explica detalladamente qué realizaste en este avance..."
+                          style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 500; color: #1e293b;"></textarea>
+            </div>
+
+            <!-- ADJUNTAR ARCHIVOS / IMÁGENES / DOCUMENTOS -->
+            <div style="margin-bottom: 18px; background: #ffffff; border: 2px dashed #c2410c; border-radius: 10px; padding: 14px 16px;" id="boxArchivoAvanceGen">
+                <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;" id="labelAdjuntoAvanceGen">
+                    <i class="bi bi-paperclip" style="color: #c2410c;"></i> Adjuntar Evidencias (Imágenes o Documentos)
+                </label>
+                <p style="margin: 0 0 8px 0; font-size: 11px; color: #64748b; font-weight: 600;">
+                    Sube imágenes de cualquier formato (PNG, JPG, WEBP, GIF...) o documentos (PDF, Word, Excel, ZIP...)
+                </p>
+                <input type="file" name="archivos_avance[]" id="input_avance_gen_archivos" multiple
+                       accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+                       style="width: 100%; padding: 8px; border: 1.5px solid #fed7aa; border-radius: 6px; background: #fff7ed; font-size: 12px; font-weight: 600; color: #1e293b; cursor: pointer;">
+            </div>
+
+            <div style="text-align: right; border-top: 1.5px dashed #cbd5e1; padding-top: 14px;">
+                <button type="button" class="btn-ver" style="background: #64748b; color: white; margin-right: 8px; font-weight: 700; padding: 9px 16px; border-radius: 6px;" onclick="cerrarModal('modalActualizarAvanceGenerico')">Cancelar</button>
+                <button type="button" class="btn-form" id="btnSubmitAvanceGen" onclick="guardarAvanceGenerico(event)" style="background: #c2410c; color: white; padding: 9px 20px; font-size: 13px; font-weight: 800; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.15); cursor: pointer;">
+                    <i class="bi bi-check-circle-fill me-1"></i> Guardar Avance y Nota
+                </button>
+            </div>
         </form>
     </div>
 </div>
 
 <!-- ============================================== -->
-<!-- MODAL: EDITAR ACTIVIDAD IMPREVISTA -->
+<!-- MODAL VER DETALLE DE ACTIVIDAD (INFORMATIVO PURO CON BITÁCORA Y BOTÓN DE COMPLETAR) -->
 <!-- ============================================== -->
-<div id="modalEditarImprevista" class="rh-modal">
-    <div class="rh-modal-content">
-        <span class="rh-modal-close" onclick="cerrarModal('modalEditarImprevista')">&times;</span>
-        <h2 style="margin-bottom: 20px; margin-top:0; color:#d97706;"><i class="bi bi-pencil-square me-2"></i>Editar Actividad Imprevista</h2>
-        <form action="" method="POST" id="formEditarImprevista">
-            @csrf
-            @method('PUT')
-
-            <!-- Título -->
-            <div style="margin-bottom:12px;">
-                <b>Título *</b>
-                <input type="text" name="titulo" id="edit_imprevista_titulo" required placeholder="Ej: Falla de internet masiva"
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
+<div id="modalVerDetalle" class="rh-modal">
+    <div class="rh-modal-content" id="contentModalVerDetalle" style="max-width: 680px; background: #ffffff; border: 3px solid #15803d; box-shadow: 0 10px 25px rgba(0,0,0,0.25); transition: all 0.3s; padding: 24px; max-height: 85vh; overflow-y: auto;">
+        <span class="rh-modal-close" onclick="cerrarModal('modalVerDetalle')">&times;</span>
+        
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px;">
+            <div>
+                <span id="badgeTipoDetalle" style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: inline-block;">Actividad</span>
+                <h2 id="tituloDetalle" style="margin: 4px 0; color: #1e293b; font-size: 18px; font-weight: 800;">Título de la actividad</h2>
             </div>
+            <span id="badgeEstadoDetalle" style="padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800;">Estado</span>
+        </div>
 
-            <!-- Descripción Detallada -->
-            <div style="margin-bottom:12px;">
-                <b>Descripción Detallada *</b>
-                <textarea name="descripcion_detallada" id="edit_imprevista_descripcion" rows="3" required placeholder="¿Qué pasó exactamente?"
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;"></textarea>
+        <!-- Grid de Especificaciones -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f8fafc; padding: 14px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
+            <div>
+                <span style="font-size: 11px; font-weight: 700; color: #64748b; display: block;">EMPLEADO RESPONSABLE</span>
+                <strong id="empleadoDetalle" style="font-size: 13px; color: #1e293b;">-</strong>
             </div>
-
-            <!-- Motivo -->
-            <div style="margin-bottom:12px;">
-                <b>Motivo *</b>
-                <input type="text" name="motivo" id="edit_imprevista_motivo" required placeholder="¿Por qué tuviste que atenderlo?"
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
+            <div>
+                <span style="font-size: 11px; font-weight: 700; color: #64748b; display: block;">ASIGNADO POR / REGISTRADO POR</span>
+                <strong id="creadorDetalle" style="font-size: 13px; color: #1e293b;">-</strong>
             </div>
-
-            <!-- Resultado Obtenido -->
-            <div style="margin-bottom:12px;">
-                <b>Resultado Obtenido *</b>
-                <textarea name="resultado_obtenido" id="edit_imprevista_resultado" rows="2" required placeholder="Resultado..."
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;"></textarea>
+            <div>
+                <span style="font-size: 11px; font-weight: 700; color: #64748b; display: block;">FECHA / PLAZO DE ENTREGA</span>
+                <strong id="fechaDetalle" style="font-size: 13px; color: #1e293b;">-</strong>
             </div>
-
-            <!-- Estado -->
-            <div style="margin-bottom:12px;">
-                <b>Estado *</b>
-                <select name="estado" id="edit_imprevista_estado" required style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
-                    <option value="finalizada">Terminada / Completada</option>
-                    <option value="pendiente">Pendiente</option>
-                    <option value="en_proceso">En Proceso</option>
-                    <option value="en_pausa">En Pausa</option>
-                </select>
+            <div>
+                <span style="font-size: 11px; font-weight: 700; color: #64748b; display: block;">PRIORIDAD</span>
+                <strong id="prioridadDetalle" style="font-size: 13px; color: #1e293b;">-</strong>
             </div>
+        </div>
 
-            <!-- Empleado Asignado -->
-            <div style="margin-bottom:12px;">
-                <b>Empleado Asignado *</b>
-                <select name="empleado_id" id="edit_imprevista_empleado" required
-                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;box-sizing:border-box;font-family:inherit;margin-top:4px;">
-                    <option value="">Selecciona un empleado</option>
-                    @if(auth()->check())
-                        <option value="{{ auth()->id() }}" style="font-weight:bold;color:#1e3a8a;">YO ({{ auth()->user()->name }})</option>
-                    @endif
-                    @foreach ($empleadosRH as $emp)
-                        @if(($emp['id'] ?? $emp->id) !== auth()->id())
-                            <option value="{{ $emp['id'] ?? $emp->id }}">
-                                {{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}
-                            </option>
-                        @endif
-                    @endforeach
-                </select>
+        <!-- Especificaciones / Descripción -->
+        <div style="margin-bottom: 16px;">
+            <label style="font-size: 12px; font-weight: 800; color: #475569; display: block; margin-bottom: 4px;">DESCRIPCIÓN Y ESPECIFICACIONES:</label>
+            <div id="descripcionDetalle" style="background: #ffffff; border: 1.5px solid #cbd5e1; padding: 12px; border-radius: 8px; font-size: 13px; color: #334155; min-height: 50px; white-space: pre-wrap;">-</div>
+        </div>
+
+        <!-- Dependencia o Vinculación -->
+        <div id="bloqueDependenciaDetalle" style="display: none; margin-bottom: 16px; background: #eff6ff; border: 1.5px solid #93c5fd; padding: 12px; border-radius: 8px;">
+            <div style="font-weight: 800; font-size: 11px; color: #1e3a8a; margin-bottom: 4px; text-transform: uppercase; display: flex; align-items: center; gap: 5px;">
+                <i class="bi bi-person-fill" style="color: #2563eb;"></i> Dependencia - Responsable y Motivo:
             </div>
+            <div style="font-size: 13px; color: #1e293b; font-weight: 800;" id="depRespDetalle">-</div>
+            <div style="font-size: 12px; color: #475569; font-style: italic; margin-top: 2px;" id="depMotivoDetalle"></div>
+        </div>
 
-            <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
-                <button type="button" onclick="confirmDeleteImprevistaModal()" class="btn-ver" style="background:#ef4444; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:bold; cursor:pointer;">
-                    <i class="bi bi-trash-fill me-1"></i> Eliminar Imprevisto
+        <!-- Extra Info (Motivo & Resultado para Imprevistas / Personales) -->
+        <div id="bloqueExtraImprevistaDetalle" style="display: none; margin-bottom: 16px;">
+            <div style="margin-bottom: 10px;">
+                <label style="font-size: 12px; font-weight: 800; color: #9a3412; display: block; margin-bottom: 4px;">MOTIVO / DETALLE PERSONAL:</label>
+                <div id="motivoDetalle" style="background: #fff7ed; border: 1px solid #fed7aa; padding: 10px; border-radius: 8px; font-size: 13px; color: #9a3412;">-</div>
+            </div>
+            <div>
+                <label style="font-size: 12px; font-weight: 800; color: #9a3412; display: block; margin-bottom: 4px;">RESULTADO OBTENIDO:</label>
+                <div id="resultadoDetalle" style="background: #fff7ed; border: 1px solid #fed7aa; padding: 10px; border-radius: 8px; font-size: 13px; color: #9a3412;">-</div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN NUEVA: BITÁCORA Y NOTAS DE PROGRESO POR FECHA -->
+        <div style="margin-top: 20px; border-top: 2px solid #e2e8f0; padding-top: 16px;">
+            <h3 style="font-size: 14px; font-weight: 800; color: #1e293b; margin: 0 0 12px 0; display: flex; align-items: center; gap: 6px;">
+                <i class="bi bi-clock-history" style="color: #2563eb;"></i> Bitácora e Historial de Avances Registrados
+            </h3>
+            <div id="containerBitacoraHistorial" style="display: flex; flex-direction: column; gap: 10px; max-height: 220px; overflow-y: auto; padding-right: 4px;">
+                <!-- Avances cargados dinámicamente con JS -->
+            </div>
+        </div>
+
+        <!-- BOTÓN DIRECTO DE ACCIÓN: COMPLETADA / SE COMPLETÓ -->
+        <div id="bloqueAccionCompletar" style="border-radius: 10px; padding: 16px; margin-top: 16px; text-align: center; transition: all 0.2s;">
+            <form action="" method="POST" id="formMarcarCompletadaDirecto">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="porcentaje_avance" value="100">
+                <input type="hidden" name="estado" value="finalizada">
+                <button type="submit" id="btnMarcarCompletadaText" class="btn-form" style="padding: 12px 28px; font-size: 14px; font-weight: 800; border-radius: 8px; border: none; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
+                    <i class="bi bi-check-circle-fill me-2"></i> Marcar como Completada
                 </button>
-                <div>
-                    <button type="button" class="btn-ver" style="background:#6b7280; margin-right:10px;" onclick="cerrarModal('modalEditarImprevista')">Cancelar</button>
-                    <button type="submit" class="btn-form">Guardar Cambios</button>
-                </div>
+            </form>
+            <div id="badgeYaFinalizadaText" style="display: none; padding: 10px; font-weight: 800; font-size: 14px; border-radius: 8px;">
+                <i class="bi bi-check-all me-1"></i> Esta actividad ya se encuentra completada al 100%.
             </div>
-        </form>
+        </div>
 
-        <form action="" method="POST" id="formEliminarImprevista" style="display:none;">
+        <div style="margin-top: 20px; text-align: right; display: flex; justify-content: space-between; align-items: center;">
+            @if($isBossOrAdmin)
+                <button type="button" id="btnDevolverDesdeDetalle" class="btn-ver" style="background: #dc2626; color: white; padding: 9px 18px; font-weight: 700; border-radius: 6px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;" onclick="openDevolverModalFromDetalle()">
+                    <i class="bi bi-arrow-return-left"></i> Devolver / Solicitar Corrección
+                </button>
+            @else
+                <div></div>
+            @endif
+            <button type="button" class="btn-ver" style="background: #64748b; color: white; padding: 9px 18px; font-weight: 700; border-radius: 6px;" onclick="cerrarModal('modalVerDetalle')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: DEVOLVER ACTIVIDAD Y SOLICITAR CORRECCIÓN (SOLO JEFE / ADMIN) -->
+<!-- ============================================== -->
+<div id="modalDevolverActividad" class="rh-modal">
+    <div class="rh-modal-content" style="max-width: 520px; background: #ffffff; border: 3px solid #dc2626; border-radius: 12px; box-shadow: 0 10px 25px rgba(220,38,38,0.25); padding: 22px;">
+        <span class="rh-modal-close" onclick="cerrarModal('modalDevolverActividad')">&times;</span>
+        
+        <div style="margin-bottom: 16px;">
+            <h2 style="margin: 0 0 6px 0; color: #991b1b; font-size: 19px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-arrow-return-left" style="color: #dc2626;"></i> Devolver Actividad al Empleado
+            </h2>
+            <p id="devolverTituloText" style="margin: 0; font-size: 13px; color: #475569; font-weight: 700;">Título de la actividad</p>
+        </div>
+
+        <form action="" method="POST" id="formDevolverActividad" onsubmit="guardarDevolucionActividad(event)">
             @csrf
-            @method('DELETE')
+            
+            <!-- AJUSTAR PORCENTAJE REAL ESTIMADO POR EL JEFE -->
+            <div style="background: #fef2f2; border: 1.5px solid #fca5a5; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #991b1b; margin: 0;">
+                        <i class="bi bi-sliders me-1"></i> Porcentaje Real Estimado por el Jefe (%):
+                    </label>
+                    <span style="font-weight: 900; font-size: 16px; color: #dc2626;" id="display_devolver_pct_val">50%</span>
+                </div>
+                <input type="range" name="porcentaje_avance" id="input_devolver_pct_range" min="0" max="95" step="5" value="50"
+                       oninput="document.getElementById('display_devolver_pct_val').innerText = this.value + '%'"
+                       style="width: 100%; accent-color: #dc2626; cursor: pointer; height: 8px;">
+            </div>
+
+            <!-- INSTRUCCIONES Y OBSERVACIONES OBLIGATORIAS -->
+            <div style="margin-bottom: 18px;">
+                <label style="font-weight: 800; font-size: 13px; color: #991b1b; display: block; margin-bottom: 6px;">
+                    Observaciones e Instrucciones de Corrección * (¿Qué faltó por hacer?)
+                </label>
+                <textarea name="comentario_jefe" id="input_devolver_comentario" rows="3" required placeholder="Ej: Te faltó realizar esto y esto para darla por completada..."
+                          style="width: 100%; padding: 10px; border: 2px solid #dc2626; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 500; color: #1e293b;"></textarea>
+            </div>
+
+            <div style="text-align: right; border-top: 1.5px dashed #cbd5e1; padding-top: 14px;">
+                <button type="button" class="btn-ver" style="background: #64748b; color: white; margin-right: 8px; font-weight: 700; padding: 9px 16px; border-radius: 6px;" onclick="cerrarModal('modalDevolverActividad')">Cancelar</button>
+                <button type="submit" class="btn-form" id="btnSubmitDevolver" style="background: #dc2626; color: white; padding: 9px 20px; font-size: 13px; font-weight: 800; border-radius: 6px; box-shadow: 0 4px 6px rgba(220,38,38,0.25);">
+                    <i class="bi bi-arrow-return-left me-1"></i> Regresar Actividad con Observaciones
+                </button>
+            </div>
         </form>
     </div>
 </div>
 
+<!-- ============================================== -->
+<!-- MODAL PRO: CONFIRMAR ELIMINACIÓN DE ACTIVIDAD -->
+<!-- ============================================== -->
+<div id="modalConfirmarEliminar" class="rh-modal">
+    <div class="rh-modal-content" style="max-width: 450px; text-align: center; padding: 25px; border: 3px solid #ef4444; border-radius: 12px; box-shadow: 0 10px 25px rgba(239,68,68,0.25);">
+        <i class="bi bi-exclamation-triangle-fill" style="font-size: 50px; color: #ef4444; display: block; margin-bottom: 12px;"></i>
+        <h3 style="margin: 0 0 8px 0; color: #1e293b; font-size: 19px; font-weight: 800;">¿Estás seguro de eliminar esta actividad?</h3>
+        <p style="color: #64748b; font-size: 13px; margin: 0 0 22px 0; line-height: 1.4;">Esta acción no se podrá deshacer. La actividad será eliminada permanentemente del sistema.</p>
+        
+        <form action="" method="POST" id="formEliminarActividad">
+            @csrf
+            @method('DELETE')
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button type="button" class="btn-ver" style="background: #64748b; color: white; padding: 10px 20px; font-weight: 700; border-radius: 8px; font-size: 13px;" onclick="cerrarModal('modalConfirmarEliminar')">Cancelar</button>
+                <button type="submit" class="btn-ver" style="background: #ef4444; color: white; padding: 10px 20px; font-weight: 800; border-radius: 8px; font-size: 13px; box-shadow: 0 4px 6px rgba(239,68,68,0.25);">Eliminar Definitivamente</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- JAVASCRIPT GLOBAL DEL MÓDULO DE ACTIVIDADES -->
 <script>
-function toggleColaboradores(val) {
-    const bloque = document.getElementById('bloque_colaboradores');
-    if (bloque) {
-        bloque.style.display = val === 'si' ? 'block' : 'none';
-        bloque.querySelectorAll('input[type=checkbox]').forEach(el => el.disabled = val !== 'si');
-    }
-}
+window.APP_BASE_URL = "{{ url('/') }}";
+window.IS_BOSS_OR_ADMIN = {{ $isBossOrAdmin ? 'true' : 'false' }};
 
-function toggleRutinaCompartida(val) {
-    const bloque = document.getElementById('bloque_rutina_compartida');
-    if (bloque) {
-        bloque.style.display = val === 'si' ? 'block' : 'none';
-        bloque.querySelectorAll('input[type=checkbox]').forEach(el => el.disabled = val !== 'si');
-    }
-}
-
-function toggleRutinaRepetida(val) {
-    const bloque = document.getElementById('bloque_rutina_veces');
-    const input = document.getElementById('rutina_veces_input');
-    if (bloque && input) {
-        if (val === 'si') {
-            bloque.style.display = 'block';
-            input.disabled = false;
-            input.required = true;
-            if (!input.value || input.value < 2) input.value = 2;
-        } else {
-            bloque.style.display = 'none';
-            input.disabled = true;
-            input.required = false;
-            input.value = 1;
-        }
-    }
-}
-
-function calcImpTime() {
-    const t1 = document.getElementById('imp_hora_inicio')?.value;
-    const t2 = document.getElementById('imp_hora_fin')?.value;
-    const label = document.getElementById('imp_tiempo_calc');
-    const hidden = document.getElementById('imp_horas_hidden');
-
-    if (t1 && t2) {
-        const d1 = new Date("1970-01-01T" + t1 + ":00");
-        const d2 = new Date("1970-01-01T" + t2 + ":00");
-        let diffMs = d2 - d1;
-        if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000;
-
-        const totalMin = Math.floor(diffMs / (1000 * 60));
-        const hrs = (totalMin / 60).toFixed(1);
-        if (label) label.textContent = `${hrs} Horas (Calculado automáticamente)`;
-        if (hidden) hidden.value = hrs;
-    } else {
-        if (label) label.textContent = '0 Horas';
-        if (hidden) hidden.value = 0;
-    }
-}
-
-function safeBtoa(str) {
-    return btoa(unescape(encodeURIComponent(str)));
-}
-function safeAtob(str) {
-    if (!str) return '';
-    try {
-        if (str.trim().startsWith('{') || str.trim().startsWith('[')) {
-            return str;
-        }
-        return decodeURIComponent(escape(atob(str)));
-    } catch (e1) {
-        try {
-            let binary = atob(str);
-            let bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-                bytes[i] = binary.charCodeAt(i);
+document.addEventListener('DOMContentLoaded', function() {
+    let formCrear = document.getElementById('formCrearActividad');
+    if (formCrear) {
+        formCrear.addEventListener('submit', function(e) {
+            let tipo = document.getElementById('crear_tipo_actividad')?.value || 'asignada';
+            if (tipo === 'asignada' && typeof actualizarSeleccionEmpleadosAsig === 'function') {
+                actualizarSeleccionEmpleadosAsig();
             }
-            return new TextDecoder().decode(bytes);
-        } catch (e2) {
-            try {
-                return atob(str);
-            } catch(e3) {
-                return str;
+
+            let titulo = document.getElementById('crear_titulo')?.value.trim();
+            let descripcion = document.getElementById('crear_descripcion')?.value.trim();
+            let empleado = document.getElementById('crear_empleado_id')?.value;
+            let prioridad = document.getElementById('crear_prioridad')?.value;
+
+            if (!titulo || !descripcion || !empleado || (tipo === 'asignada' && !prioridad)) {
+                e.preventDefault();
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Campos Obligatorios Incompletos',
+                        html: '<p style="font-size:13px; color:#475569; margin-bottom:10px;">Por favor completa los campos requeridos (*):</p>' +
+                              '<ul style="text-align:left; font-size:13px; font-weight:700; color:#dc2626; margin-top:6px; line-height:1.6;">' +
+                              (!titulo ? '<li>• Título de la actividad *</li>' : '') +
+                              (!descripcion ? '<li>• Descripción de la actividad *</li>' : '') +
+                              (!empleado ? '<li>• Empleado asignado *</li>' : '') +
+                              ((tipo === 'asignada' && !prioridad) ? '<li>• Prioridad * (Selecciona una prioridad)</li>' : '') +
+                              '</ul>',
+                        confirmButtonColor: '#15803d',
+                        confirmButtonText: 'Entendido, completar campos'
+                    });
+                }
+                return false;
             }
-        }
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Guardando actividad...',
+                    text: 'Registrando la información en el sistema. Por favor espera un momento.',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+            }
+        });
     }
+});
+
+function cerrarTodosLosModales() {
+    document.querySelectorAll('.rh-modal').forEach(m => {
+        m.classList.remove('active');
+        m.style.display = 'none';
+    });
 }
 
 function abrirModal(id) {
+    cerrarTodosLosModales();
     let m = document.getElementById(id);
     if (m) {
         m.classList.add('active');
         m.style.display = 'flex';
     }
 }
+
 function cerrarModal(id) {
     let m = document.getElementById(id);
     if (m) {
@@ -1026,746 +1116,1566 @@ function cerrarModal(id) {
     }
 }
 
-function openEditModalFromRow(btn) {
-    let elWithData = null;
-    if (btn) {
-        elWithData = (btn.dataset && btn.dataset.actividad) ? btn : (btn.closest ? btn.closest('[data-actividad]') : null);
-        while (elWithData && (!elWithData.dataset || !elWithData.dataset.actividad)) {
-            elWithData = elWithData.parentElement ? elWithData.parentElement.closest('[data-actividad]') : null;
-        }
-    }
-    let rawData = (elWithData && elWithData.dataset && elWithData.dataset.actividad) ? elWithData.dataset.actividad : '';
-    openEditModal({ dataset: { actividad: rawData } });
-}
-
-function openEditModal(btn) {
-    cerrarModal('modalFicha');
-    let actividad = null;
-    let rawData = '';
-
-    if (btn) {
-        let elWithData = (btn.dataset && btn.dataset.actividad) ? btn : (btn.closest ? btn.closest('[data-actividad]') : null);
-        while (elWithData && (!elWithData.dataset || !elWithData.dataset.actividad)) {
-            elWithData = elWithData.parentElement ? elWithData.parentElement.closest('[data-actividad]') : null;
-        }
-        if (elWithData && elWithData.dataset && elWithData.dataset.actividad) {
-            rawData = elWithData.dataset.actividad;
-        }
-    }
-
-    if (rawData) {
-        try {
-            let decoded = safeAtob(rawData);
-            actividad = JSON.parse(decoded);
-        } catch(e) {
-            console.warn("Could not parse rawData for openEditModal", e);
-        }
-    }
-
-    if (!actividad && window.currentActividad) {
-        actividad = window.currentActividad;
-    }
-
-    if (!actividad) {
-        alert("No se encontró la información de la actividad para editar.");
-        return;
-    }
-
-    try {
-        let baseUrl = getAppBaseUrl();
-        let formEdit = document.getElementById('formEditar');
-        if (formEdit) {
-            formEdit.action = `${baseUrl}/actividades/${actividad.id}`;
-        }
-        
-        if (document.getElementById('edit_titulo')) {
-            document.getElementById('edit_titulo').value = actividad.titulo || '';
-        }
-        if (document.getElementById('edit_descripcion')) {
-            document.getElementById('edit_descripcion').value = actividad.descripcion || '';
-        }
-        if (document.getElementById('edit_empleado')) {
-            document.getElementById('edit_empleado').value = actividad.empleado_id || '';
-        }
-        if (document.getElementById('edit_estado')) {
-            document.getElementById('edit_estado').value = actividad.estado || 'pendiente';
-        }
-        if (document.getElementById('edit_prioridad')) {
-            document.getElementById('edit_prioridad').value = actividad.prioridad || 'media';
-        }
-        
-        // Sencilla:
-        if (document.getElementById('edit_sencilla_no')) {
-            document.getElementById('edit_sencilla_no').checked = true;
-            toggleEditSencilla('no');
-        }
-
-        // Compartida:
-        if (document.getElementById('edit_compartida_no')) {
-            document.getElementById('edit_compartida_no').checked = true;
-            toggleEditCompartida('no');
-        }
-
-        // Duracion:
-        if (actividad.modalidad === 'varios_dias' || (actividad.fecha_inicio && actividad.fecha_estimada_fin && actividad.fecha_inicio !== actividad.fecha_estimada_fin)) {
-            if (document.getElementById('edit_mas_un_dia_si')) {
-                document.getElementById('edit_mas_un_dia_si').checked = true;
-                toggleEditDuracion('si');
-            }
-            if (document.getElementById('edit_fecha_inicio')) {
-                document.getElementById('edit_fecha_inicio').value = actividad.fecha_inicio ? actividad.fecha_inicio.substring(0,10) : '';
-            }
-            if (document.getElementById('edit_fecha_fin')) {
-                document.getElementById('edit_fecha_fin').value = actividad.fecha_estimada_fin ? actividad.fecha_estimada_fin.substring(0,10) : '';
-            }
+function updateImprevistoPorcentajeDisplay(val) {
+    let disp = document.getElementById('display_porcentaje_imprevisto');
+    if (disp) disp.innerText = `${val}%`;
+    let hiddenEstado = document.getElementById('crear_estado_imprevisto');
+    if (hiddenEstado) {
+        if (parseInt(val) >= 100) {
+            hiddenEstado.value = 'finalizada';
+        } else if (parseInt(val) > 0) {
+            hiddenEstado.value = 'en_proceso';
         } else {
-            if (document.getElementById('edit_mas_un_dia_no')) {
-                document.getElementById('edit_mas_un_dia_no').checked = true;
-                toggleEditDuracion('no');
-            }
-            if (document.getElementById('edit_tiempo_estimado')) {
-                document.getElementById('edit_tiempo_estimado').value = actividad.tiempo_estimado || '';
-            }
+            hiddenEstado.value = 'pendiente';
         }
-        
-        abrirModal('modalEditar');
-    } catch(err) {
-        console.error("Error al abrir modal de edición de actividad:", err);
-        alert("Ocurrió un error al cargar los datos para editar la actividad.");
     }
 }
 
-function openEditRutinaModal(btn) {
-    let rutina = null;
-    let rawData = '';
+function updateAvanceGenDisplay(val) {
+    let disp = document.getElementById('display_avance_gen_val');
+    if (disp) disp.innerText = `${val}%`;
+}
 
-    if (btn) {
-        let elWithData = (btn.dataset && btn.dataset.rutina) ? btn : (btn.closest ? btn.closest('[data-rutina]') : null);
-        while (elWithData && (!elWithData.dataset || !elWithData.dataset.rutina)) {
-            elWithData = elWithData.parentElement ? elWithData.parentElement.closest('[data-rutina]') : null;
-        }
-        if (elWithData && elWithData.dataset && elWithData.dataset.rutina) {
-            rawData = elWithData.dataset.rutina;
+function setAvanceGenQuickVal(val) {
+    let range = document.getElementById('input_avance_gen_range');
+    if (range) {
+        range.value = val;
+        updateAvanceGenDisplay(val);
+    }
+}
+
+function openAvanceGenericoModal(btn, event) {
+    if (event) event.stopPropagation();
+    if (!btn) return;
+    let dataset = btn.dataset;
+    let id = dataset.id;
+    let tipo = dataset.tipo || 'asignada';
+    if (!id) return;
+
+    let baseUrl = window.APP_BASE_URL || '';
+    let form = document.getElementById('formAvanceGenerico');
+    let titleHeader = document.getElementById('titleAvanceGenHeader');
+    let content = document.getElementById('contentModalAvanceGen');
+    let submitBtn = document.getElementById('btnSubmitAvanceGen');
+    let hiddenTipo = document.getElementById('avance_tipo_gen_hidden');
+
+    let boxSlider = document.getElementById('boxAvanceSliderGen');
+    let labelSlider = document.getElementById('labelPorcentajeAvanceGen');
+    let iconSlider = document.getElementById('iconPorcentajeAvanceGen');
+    let displayVal = document.getElementById('display_avance_gen_val');
+    let rangeInput = document.getElementById('input_avance_gen_range');
+    let quickBtns  = document.querySelectorAll('.quick-btn-avance');
+
+    let boxRutina = document.getElementById('boxAvanceRutinaDividido');
+    let labelNota = document.getElementById('labelNotaAvanceGen');
+    let inputNota = document.getElementById('input_avance_gen_resultado');
+
+    if (hiddenTipo) hiddenTipo.value = tipo;
+
+    let themeColor = '#15803d';
+    let textColor  = '#166534';
+    let bgLight    = '#f0fdf4';
+    let borderLight = '#86efac';
+
+    if (tipo === 'imprevista') {
+        themeColor = '#c2410c';
+        textColor  = '#9a3412';
+        bgLight    = '#fff7ed';
+        borderLight = '#fed7aa';
+    } else if (tipo === 'rutinaria') {
+        themeColor = '#1e40af';
+        textColor  = '#1e3a8a';
+        bgLight    = '#eff6ff';
+        borderLight = '#bfdbfe';
+    }
+
+    if (content)   { content.style.background = bgLight; content.style.border = `3px solid ${themeColor}`; }
+    if (submitBtn) { submitBtn.style.background = themeColor; }
+    if (labelNota) { labelNota.style.color = textColor; }
+    if (inputNota) { inputNota.style.border = `2px solid ${themeColor}`; }
+
+    let boxArchivo    = document.getElementById('boxArchivoAvanceGen');
+    let labelAdjunto  = document.getElementById('labelAdjuntoAvanceGen');
+    let inputArchivos = document.getElementById('input_avance_gen_archivos');
+    let boxHoras      = document.getElementById('boxHorasTrabajadasGen');
+    let labelHoras    = document.getElementById('labelHorasTrabajadasGen');
+    let inputHoras    = document.getElementById('input_avance_gen_horas');
+
+    if (boxArchivo)   { boxArchivo.style.border = `2px dashed ${themeColor}`; boxArchivo.style.background = '#ffffff'; }
+    if (labelAdjunto) { 
+        labelAdjunto.style.color = textColor; 
+        let iconP = labelAdjunto.querySelector('i');
+        if (iconP) iconP.style.color = themeColor;
+    }
+    if (inputArchivos){ inputArchivos.style.border = `1.5px solid ${borderLight}`; inputArchivos.style.background = bgLight; }
+
+    if (boxHoras)     { boxHoras.style.display = (tipo === 'asignada') ? 'block' : 'none'; }
+    if (labelHoras)   { labelHoras.style.color = textColor; }
+    if (inputHoras)   { inputHoras.style.border = `2px solid ${themeColor}`; }
+
+    if (form) {
+        if (tipo === 'imprevista') {
+            form.action = `${baseUrl}/actividades-imprevistas/${id}`;
+            if (titleHeader) { titleHeader.style.color = textColor; titleHeader.innerHTML = `<i class="bi bi-graph-up-arrow" style="color: ${themeColor};"></i> Registrar Avance de Actividad Personal`; }
+            if (boxSlider) { boxSlider.style.border = `2px solid ${themeColor}`; boxSlider.style.display = 'block'; }
+            if (labelSlider) { labelSlider.style.color = textColor; labelSlider.innerHTML = `<i class="bi bi-percent" style="color: ${themeColor};"></i> Porcentaje de Avance`; }
+            if (iconSlider) { iconSlider.style.color = themeColor; }
+            if (displayVal) { displayVal.style.color = themeColor; }
+            if (rangeInput) { rangeInput.style.accentColor = themeColor; }
+
+            quickBtns.forEach((qb, idx) => {
+                if (idx === 3) {
+                    qb.style.background = themeColor; qb.style.borderColor = themeColor; qb.style.color = '#ffffff';
+                } else {
+                    qb.style.background = bgLight; qb.style.borderColor = borderLight; qb.style.color = textColor;
+                }
+            });
+
+            if (boxRutina) boxRutina.style.display = 'none';
+        } else if (tipo === 'rutinaria') {
+            form.action = `${baseUrl}/rutinas/${id}`;
+            if (titleHeader) { titleHeader.style.color = textColor; titleHeader.innerHTML = `<i class="bi bi-arrow-repeat" style="color: ${themeColor};"></i> Registrar Ejecución de Rutina`; }
+            if (boxSlider) boxSlider.style.display = 'none';
+            if (boxRutina) { boxRutina.style.border = `2px solid ${themeColor}`; boxRutina.style.display = 'block'; }
+            let labelRut = document.getElementById('labelRutinaAvanceHeader');
+            if (labelRut) labelRut.style.color = textColor;
+
+            let veces = parseInt(dataset.veces || 1);
+            let ejecHoy = parseInt(dataset.ejecuciones || 0);
+            let container = document.getElementById('containerOpcionesRutinaDiv');
+            if (container) {
+                container.innerHTML = '';
+                for (let i = 1; i <= veces; i++) {
+                    let pct = Math.round((i / veces) * 100);
+                    let isChecked = i <= ejecHoy ? 'checked' : '';
+                    container.innerHTML += `
+                        <label style="display: flex; align-items: center; gap: 10px; background: #ffffff; padding: 10px 14px; border-radius: 8px; border: 1.5px solid ${borderLight}; cursor: pointer; font-size: 13px; font-weight: 700; color: ${textColor};">
+                            <input type="radio" name="cantidad_ejecuciones_rutina" value="${i}" ${isChecked} onchange="setAvanceGenQuickVal(${pct})" style="accent-color: ${themeColor}; width: 18px; height: 18px;">
+                            <span>Ejecución ${i} de ${veces} — <strong>${pct}%</strong></span>
+                        </label>
+                    `;
+                }
+            }
+        } else { // asignada
+            form.action = `${baseUrl}/actividades/${id}`;
+            if (titleHeader) { titleHeader.style.color = textColor; titleHeader.innerHTML = `<i class="bi bi-graph-up-arrow" style="color: ${themeColor};"></i> Registrar Avance de Actividad Asignada`; }
+            if (boxSlider) { boxSlider.style.border = `2px solid ${themeColor}`; boxSlider.style.display = 'block'; }
+            if (labelSlider) { labelSlider.style.color = textColor; labelSlider.innerHTML = `<i class="bi bi-percent" style="color: ${themeColor};"></i> Porcentaje de Avance <span style="font-size: 11px; font-weight: 600; color: #475569; margin-left: 4px;">(A consideración del jefe)</span>`; }
+            if (iconSlider) { iconSlider.style.color = themeColor; }
+            if (displayVal) { displayVal.style.color = themeColor; }
+            if (rangeInput) { rangeInput.style.accentColor = themeColor; }
+
+            quickBtns.forEach((qb, idx) => {
+                if (idx === 3) {
+                    qb.style.background = themeColor; qb.style.borderColor = themeColor; qb.style.color = '#ffffff';
+                } else {
+                    qb.style.background = bgLight; qb.style.borderColor = borderLight; qb.style.color = textColor;
+                }
+            });
+
+            if (boxRutina) boxRutina.style.display = 'none';
         }
     }
 
-    if (rawData) {
+    let tituloText = document.getElementById('avanceGenTituloText');
+    if (tituloText) tituloText.innerText = dataset.titulo || 'Actividad';
+
+    let avanceVal = dataset.avance !== undefined ? parseInt(dataset.avance) : 50;
+    let range = document.getElementById('input_avance_gen_range');
+    if (range) range.value = avanceVal;
+    updateAvanceGenDisplay(avanceVal);
+
+    let resInput = document.getElementById('input_avance_gen_resultado');
+    if (resInput) {
+        resInput.value = '';
+        if (typeof setupAutoNumbering === 'function') {
+            setupAutoNumbering('input_avance_gen_resultado');
+        }
+    }
+
+    abrirModal('modalActualizarAvanceGenerico');
+}
+
+function confirmarEliminarActividad(actionUrl, event) {
+    if (event) event.stopPropagation();
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: '¿Estás seguro de eliminar esta actividad?',
+            text: 'Esta acción no se puede deshacer. La actividad será eliminada permanentemente del sistema.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: '<i class="bi bi-trash me-1"></i> Sí, eliminar definitivamente',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let form = document.getElementById('formEliminarActividad');
+                if (form) {
+                    form.action = actionUrl;
+                    Swal.fire({
+                        title: 'Eliminando actividad...',
+                        text: 'Procesando eliminación en el sistema.',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+                    form.submit();
+                }
+            }
+        });
+    } else {
+        let form = document.getElementById('formEliminarActividad');
+        if (form) form.action = actionUrl;
+        abrirModal('modalConfirmarEliminar');
+    }
+}
+
+function openShowModalFromRow(elem) {
+    if (!elem) return;
+    let dataset = elem.dataset;
+    let tipo = dataset.tipo || 'asignada';
+    let id = dataset.id;
+    if (!id) return;
+    window.currentDetailDataset = dataset;
+
+    let baseUrl = window.APP_BASE_URL || '';
+    let content = document.getElementById('contentModalVerDetalle');
+    let badgeTipo = document.getElementById('badgeTipoDetalle');
+    let badgeEstado = document.getElementById('badgeEstadoDetalle');
+    let titulo = document.getElementById('tituloDetalle');
+    let empleado = document.getElementById('empleadoDetalle');
+    let creador = document.getElementById('creadorDetalle');
+    let fecha = document.getElementById('fechaDetalle');
+    let prioridad = document.getElementById('prioridadDetalle');
+    let descripcion = document.getElementById('descripcionDetalle');
+    let bloqueExtraImp = document.getElementById('bloqueExtraImprevistaDetalle');
+    let containerBitacora = document.getElementById('containerBitacoraHistorial');
+
+    let formCompletar = document.getElementById('formMarcarCompletadaDirecto');
+    let btnCompletar  = document.getElementById('btnMarcarCompletadaText');
+    let badgeYaFinalizada = document.getElementById('badgeYaFinalizadaText');
+
+    if (titulo) titulo.innerText = dataset.titulo || 'Sin título';
+    if (empleado) empleado.innerText = dataset.empleadonombre || '-';
+    if (creador) creador.innerText = dataset.creadornombre || '-';
+    if (fecha) fecha.innerText = dataset.fechadisplay || '-';
+    if (prioridad) prioridad.innerText = (dataset.prioridad || 'media').toUpperCase();
+    if (descripcion) descripcion.innerText = dataset.descripcion || 'Sin descripción';
+
+    let bloqueDep = document.getElementById('bloqueDependenciaDetalle');
+    let depResp   = document.getElementById('depRespDetalle');
+    let depMotivo = document.getElementById('depMotivoDetalle');
+
+    if (dataset.depresp || dataset.depmotivo) {
+        if (bloqueDep) bloqueDep.style.display = 'block';
+        if (depResp) depResp.innerText = dataset.depresp || 'No especificado';
+        if (depMotivo) depMotivo.innerText = dataset.depmotivo ? `Motivo: ${dataset.depmotivo}` : '';
+    } else {
+        if (bloqueDep) bloqueDep.style.display = 'none';
+    }
+
+    let est = dataset.estado || 'pendiente';
+    if (badgeEstado) {
+        badgeEstado.innerText = est.replace('_', ' ').toUpperCase();
+        badgeEstado.style.background = est === 'finalizada' ? '#dcfce7' : (est === 'atrasada' ? '#fee2e2' : '#fef3c7');
+        badgeEstado.style.color = est === 'finalizada' ? '#166534' : (est === 'atrasada' ? '#991b1b' : '#92400e');
+    }
+
+    let routeUpdate = `${baseUrl}/actividades/${id}`;
+    if (tipo === 'imprevista') routeUpdate = `${baseUrl}/actividades-imprevistas/${id}`;
+    if (tipo === 'rutinaria') routeUpdate = `${baseUrl}/rutinas/${id}`;
+
+    if (formCompletar) formCompletar.action = routeUpdate;
+
+    if (tipo === 'imprevista') {
+        if (content) { content.style.border = '3px solid #c2410c'; }
+        if (badgeTipo) { badgeTipo.innerText = 'PERSONAL'; badgeTipo.style.background = '#ffedd5'; badgeTipo.style.color = '#c2410c'; }
+        if (btnCompletar) {
+            btnCompletar.style.background = '#c2410c';
+            btnCompletar.style.color = 'white';
+            btnCompletar.innerHTML = `<i class="bi bi-question-circle-fill me-2"></i> ¿Se completó? (Marcar Solucionada)`;
+        }
+        if (bloqueExtraImp) {
+            bloqueExtraImp.style.display = 'block';
+            document.getElementById('motivoDetalle').innerText = dataset.motivo || 'N/A';
+            document.getElementById('resultadoDetalle').innerText = dataset.resultado || 'N/A';
+        }
+    } else if (tipo === 'rutinaria') {
+        if (content) { content.style.border = '3px solid #1e40af'; }
+        if (badgeTipo) { badgeTipo.innerText = 'RUTINARIA'; badgeTipo.style.background = '#dbeafe'; badgeTipo.style.color = '#1e40af'; }
+        if (btnCompletar) {
+            btnCompletar.style.background = '#1e40af';
+            btnCompletar.style.color = 'white';
+            btnCompletar.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i> Marcar Rutina Completada`;
+        }
+        if (bloqueExtraImp) bloqueExtraImp.style.display = 'none';
+    } else {
+        if (content) { content.style.border = '3px solid #15803d'; }
+        if (badgeTipo) { badgeTipo.innerText = 'ASIGNADA'; badgeTipo.style.background = '#dcfce7'; badgeTipo.style.color = '#15803d'; }
+        if (btnCompletar) {
+            btnCompletar.style.background = '#15803d';
+            btnCompletar.style.color = 'white';
+            btnCompletar.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i> Marcar como Completada`;
+        }
+        if (bloqueExtraImp) bloqueExtraImp.style.display = 'none';
+    }
+
+    if (est === 'finalizada' || parseInt(dataset.avance || 0) >= 100) {
+        if (formCompletar) formCompletar.style.display = 'none';
+        if (badgeYaFinalizada) {
+            badgeYaFinalizada.style.display = 'block';
+            badgeYaFinalizada.style.background = '#dcfce7';
+            badgeYaFinalizada.style.color = '#166534';
+        }
+    } else {
+        if (formCompletar) formCompletar.style.display = 'block';
+        if (badgeYaFinalizada) badgeYaFinalizada.style.display = 'none';
+    }
+
+    // CARGAR BITÁCORA / HISTORIAL DE AVANCES CON FECHA Y NOTAS
+    if (containerBitacora) {
+        containerBitacora.innerHTML = '';
+        let historialData = [];
         try {
-            let decoded = safeAtob(rawData);
-            rutina = JSON.parse(decoded);
-        } catch(e) {
-            console.warn("Could not parse rawData rutina", e);
+            if (dataset.historial) {
+                historialData = JSON.parse(dataset.historial);
+            }
+        } catch(e) { console.error("Error parseando historial:", e); }
+
+        if (historialData && historialData.length > 0) {
+            historialData.forEach(item => {
+                let badgeBg = item.porcentaje >= 100 ? '#dcfce7' : '#fef3c7';
+                let badgeColor = item.porcentaje >= 100 ? '#166534' : '#92400e';
+                containerBitacora.innerHTML += `
+                    <div style="background: #f8fafc; border-left: 4px solid ${badgeColor}; padding: 10px 14px; border-radius: 8px; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 12px; font-weight: 800; color: #1e293b;">
+                                <i class="bi bi-person-fill me-1"></i> ${item.empleado || 'Usuario'}
+                            </span>
+                            <span style="background: ${badgeBg}; color: ${badgeColor}; font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 12px;">
+                                ${item.porcentaje}% Avance
+                            </span>
+                        </div>
+                        <p style="margin: 0 0 4px 0; font-size: 13px; color: #334155; font-weight: 500;">
+                            "${item.nota || 'Sin notas registadas'}"
+                        </p>
+                        <span style="font-size: 10px; font-weight: 700; color: #64748b; display: block;">
+                            <i class="bi bi-clock me-1"></i> Registrado el ${item.fecha || 'N/A'}
+                        </span>
+                    </div>
+                `;
+            });
+        } else {
+            containerBitacora.innerHTML = `
+                <div style="text-align: center; padding: 15px; color: #64748b; font-size: 12px; font-style: italic;">
+                    Aún no hay avances registrados para esta actividad.
+                </div>
+            `;
         }
     }
 
-    if (!rutina && window.currentRutina) {
-        rutina = window.currentRutina;
-    }
+    abrirModal('modalVerDetalle');
+}
 
-    if (!rutina) {
-        alert("No se pudo encontrar la información de la rutina para editar.");
+function toggleSencillaNueva(val) {
+    let bloqueAvanzado = document.getElementById('bloque_avanzado_asignada');
+    if (bloqueAvanzado) {
+        bloqueAvanzado.style.display = (val === 'no') ? 'block' : 'none';
+    }
+}
+
+function toggleCrearFechas(val) {
+    let sec = document.getElementById('seccion_fechas_asignada');
+    if (sec) {
+        sec.style.display = (val === 'varios_dias') ? 'grid' : 'none';
+    }
+}
+
+function toggleColaboradoresAsig(val) {
+    let bloque = document.getElementById('bloque_lista_colaboradores_asig');
+    if (bloque) bloque.style.display = (val === 'si') ? 'block' : 'none';
+}
+
+function toggleColaboradoresImp(val) {
+    let bloque = document.getElementById('bloque_lista_colaboradores_imp');
+    if (bloque) bloque.style.display = (val === 'si') ? 'block' : 'none';
+}
+
+function calcularDiferenciaHorasCreacion() {
+    let ini = document.getElementById('crear_hora_inicio')?.value;
+    let fin = document.getElementById('crear_hora_fin')?.value;
+    let inputHoras = document.getElementById('crear_horas_invertidas');
+
+    if (!ini || !fin || !inputHoras) return;
+
+    let [h1, m1] = ini.split(':').map(Number);
+    let [h2, m2] = fin.split(':').map(Number);
+
+    let totalMin1 = (h1 * 60) + m1;
+    let totalMin2 = (h2 * 60) + m2;
+
+    if (totalMin2 > totalMin1) {
+        let diffMin = totalMin2 - totalMin1;
+        let diffHoras = parseFloat((diffMin / 60).toFixed(2));
+        inputHoras.value = diffHoras;
+    }
+}
+
+function toggleDependenciaAsig(val) {
+    let bloque = document.getElementById('bloque_dependencia_asig');
+    if (bloque) {
+        bloque.style.display = (val === 'si') ? 'grid' : 'none';
+    }
+    if (val === 'no') {
+        let inputResp = document.getElementById('crear_dependencia_responsable');
+        let inputMot  = document.getElementById('crear_dependencia_motivo');
+        if (inputResp) inputResp.value = '';
+        if (inputMot)  inputMot.value = '';
+    }
+}
+
+function toggleTipoPlazoSub(val) {
+    let secFechas = document.getElementById('seccion_fechas_asignada');
+    let boxHorario = document.getElementById('boxHorarioEstimado');
+
+    if (val === 'fecha') {
+        if (secFechas) secFechas.style.display = 'grid';
+        if (boxHorario) boxHorario.style.display = 'none';
+    } else if (val === 'hora') {
+        if (secFechas) secFechas.style.display = 'none';
+        if (boxHorario) boxHorario.style.display = 'grid';
+    } else if (val === 'ambos') {
+        if (secFechas) secFechas.style.display = 'grid';
+        if (boxHorario) boxHorario.style.display = 'grid';
+    }
+}
+
+function toggleTienePlazo(val) {
+    let subBox = document.getElementById('sub_box_tipo_plazo');
+
+    if (val === 'si') {
+        if (subBox) subBox.style.display = 'block';
+        let selTipo = document.querySelector('input[name="tipo_plazo"]:checked')?.value || 'fecha';
+        toggleTipoPlazoSub(selTipo);
+    } else {
+        if (subBox) subBox.style.display = 'none';
+    }
+}
+
+function actualizarSeleccionEmpleadosAsig() {
+    let checkedElements = document.querySelectorAll('input[name="empleados_asig_checkboxes[]"]:checked');
+    let containerHidden = document.getElementById('container_hidden_empleados_compartidos');
+    let inputEmpleadoId = document.getElementById('crear_empleado_id');
+    let inputColaboro = document.getElementById('crear_colaboro_asig_radio');
+
+    if (!containerHidden || !inputEmpleadoId) return;
+
+    containerHidden.innerHTML = '';
+
+    if (checkedElements.length === 0) {
+        inputEmpleadoId.value = '{{ auth()->id() }}';
+        if (inputColaboro) inputColaboro.value = 'no';
         return;
     }
 
-    try {
-        window.currentRutina = rutina;
-        let baseUrl = getAppBaseUrl();
-        
-        let formEdit = document.getElementById('formEditarRutina');
-        if (formEdit) {
-            formEdit.action = `${baseUrl}/rutinas/${rutina.id}`;
-        }
+    inputEmpleadoId.value = checkedElements[0].value;
 
-        let formDelete = document.getElementById('formEliminarRutina');
-        if (formDelete) {
-            formDelete.action = `${baseUrl}/rutinas/${rutina.id}`;
-        }
-        
-        if (document.getElementById('edit_rutina_titulo')) {
-            document.getElementById('edit_rutina_titulo').value = rutina.titulo || '';
-        }
-        if (document.getElementById('edit_rutina_descripcion')) {
-            document.getElementById('edit_rutina_descripcion').value = rutina.descripcion || '';
-        }
-        if (document.getElementById('edit_rutina_veces')) {
-            document.getElementById('edit_rutina_veces').value = rutina.veces_al_dia || rutina.veces || 1;
-        }
-        
-        abrirModal('modalEditarRutina');
-    } catch(err) {
-        console.error("Error al abrir modal de edición de rutina:", err);
-        alert("Ocurrió un error al cargar la rutina para editar.");
+    if (checkedElements.length > 1) {
+        if (inputColaboro) inputColaboro.value = 'si';
+        checkedElements.forEach((el, index) => {
+            if (index > 0) {
+                let hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'empleados_compartidos[]';
+                hidden.value = el.value;
+                containerHidden.appendChild(hidden);
+            }
+        });
+    } else {
+        if (inputColaboro) inputColaboro.value = 'no';
     }
 }
 
-function getAppBaseUrl() {
-    let appUrl = "{{ url('/') }}".replace(/\/$/, '');
-    try {
-        let parsedApp = new URL(appUrl);
-        let path = parsedApp.pathname;
-        if (path === '/') path = '';
-        return window.location.origin + path;
-    } catch(e) {
-        return window.location.origin;
-    }
-}
-
-function openShowModal(btn) {
-    let targetEl = (btn && btn.closest) ? (btn.closest('[data-id], [data-actividad]') || btn) : btn;
-    let actividadId = targetEl ? (targetEl.dataset ? targetEl.dataset.id : null) : null;
-    if (!actividadId && targetEl && targetEl.dataset && targetEl.dataset.actividad) {
-        let strData = targetEl.dataset.actividad;
-        if (strData) {
-            try {
-                let actObj = JSON.parse(safeAtob(strData));
-                actividadId = actObj ? actObj.id : null;
-            } catch(e) {}
-        }
-    }
-    if (!actividadId) return;
-
-    let fetchUrl = `${getAppBaseUrl()}/actividades/${actividadId}/details`;
-
-    fetch(fetchUrl, {
-        headers: {
-            "Accept": "application/json",
-            "X-Requested-With": "XMLHttpRequest"
-        }
-    })
-    .then(r => {
-        if (!r.ok) {
-            throw new Error(`HTTP ${r.status}: ${r.statusText}`);
-        }
-        return r.json();
-    })
-    .then(actividad => {
-        window.currentActividad = actividad;
-        let btnEdit = document.getElementById('ficha_btn_editar');
-        if (btnEdit) btnEdit.dataset.actividad = safeBtoa(JSON.stringify(actividad));
-
-        let formDel = document.getElementById('form_delete_actividad');
-        if (formDel) formDel.action = `${getAppBaseUrl()}/actividades/${actividad.id}`;
-        
-        let avanceId = document.getElementById('avance_actividad_id');
-        if (avanceId) avanceId.value = actividad.id;
-
-        let formSlider = document.getElementById('form-slider-avance');
-        if (formSlider) formSlider.action = `${getAppBaseUrl()}/actividades/${actividad.id}`;
-        
-        let elPrioridad = document.getElementById('ficha_prioridad');
-        if (elPrioridad) elPrioridad.textContent = 'Prioridad: ' + (actividad.prioridad ? actividad.prioridad.toUpperCase() : '');
-        
-        let sel = document.getElementById('ficha_estado_select');
-        if (sel) {
-            sel.value = actividad.estado;
-            let colorMap = {
-                'pendiente': '#fef3c7', 'en_proceso': '#dbeafe', 'en_pausa': '#f3f4f6', 'finalizada': '#dcfce7', 'atrasada': '#fee2e2', 'cancelada': '#f1f5f9'
-            };
-            let txtMap = {
-                'pendiente': '#92400e', 'en_proceso': '#1e40af', 'en_pausa': '#475569', 'finalizada': '#166534', 'atrasada': '#991b1b', 'cancelada': '#64748b'
-            };
-            sel.style.backgroundColor = colorMap[actividad.estado] || '#f1f5f9';
-            sel.style.color = txtMap[actividad.estado] || '#475569';
-        }
-        
-        let elTitulo = document.getElementById('ficha_titulo');
-        if (elTitulo) elTitulo.textContent = actividad.titulo || '';
-
-        let elDesc = document.getElementById('ficha_descripcion');
-        if (elDesc) elDesc.textContent = actividad.descripcion || '';
-
-        let elImp = document.getElementById('ficha_impacto');
-        if (elImp) elImp.textContent = actividad.impacto || '';
-        
-        let fIni = actividad.fecha_inicio ? actividad.fecha_inicio.substring(0,10) : '';
-        let fFin = actividad.fecha_estimada_fin ? actividad.fecha_estimada_fin.substring(0,10) : '';
-        let elFechas = document.getElementById('ficha_fechas');
-        if (elFechas) elFechas.textContent = `Del ${fIni} al ${fFin} (${actividad.tiempo_estimado || 'N/A'})`;
-        
-        let slider = document.getElementById('slider_avance');
-        if (slider) slider.value = actividad.porcentaje_avance || 0;
-
-        let elAvanceVal = document.getElementById('ficha_avance_text_val');
-        if (elAvanceVal) elAvanceVal.textContent = actividad.porcentaje_avance || 0;
-
-        // Show/Hide completada/reabrir buttons conditionally based on status
-        let btnCompletar = document.getElementById('ficha_btn_completar');
-        let btnReabrir = document.getElementById('ficha_btn_reabrir');
-        if (btnCompletar && btnReabrir) {
-            if (actividad.estado === 'finalizada') {
-                btnCompletar.style.display = 'none';
-                btnReabrir.style.display = 'block';
-            } else {
-                btnCompletar.style.display = 'block';
-                btnReabrir.style.display = 'none';
-            }
-        }
-
-        const tbody = document.getElementById('tabla_avances');
-        if (tbody) {
-            tbody.innerHTML = '';
-            if (actividad.avances && actividad.avances.length > 0) {
-                actividad.avances.forEach(av => {
-                    let row = document.createElement('tr');
-                    
-                    let aprobacionCell = '';
-                    if (av.estado === 'pendiente_aprobacion') {
-                        if (window.isBoss) {
-                            aprobacionCell = `
-                                <div style="display:flex; gap:5px;">
-                                    <button type="button" class="btn-ver" style="background:#10b981; padding:3px 8px; font-size:10px;" onclick="aprobarAvance(${av.id})">Aprobar</button>
-                                    <button type="button" class="btn-ver" style="background:#ef4444; padding:3px 8px; font-size:10px;" onclick="rechazarAvance(${av.id})">Rechazar</button>
-                                </div>
-                            `;
-                        } else {
-                            aprobacionCell = '<span style="color:#d97706; font-weight:bold;">Pendiente de Aprobación</span>';
-                        }
-                    } else if (av.estado === 'aprobado') {
-                        aprobacionCell = '<span style="color:#10b981; font-weight:bold;">Aprobado</span>';
-                    } else {
-                        aprobacionCell = `<span style="color:#ef4444; font-weight:bold;" title="${av.comentario_jefe || ''}">Rechazado</span>`;
-                    }
-
-                    row.innerHTML = `
-                        <td style="padding:4px;">${av.fecha_avance ? av.fecha_avance.substring(0,10) : ''}<br><small style="color:#6b7280;">${av.hora_inicio} - ${av.hora_fin}</small></td>
-                        <td style="padding:4px;">${av.horas_trabajadas || '0'} hrs</td>
-                        <td style="padding:4px;">
-                            <strong>Hizo:</strong> ${av.que_se_hizo}<br>
-                            <strong>Resultado:</strong> ${av.resultado_final}
-                        </td>
-                        <td style="padding:4px;">${aprobacionCell}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            } else {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#6b7280; padding:15px;">Aún no se registran avances.</td></tr>`;
-            }
-        }
-
-        const chatBox = document.getElementById('chat_mensajes');
-        if (chatBox) {
-            chatBox.innerHTML = '';
-            if (actividad.mensajes && actividad.mensajes.length > 0) {
-                actividad.mensajes.forEach(msj => {
-                    let bubble = document.createElement('div');
-                    bubble.style.marginBottom = '8px';
-                    bubble.style.padding = '6px 10px';
-                    bubble.style.borderRadius = '8px';
-                    bubble.style.maxWidth = '85%';
-                    
-                    let senderName = msj.remitente ? msj.remitente.name : (msj.user ? msj.user.name : 'Usuario');
-                    let currentAuthId = (typeof authId !== 'undefined') ? authId : 0;
-                    let isMe = msj.remitente_id == currentAuthId || msj.user_id == currentAuthId;
-                    
-                    if (isMe) {
-                        bubble.style.background = '#dbeafe';
-                        bubble.style.color = '#1e3a8a';
-                        bubble.style.marginLeft = 'auto';
-                    } else {
-                        bubble.style.background = '#f1f5f9';
-                        bubble.style.color = '#334155';
-                    }
-                    
-                    bubble.innerHTML = `
-                        <div style="font-size:11px; font-weight:bold; margin-bottom:2px;">${senderName}</div>
-                        <div style="font-size:13px; line-height:1.4;">${msj.mensaje}</div>
-                        <div style="font-size:9px; text-align:right; margin-top:3px; opacity:0.7;">${msj.created_at ? msj.created_at.substring(11,16) : ''}</div>
-                    `;
-                    chatBox.appendChild(bubble);
-                });
-            } else {
-                chatBox.innerHTML = `<div style="text-align:center; color:#94a3b8; padding:20px; font-size:13px;">No hay mensajes en este chat.</div>`;
-            }
-        }
-        
-        abrirModal('modalFicha');
-        if (chatBox) {
-            setTimeout(() => {
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }, 100);
-        }
-    })
-    .catch(err => {
-        console.error("Error al obtener detalles de la actividad:", err);
-        alert("Ocurrió un error al cargar la ficha de la actividad (" + err.message + ").");
-    });
-}
-
-function enviarMensaje(ev) {
-    ev.preventDefault();
-    let input = document.getElementById('chat_input_mensaje');
-    let mensajeText = input.value;
-    let actividadId = document.getElementById('avance_actividad_id').value;
-
-    if (!mensajeText.trim()) return;
-
-    fetch(`${window.APP_BASE_URL}/actividades/${actividadId}/mensajes`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": "{{ csrf_token() }}",
-            "Accept": "application/json"
-        },
-        body: JSON.stringify({ mensaje: mensajeText })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            input.value = '';
-            fetch(`${window.APP_BASE_URL}/actividades/${actividadId}/details`)
-                .then(r => r.json())
-                .then(act => {
-                    openShowModal({ dataset: { id: act.id } });
-                });
-        }
-    });
-}
-
-function aprobarAvance(id) {
-    let comentario = prompt("Escribe un comentario opcional para el empleado:");
-    if (comentario === null) return;
+function seleccionarTipoCreacion(tipo) {
+    document.getElementById('crear_tipo_actividad').value = tipo;
     
-    fetch(`${window.APP_BASE_URL}/avances-actividad/${id}/aprobar`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": "{{ csrf_token() }}",
-            "Accept": "application/json"
-        },
-        body: JSON.stringify({ comentario_jefe: comentario })
-    })
-    .then(r => {
-        window.location.reload();
-    });
-}
+    let boxMultiEmp = document.getElementById('box_multiselect_empleados_asig');
+    let boxSingleEmp = document.getElementById('box_single_select_empleado');
 
-function rechazarAvance(id) {
-    let comentario = prompt("Comentario de rechazo (Obligatorio):");
-    if (!comentario) {
-        if (comentario === "") alert("El comentario es obligatorio para rechazar un avance.");
-        return;
+    if (tipo === 'asignada' || tipo === 'rutinaria') {
+        if (boxMultiEmp) boxMultiEmp.style.display = 'block';
+        if (boxSingleEmp) boxSingleEmp.style.display = 'none';
+        actualizarSeleccionEmpleadosAsig();
+    } else if (tipo === 'imprevista') {
+        if (boxMultiEmp) boxMultiEmp.style.display = 'none';
+        if (boxSingleEmp) boxSingleEmp.style.display = 'none';
     }
     
-    fetch(`${window.APP_BASE_URL}/avances-actividad/${id}/rechazar`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": "{{ csrf_token() }}",
-            "Accept": "application/json"
-        },
-        body: JSON.stringify({ comentario_jefe: comentario })
-    })
-    .then(r => {
-        window.location.reload();
+    let modalContent = document.getElementById('modalCrearContent');
+    let headerTitle  = document.getElementById('crearModalHeaderTitle');
+    let submitBtn    = document.getElementById('btnSubmitCrear');
+    let subtitle     = document.getElementById('crearModalSubtitle');
+    let labelEmp     = document.getElementById('labelEmpleadoCrear');
+    let selectEmp    = document.getElementById('crear_empleado_id');
+    let labelDirigido= document.getElementById('labelDirigidoCrear');
+    let selectDirigido=document.getElementById('crear_dirigido_a_id');
+    let labelTit     = document.getElementById('labelTituloCrear');
+    let inputTitulo  = document.getElementById('crear_titulo');
+    
+    let boxPlazo     = document.getElementById('boxPreguntaTienePlazo');
+    let labelPlazo   = document.getElementById('labelPreguntaTienePlazo');
+    let iconPlazo    = document.getElementById('iconPreguntaTienePlazo');
+    let radioSi      = document.getElementById('labelPlazoSi');
+    let radioNo      = document.getElementById('labelPlazoNo');
+    let chkRadioSi   = document.getElementById('crear_plazo_si');
+    let chkRadioNo   = document.getElementById('crear_plazo_no');
+
+    let boxHorario   = document.getElementById('boxHorarioEstimado');
+    let labelHoraIni = document.getElementById('labelHoraInicio');
+    let inputHoraIni = document.getElementById('crear_hora_inicio');
+    let labelHoraFin = document.getElementById('labelHoraFin');
+    let inputHoraFin = document.getElementById('crear_hora_fin');
+
+    let labelDepArea = document.getElementById('labelDepArea');
+    let inputDepArea = document.getElementById('crear_dependencia_area');
+    let labelDepResp = document.getElementById('labelDepResp');
+    let inputDepResp = document.getElementById('crear_dependencia_responsable');
+
+    let labelDesc    = document.getElementById('label_descripcion');
+    let inputDesc    = document.getElementById('crear_descripcion');
+
+    let labelAcciones= document.getElementById('labelAccionesRealizadas');
+    let inputAcciones= document.getElementById('crear_acciones_realizadas');
+
+    let boxObs       = document.getElementById('boxObservaciones');
+    let labelObs     = document.getElementById('labelObservaciones');
+    let inputObs     = document.getElementById('crear_observaciones');
+
+    let boxPermitir  = document.getElementById('boxPermitirAvance');
+
+    let btnAsig = document.getElementById('btnTipoAsignada');
+    let btnImp  = document.getElementById('btnTipoImprevista');
+    let btnRut  = document.getElementById('btnTipoRutinaria');
+
+    let form = document.getElementById('formCrearActividad');
+    let secAsig = document.getElementById('seccion_campos_asignada');
+    let secImp  = document.getElementById('seccion_campos_imprevista');
+    let secRut  = document.getElementById('seccion_campos_rutinaria');
+
+    let inputMotivo = document.getElementById('crear_motivo');
+    let inputResultado = document.getElementById('crear_resultado_obtenido');
+
+    // Reset styles on top buttons
+    [btnAsig, btnImp, btnRut].forEach(b => {
+        if(b) {
+            b.style.border = '2px solid #cbd5e1';
+            b.style.background = '#ffffff';
+            b.style.color = '#475569';
+        }
+    });
+
+    let themeColor  = '#15803d';
+    let textColor   = '#166534';
+    let bgLight     = '#f0fdf4';
+    let borderLight = '#86efac';
+
+    if (tipo === 'imprevista') {
+        themeColor  = '#c2410c';
+        textColor   = '#9a3412';
+        bgLight     = '#fff7ed';
+        borderLight = '#fed7aa';
+    } else if (tipo === 'rutinaria') {
+        themeColor  = '#1e40af';
+        textColor   = '#1e3a8a';
+        bgLight     = '#eff6ff';
+        borderLight = '#bfdbfe';
+    }
+
+    if (modalContent) { modalContent.style.background = bgLight; modalContent.style.border = `3px solid ${themeColor}`; }
+    if (submitBtn)    { submitBtn.style.background = themeColor; }
+
+    if (labelEmp)     { labelEmp.style.color = textColor; }
+    if (selectEmp)    { selectEmp.style.border = `2px solid ${themeColor}`; }
+    if (labelDirigido){ labelDirigido.style.color = textColor; }
+    if (selectDirigido){ selectDirigido.style.border = `2px solid ${themeColor}`; }
+
+    if (labelTit)     { labelTit.style.color = textColor; }
+    if (inputTitulo)  { inputTitulo.style.border = `2px solid ${themeColor}`; }
+
+    if (boxPlazo)     { 
+        boxPlazo.style.display = (tipo === 'rutinaria') ? 'none' : 'block'; 
+        boxPlazo.style.background = '#ffffff'; 
+        boxPlazo.style.border = `2px solid ${themeColor}`; 
+    }
+    if (labelPlazo)   { labelPlazo.style.color = textColor; }
+    if (iconPlazo)    { iconPlazo.style.color = themeColor; }
+    if (radioSi)      { radioSi.style.color = textColor; }
+    if (radioNo)      { radioNo.style.color = textColor; }
+    if (chkRadioSi)   { chkRadioSi.style.accentColor = themeColor; }
+    if (chkRadioNo)   { chkRadioNo.style.accentColor = themeColor; }
+
+    if (boxHorario)   { boxHorario.style.background = bgLight; boxHorario.style.border = `1.5px solid ${borderLight}`; }
+    if (labelHoraIni) { labelHoraIni.style.color = textColor; }
+    if (inputHoraIni) { inputHoraIni.style.border = `1.5px solid ${themeColor}`; }
+    if (labelHoraFin) { labelHoraFin.style.color = textColor; }
+    if (inputHoraFin) { inputHoraFin.style.border = `1.5px solid ${themeColor}`; }
+
+    if (tipo === 'rutinaria') {
+        if (boxHorario) boxHorario.style.display = 'none';
+    } else {
+        let valPlazo = document.querySelector('input[name="tiene_plazo"]:checked')?.value || 'si';
+        toggleTienePlazo(valPlazo);
+    }
+
+    if (labelDepArea) { labelDepArea.style.color = textColor; }
+    if (inputDepArea) { inputDepArea.style.border = `1.5px solid ${themeColor}`; }
+    if (labelDepResp) { labelDepResp.style.color = textColor; }
+    if (inputDepResp) { inputDepResp.style.border = `1.5px solid ${themeColor}`; }
+
+    if (labelDesc)    { labelDesc.style.color = textColor; }
+    if (inputDesc)    { inputDesc.style.border = `2px solid ${themeColor}`; }
+
+    if (labelAcciones){ labelAcciones.innerText = 'Acciones a realizar'; labelAcciones.style.color = textColor; }
+    if (inputAcciones){ inputAcciones.style.border = `1.5px solid ${themeColor}`; }
+
+    if (boxObs)       { boxObs.style.display = (tipo === 'rutinaria') ? 'none' : 'block'; }
+    if (labelObs)     { labelObs.style.color = textColor; }
+    if (inputObs)     { inputObs.style.border = `1.5px solid ${themeColor}`; }
+
+    if (boxPermitir)  { 
+        boxPermitir.style.display = (tipo === 'asignada') ? 'block' : 'none'; 
+        let chkP = document.getElementById('crear_permitir_registro_avance');
+        if (chkP) chkP.checked = false;
+    }
+
+    let containerTop = document.getElementById('container_top_responsables_dirigido');
+    let boxColDirigido = document.getElementById('box_col_dirigido_a');
+    let dirTop = document.getElementById('crear_dirigido_a_id');
+    let dirImp = document.getElementById('crear_dirigido_a_id_imp');
+    let bloqueSeleccionAsig = document.getElementById('bloque_seleccion_empleados_asig');
+
+    let titAsig = document.getElementById('crear_titulo');
+    let descAsig = document.getElementById('crear_descripcion');
+    let titRut = document.getElementById('crear_titulo_rutinaria');
+    let descRut = document.getElementById('crear_descripcion_rutinaria');
+    let accRut = document.getElementById('crear_acciones_realizadas_rutinaria');
+    let obsRut = document.getElementById('crear_observaciones_rutinaria');
+
+    if (tipo === 'imprevista') {
+        if (containerTop) containerTop.style.display = 'none';
+        if (dirTop) dirTop.disabled = true;
+        if (dirImp) dirImp.disabled = false;
+
+        if (titAsig) { titAsig.required = false; titAsig.name = 'titulo_asig'; }
+        if (descAsig) { descAsig.required = false; descAsig.name = 'descripcion_asig'; }
+        if (titRut) { titRut.required = false; titRut.name = 'titulo_rutinaria'; }
+        if (descRut) { descRut.required = false; descRut.name = 'descripcion_rutinaria'; }
+    } else if (tipo === 'rutinaria') {
+        if (containerTop) {
+            containerTop.style.display = 'flex';
+            containerTop.style.flexDirection = 'column';
+        }
+        if (boxColDirigido) boxColDirigido.style.display = 'none';
+        if (dirTop) dirTop.disabled = true;
+        if (dirImp) dirImp.disabled = true;
+        if (bloqueSeleccionAsig) {
+            bloqueSeleccionAsig.style.border = `2px solid ${themeColor}`;
+            let headerSpan = document.getElementById('spanHeaderMultiselect');
+            if (headerSpan) headerSpan.style.color = textColor;
+            let empLabels = bloqueSeleccionAsig.querySelectorAll('label');
+            empLabels.forEach(lbl => { lbl.style.color = textColor; });
+            let empInputs = bloqueSeleccionAsig.querySelectorAll('input[type="checkbox"]');
+            empInputs.forEach(inp => { inp.style.accentColor = themeColor; });
+        }
+
+        if (titAsig) { titAsig.required = false; titAsig.name = 'titulo_asig'; }
+        if (descAsig) { descAsig.required = false; descAsig.name = 'descripcion_asig'; }
+        if (titRut) { titRut.required = true; titRut.name = 'titulo'; }
+        if (descRut) { descRut.required = true; descRut.name = 'descripcion'; }
+        if (accRut) accRut.name = 'acciones_realizadas';
+        if (obsRut) obsRut.name = 'observaciones';
+    } else {
+        if (containerTop) {
+            containerTop.style.display = 'flex';
+            containerTop.style.flexDirection = 'column';
+        }
+        if (boxColDirigido) boxColDirigido.style.display = 'block';
+        if (dirTop) dirTop.disabled = false;
+        if (dirImp) dirImp.disabled = true;
+        if (bloqueSeleccionAsig) {
+            bloqueSeleccionAsig.style.border = `2px solid ${themeColor}`;
+            let headerSpan = document.getElementById('spanHeaderMultiselect');
+            if (headerSpan) headerSpan.style.color = textColor;
+            let empLabels = bloqueSeleccionAsig.querySelectorAll('label');
+            empLabels.forEach(lbl => { lbl.style.color = textColor; });
+            let empInputs = bloqueSeleccionAsig.querySelectorAll('input[type="checkbox"]');
+            empInputs.forEach(inp => { inp.style.accentColor = themeColor; });
+        }
+
+        if (titAsig) { titAsig.required = true; titAsig.name = 'titulo'; }
+        if (descAsig) { descAsig.required = true; descAsig.name = 'descripcion'; }
+        if (titRut) { titRut.required = false; titRut.name = 'titulo_rutinaria'; }
+        if (descRut) { descRut.required = false; descRut.name = 'descripcion_rutinaria'; }
+        if (accRut) accRut.name = 'acciones_realizadas_rutinaria';
+        if (obsRut) obsRut.name = 'observaciones_rutinaria';
+    }
+
+    function toggleSectionDisabled(sec, isDisabled) {
+        if (!sec) return;
+        sec.querySelectorAll('input, select, textarea').forEach(el => {
+            el.disabled = isDisabled;
+        });
+    }
+
+    if (tipo === 'asignada') {
+        if (headerTitle)  { headerTitle.style.color = textColor; headerTitle.innerHTML = `<i class="bi bi-check2-circle" style="color:${themeColor};"></i> Nueva Actividad Asignada`; }
+        if (subtitle)     { subtitle.innerText = '{{ $isBossOrAdmin ? "Configura la tarea que asignarás a tu personal:" : "Configura la tarea que realizarás:" }}'; }
+        if (labelEmp)     { labelEmp.innerText = '{{ $isBossOrAdmin ? "¿A quién le asignas esta actividad? *" : "Empleado Responsable *" }}'; }
+
+        if (btnAsig) {
+            btnAsig.style.border = `3px solid ${themeColor}`;
+            btnAsig.style.background = '#dcfce7';
+            btnAsig.style.color = textColor;
+        }
+        if (form) form.action = "{{ route('actividades.store') }}";
+
+        if (secAsig) secAsig.style.display = 'block';
+        if (secImp)  secImp.style.display  = 'none';
+        if (secRut)  secRut.style.display  = 'none';
+
+        toggleSectionDisabled(secAsig, false);
+        toggleSectionDisabled(secImp, true);
+        toggleSectionDisabled(secRut, true);
+    } else if (tipo === 'imprevista') {
+        if (headerTitle)  { headerTitle.style.color = textColor; headerTitle.innerHTML = `<i class="bi bi-person-fill" style="color:${themeColor};"></i> Registrar Actividad Personal`; }
+        if (subtitle)     { subtitle.innerText = 'Registra una actividad personal creada por ti en tu jornada:'; }
+        if (labelEmp)     { labelEmp.innerText = 'Empleado asignado / responsable *'; }
+
+        if (btnImp) {
+            btnImp.style.border = `3px solid ${themeColor}`;
+            btnImp.style.background = '#ffedd5';
+            btnImp.style.color = textColor;
+        }
+        if (form) form.action = "{{ route('actividades-imprevistas.store') }}";
+
+        if (secAsig) secAsig.style.display = 'none';
+        if (secImp)  secImp.style.display  = 'block';
+        if (secRut)  secRut.style.display  = 'none';
+
+        toggleSectionDisabled(secAsig, true);
+        toggleSectionDisabled(secImp, false);
+        toggleSectionDisabled(secRut, true);
+
+        // Restablecer slider de avance a 0%
+        let slider = document.getElementById('crear_porcentaje_imprevisto');
+        if (slider) { slider.value = 0; updateImprevistoPorcentajeDisplay(0); }
+
+        if (inputHoraIni && inputHoraFin) {
+            inputHoraIni.value = "09:00";
+            inputHoraFin.value = "10:00";
+            calcularDiferenciaHorasCreacion();
+        }
+    } else if (tipo === 'rutinaria') {
+        if (headerTitle)  { headerTitle.style.color = textColor; headerTitle.innerHTML = `<i class="bi bi-arrow-repeat" style="color:${themeColor};"></i> Crear Rutina Diaria`; }
+        if (subtitle)     { subtitle.innerText = 'Establece un hábito o tarea que se ejecutará periódicamente:'; }
+        if (labelEmp)     { labelEmp.innerText = '{{ $isBossOrAdmin ? "¿A quién le asignas esta actividad? *" : "Empleado Responsable *" }}'; }
+
+        if (btnRut) {
+            btnRut.style.border = `3px solid ${themeColor}`;
+            btnRut.style.background = '#dbeafe';
+            btnRut.style.color = textColor;
+        }
+        if (form) form.action = "{{ route('rutinas.store') }}";
+
+        if (secAsig) secAsig.style.display = 'none';
+        if (secImp)  secImp.style.display  = 'none';
+        if (secRut)  secRut.style.display  = 'block';
+
+        toggleSectionDisabled(secAsig, true);
+        toggleSectionDisabled(secImp, true);
+        toggleSectionDisabled(secRut, false);
+    }
+}
+
+function setupAutoNumbering(elementId) {
+    let el = document.getElementById(elementId);
+    if (!el || el.dataset.autonumAttached) return;
+    el.dataset.autonumAttached = "true";
+
+    el.addEventListener('focus', function() {
+        if (!this.value || this.value.trim() === '') {
+            this.value = '1. ';
+        }
+    });
+
+    el.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            let start = this.selectionStart;
+            let end = this.selectionEnd;
+            let val = this.value;
+
+            let linesBefore = val.substring(0, start).split('\n');
+            let nextNum = linesBefore.length + 1;
+            let insertStr = '\n' + nextNum + '. ';
+
+            this.value = val.substring(0, start) + insertStr + val.substring(end);
+            this.selectionStart = this.selectionEnd = start + insertStr.length;
+        }
     });
 }
 
-function updatePorcentaje(slider) {
-    let form = document.getElementById('form-slider-avance');
-    let fd = new FormData(form);
-    fetch(form.action, {
+function toggleEstadoPersonal(val) {
+    let blkRealizada = document.getElementById('bloque_personal_realizada');
+    let blkPendiente = document.getElementById('bloque_personal_pendiente');
+    let hiddenEstado = document.getElementById('crear_estado_imprevisto');
+
+    if (val === 'realizada') {
+        if (blkRealizada) blkRealizada.style.display = 'block';
+        if (blkPendiente) blkPendiente.style.display = 'none';
+        if (hiddenEstado) hiddenEstado.value = 'finalizada';
+    } else {
+        if (blkRealizada) blkRealizada.style.display = 'none';
+        if (blkPendiente) blkPendiente.style.display = 'block';
+        if (hiddenEstado) hiddenEstado.value = 'pendiente';
+    }
+}
+
+function toggleSencillaImp(val) {
+    let blkSencilla = document.getElementById('bloque_sencilla_imp_si');
+    let blkAdv = document.getElementById('bloque_avanzado_imp_pendiente');
+    if (val === 'si') {
+        if (blkSencilla) blkSencilla.style.display = 'block';
+        if (blkAdv) blkAdv.style.display = 'none';
+    } else if (val === 'no') {
+        if (blkSencilla) blkSencilla.style.display = 'none';
+        if (blkAdv) blkAdv.style.display = 'block';
+    }
+}
+
+function toggleDependenciaImp(val) {
+    let blk = document.getElementById('bloque_dependencia_imp');
+    if (blk) blk.style.display = (val === 'si') ? 'grid' : 'none';
+}
+
+function toggleDependenciaImpPend(val) {
+    let blk = document.getElementById('bloque_dependencia_imp_pend');
+    if (blk) blk.style.display = (val === 'si') ? 'grid' : 'none';
+}
+
+function toggleTienePlazoImp(val) {
+    let subBox = document.getElementById('sub_box_tipo_plazo_imp');
+    if (val === 'si') {
+        if (subBox) subBox.style.display = 'block';
+        let selTipo = document.querySelector('input[name="tipo_plazo_imp"]:checked')?.value || 'fecha';
+        toggleTipoPlazoSubImp(selTipo);
+    } else {
+        if (subBox) subBox.style.display = 'none';
+    }
+}
+
+function toggleTipoPlazoSubImp(val) {
+    let secFechas = document.getElementById('seccion_fechas_imp');
+    let boxHorario = document.getElementById('boxHorario_imp');
+
+    if (val === 'fecha') {
+        if (secFechas) secFechas.style.display = 'grid';
+        if (boxHorario) boxHorario.style.display = 'none';
+    } else if (val === 'hora') {
+        if (secFechas) secFechas.style.display = 'none';
+        if (boxHorario) boxHorario.style.display = 'grid';
+    } else if (val === 'ambos') {
+        if (secFechas) secFechas.style.display = 'grid';
+        if (boxHorario) boxHorario.style.display = 'grid';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    setupAutoNumbering('crear_acciones_realizadas');
+    setupAutoNumbering('crear_observaciones');
+    setupAutoNumbering('crear_acciones_realizadas_imp');
+    setupAutoNumbering('crear_observaciones_imp');
+});
+
+function abrirModalCrearActividad(tipo = 'asignada', soloPersonal = false) {
+    let boxSelector = document.getElementById('box_selector_tipo_actividad');
+    if (boxSelector) boxSelector.style.display = soloPersonal ? 'none' : 'grid';
+
+    let form = document.getElementById('formCrearActividad');
+    if (form) {
+        form.reset();
+        let methodInput = document.getElementById('crear_method_spoof');
+        if (methodInput) methodInput.remove();
+    }
+
+    // Uncheck all radios by default and hide all conditional blocks
+    document.querySelectorAll('#modalCrearActividad input[type="radio"]').forEach(r => r.checked = false);
+
+    let idsToHide = [
+        'bloque_personal_realizada',
+        'bloque_personal_pendiente',
+        'bloque_sencilla_imp_si',
+        'bloque_avanzado_imp_pendiente',
+        'sub_box_tipo_plazo_imp',
+        'seccion_fechas_imp',
+        'boxHorario_imp',
+        'bloque_dependencia_imp',
+        'bloque_dependencia_imp_pend',
+        'bloque_lista_colaboradores_imp',
+        'bloque_avanzado_asignada',
+        'sub_box_tipo_plazo',
+        'bloque_dependencia_asig'
+    ];
+    idsToHide.forEach(id => {
+        let el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+
+    let submitBtn = document.getElementById('btnSubmitCrear');
+    if (submitBtn) submitBtn.innerText = 'Guardar Actividad';
+
+    seleccionarTipoCreacion(tipo);
+    abrirModal('modalCrearActividad');
+    setupAutoNumbering('crear_acciones_realizadas');
+    setupAutoNumbering('crear_observaciones');
+    setupAutoNumbering('crear_acciones_realizadas_imp');
+    setupAutoNumbering('crear_observaciones_imp');
+}
+
+function openCrearModal(tipo) {
+    abrirModalCrearActividad(tipo);
+}
+
+function openEditModalFromRow(btn, event) {
+    if (event) event.stopPropagation();
+    if (!btn) return;
+    let dataset = btn.dataset;
+    let tipo = dataset.tipo || 'asignada';
+    let id = dataset.id;
+
+    if (!id) return;
+
+    let boxSelector = document.getElementById('box_selector_tipo_actividad');
+    if (boxSelector) boxSelector.style.display = 'none';
+
+    let baseUrl = window.APP_BASE_URL || '';
+    let form = document.getElementById('formCrearActividad');
+    if (!form) return;
+
+    form.reset();
+
+    // Select the activity type section
+    seleccionarTipoCreacion(tipo);
+
+    if (tipo === 'asignada') {
+        form.action = `${baseUrl}/actividades/${id}`;
+    } else if (tipo === 'imprevista') {
+        form.action = `${baseUrl}/actividades-imprevistas/${id}`;
+    } else if (tipo === 'rutinaria') {
+        form.action = `${baseUrl}/rutinas/${id}`;
+    }
+
+    let methodInput = document.getElementById('crear_method_spoof');
+    if (!methodInput) {
+        methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.id = 'crear_method_spoof';
+        form.appendChild(methodInput);
+    }
+    methodInput.value = 'PUT';
+
+    let headerTitle = document.getElementById('crearModalHeaderTitle');
+    let submitBtn   = document.getElementById('btnSubmitCrear');
+    let subtitle    = document.getElementById('crearModalSubtitle');
+
+    let themeColor = (tipo === 'imprevista') ? '#c2410c' : ((tipo === 'rutinaria') ? '#1e40af' : '#15803d');
+
+    if (headerTitle) headerTitle.innerHTML = `<i class="bi bi-pencil-square" style="color:${themeColor};"></i> Editar Actividad (${tipo === 'imprevista' ? 'Personal' : (tipo === 'rutinaria' ? 'Rutina' : 'Asignada')})`;
+    if (subtitle)    subtitle.innerText = 'Modifica los datos de esta actividad:';
+    if (submitBtn)   submitBtn.innerText = 'Actualizar Actividad';
+
+    // Set employee checkbox if present
+    let empId = dataset.empleado;
+    if (empId) {
+        let chk = document.querySelector(`input[name="empleados_asig_checkboxes[]"][value="${empId}"]`);
+        if (chk) {
+            document.querySelectorAll('input[name="empleados_asig_checkboxes[]"]').forEach(c => c.checked = false);
+            chk.checked = true;
+            actualizarSeleccionEmpleadosAsig();
+        }
+    }
+
+    if (tipo === 'rutinaria') {
+        if (document.getElementById('crear_titulo_rutinaria')) document.getElementById('crear_titulo_rutinaria').value = dataset.titulo || '';
+        if (document.getElementById('crear_descripcion_rutinaria')) document.getElementById('crear_descripcion_rutinaria').value = dataset.descripcion || '';
+        if (document.getElementById('crear_acciones_realizadas_rutinaria')) document.getElementById('crear_acciones_realizadas_rutinaria').value = dataset.acciones || '';
+        if (document.getElementById('crear_observaciones_rutinaria')) document.getElementById('crear_observaciones_rutinaria').value = dataset.observaciones || '';
+        if (document.getElementById('crear_veces_al_dia')) document.getElementById('crear_veces_al_dia').value = dataset.veces || '1';
+    } else if (tipo === 'imprevista') {
+        let motVal = dataset.motivo || dataset.titulo || '';
+        let descVal = dataset.descripcion || '';
+        let accVal = dataset.acciones || '';
+        let obsVal = dataset.observaciones || '';
+        let resVal = dataset.resultado || '';
+        let hrsVal = dataset.horas || '1.0';
+        let estVal = dataset.estado || 'pendiente';
+        let porcVal = dataset.porcentaje || (estVal === 'realizada' || estVal === 'finalizada' ? '100' : '0');
+
+        if (document.getElementById('crear_dirigido_a_id_imp')) document.getElementById('crear_dirigido_a_id_imp').value = dataset.dirigido || '';
+        if (document.getElementById('crear_motivo')) document.getElementById('crear_motivo').value = motVal;
+        if (document.getElementById('crear_titulo_imp_sencilla')) document.getElementById('crear_titulo_imp_sencilla').value = motVal;
+        if (document.getElementById('crear_descripcion_imp_sencilla')) document.getElementById('crear_descripcion_imp_sencilla').value = descVal;
+        if (document.getElementById('crear_acciones_realizadas_imp')) document.getElementById('crear_acciones_realizadas_imp').value = accVal;
+        if (document.getElementById('crear_observaciones_imp')) document.getElementById('crear_observaciones_imp').value = obsVal;
+        if (document.getElementById('crear_resultado_obtenido')) document.getElementById('crear_resultado_obtenido').value = resVal;
+        if (document.getElementById('crear_horas_invertidas')) document.getElementById('crear_horas_invertidas').value = hrsVal;
+
+        let radRealizada = document.querySelector('input[name="estado_personal_radio"][value="realizada"]');
+        let radPendiente = document.querySelector('input[name="estado_personal_radio"][value="pendiente"]');
+        if (estVal === 'realizada' || estVal === 'finalizada') {
+            if (radRealizada) radRealizada.checked = true;
+            toggleEstadoPersonal('realizada');
+        } else {
+            if (radPendiente) radPendiente.checked = true;
+            toggleEstadoPersonal('pendiente');
+
+            let hasAdv = (accVal || obsVal || dataset.prioridad);
+            let rSenSi = document.querySelector('input[name="_sencilla_imp"][value="si"]');
+            let rSenNo = document.querySelector('input[name="_sencilla_imp"][value="no"]');
+            if (hasAdv) {
+                if (rSenNo) rSenNo.checked = true;
+                toggleSencillaImp('no');
+            } else {
+                if (rSenSi) rSenSi.checked = true;
+                toggleSencillaImp('si');
+            }
+        }
+
+        let slider = document.getElementById('crear_porcentaje_imprevisto');
+        if (slider) {
+            slider.value = porcVal;
+            updateImprevistoPorcentajeDisplay(porcVal);
+        }
+    } else { // asignada
+        if (document.getElementById('crear_titulo')) document.getElementById('crear_titulo').value = dataset.titulo || '';
+        if (document.getElementById('crear_descripcion')) document.getElementById('crear_descripcion').value = dataset.descripcion || '';
+        if (document.getElementById('crear_acciones_realizadas')) document.getElementById('crear_acciones_realizadas').value = dataset.acciones || '';
+        if (document.getElementById('crear_observaciones')) document.getElementById('crear_observaciones').value = dataset.observaciones || '';
+        if (document.getElementById('crear_prioridad')) document.getElementById('crear_prioridad').value = dataset.prioridad || 'media';
+        if (document.getElementById('crear_dirigido_a_id')) document.getElementById('crear_dirigido_a_id').value = dataset.dirigido || '';
+        if (document.getElementById('crear_fecha_inicio')) document.getElementById('crear_fecha_inicio').value = dataset.fechainicio || '';
+        if (document.getElementById('crear_fecha_fin')) document.getElementById('crear_fecha_fin').value = dataset.fechafin || '';
+
+        let chkPermitir = document.getElementById('crear_permitir_registro_avance');
+        if (chkPermitir) {
+            chkPermitir.checked = (dataset.permitiravance == '1' || dataset.permitiravance === 'true');
+        }
+
+        let horIni = dataset.horainicio;
+        let horFin = dataset.horafin;
+        if (document.getElementById('crear_hora_inicio')) document.getElementById('crear_hora_inicio').value = horIni || '09:00';
+        if (document.getElementById('crear_hora_fin')) document.getElementById('crear_hora_fin').value = horFin || '10:00';
+
+        let chkSi = document.getElementById('crear_plazo_si');
+        let chkNo = document.getElementById('crear_plazo_no');
+        if (horIni || dataset.tieneplazo === 'si') {
+            if (chkSi) chkSi.checked = true;
+            toggleTienePlazo('si');
+        } else if (dataset.tieneplazo === 'no') {
+            if (chkNo) chkNo.checked = true;
+            toggleTienePlazo('no');
+        }
+
+        let depRespVal = dataset.depresp || '';
+        let depMotVal  = dataset.depmotivo || '';
+        let hasDep = (depRespVal !== '' || depMotVal !== '');
+        let rDepSi = document.getElementById('crear_depende_si');
+        let rDepNo = document.getElementById('crear_depende_no');
+        if (hasDep) {
+            if (rDepSi) rDepSi.checked = true;
+            toggleDependenciaAsig('si');
+            if (document.getElementById('crear_dependencia_responsable')) document.getElementById('crear_dependencia_responsable').value = depRespVal;
+            if (document.getElementById('crear_dependencia_motivo')) document.getElementById('crear_dependencia_motivo').value = depMotVal;
+        } else {
+            if (rDepNo) rDepNo.checked = true;
+            toggleDependenciaAsig('no');
+        }
+
+        let hasAdv = (dataset.acciones || dataset.observaciones || hasDep || dataset.fechainicio || (dataset.tieneplazo === 'si'));
+        let rSenSi = document.getElementById('crear_sencilla_si');
+        let rSenNo = document.getElementById('crear_sencilla_no');
+        if (hasAdv) {
+            if (rSenNo) rSenNo.checked = true;
+            toggleSencillaNueva('no');
+        } else {
+            if (rSenSi) rSenSi.checked = true;
+            toggleSencillaNueva('si');
+        }
+    }
+
+    abrirModal('modalCrearActividad');
+}
+
+// Aliases para retrocompatibilidad con las vistas
+function openEditRutinaModal(btn, event) { openEditModalFromRow(btn, event); }
+function openEditImprevistaModal(btn, event) { openEditModalFromRow(btn, event); }
+
+function handleRutinaCheck(checkbox, event) {
+    if (event) event.stopPropagation();
+    let id = checkbox.dataset.id;
+    let checkedCount = 0;
+    
+    document.querySelectorAll(`.rutina-check-box[data-id="${id}"]`).forEach(cb => {
+        if (cb.checked) checkedCount++;
+    });
+
+    let baseUrl = window.APP_BASE_URL || '';
+    fetch(`${baseUrl}/rutinas/${id}/set-ejecuciones`, {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        body: fd
-    }).then(r => r.json()).then(data => {
-        // Updated successfully
-    });
-}
-
-function calcTime() {
-    let t1 = document.getElementById('modal_hi').value;
-    let t2 = document.getElementById('modal_hf').value;
-    if(t1 && t2) {
-        let d1 = new Date("1970-01-01T" + t1 + "Z");
-        let d2 = new Date("1970-01-01T" + t2 + "Z");
-        let diff = (d2 - d1) / 60000;
-        if(diff < 0) diff += 1440;
-        let hrs = Math.floor(diff/60);
-        let mins = diff % 60;
-        let str = "";
-        if (hrs > 0) str += hrs + " hora(s) ";
-        if (mins > 0) str += mins + " minuto(s)";
-        document.getElementById('label_tiempo_calc').innerHTML = '<span style="color:#059669; font-weight:bold;">' + str + '</span>';
-    }
-}
-
-function aprobarActividadDesdeFicha() {
-    let id = document.getElementById('avance_actividad_id').value;
-    if (!id) return;
-    if (!confirm('¿Marcar esta actividad como finalizada/aprobada?')) return;
-    
-    fetch(`${window.APP_BASE_URL}/actividades/${id}/aprobar`, {
-        method: "POST",
         headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": "{{ csrf_token() }}",
-            "Accept": "application/json"
-        }
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ cantidad: checkedCount })
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            location.reload();
-        } else {
-            alert('Error: ' + (data.message || 'No tienes permisos.'));
-        }
-    });
-}
+            let row = checkbox.closest('tr');
+            if (row) {
+                let badge = row.querySelector('.estado-badge-val');
+                let bar = row.querySelector('.progreso-bar-val');
+                let txt = row.querySelector('.progreso-txt-val');
 
-function reabrirActividadDesdeFicha() {
-    let id = document.getElementById('avance_actividad_id').value;
-    if (!id) return;
-    if (!confirm('¿Reabrir esta actividad?')) return;
-    
-    fetch(`${window.APP_BASE_URL}/actividades/${id}/reabrir`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": "{{ csrf_token() }}",
-            "Accept": "application/json"
+                let porcentaje = data.porcentaje || 0;
+                let estado = porcentaje >= 100 ? 'Finalizada' : (porcentaje > 0 ? 'En proceso' : 'Pendiente');
+                let color = porcentaje >= 100 ? '#166534' : (porcentaje > 0 ? '#ca8a04' : '#475569');
+                
+                if (badge) {
+                    badge.style.color = color;
+                    badge.innerText = `${estado} (${porcentaje}%)`;
+                }
+                if (bar) {
+                    bar.style.width = `${porcentaje}%`;
+                }
+                if (txt) {
+                    txt.innerText = `${porcentaje}%`;
+                }
+                row.dataset.avance = porcentaje;
+                row.dataset.estado = porcentaje >= 100 ? 'finalizada' : (porcentaje > 0 ? 'en_proceso' : 'pendiente');
+            }
         }
     })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Error: ' + (data.message || 'No tienes permisos.'));
-        }
-    });
+    .catch(err => console.error("Error actualizando ejecución de rutina:", err));
 }
 
-function openEditRutinaModal(btn) {
-    let rutina = null;
-    let rawData = btn ? (btn.dataset ? btn.dataset.rutina : '') : '';
-    if (!rawData && btn && btn.closest) {
-        let row = btn.closest('[data-rutina], tr');
-        rawData = row ? (row.dataset ? row.dataset.rutina : '') : '';
-    }
+// HANDLERS DE EVENTOS DE ENVÍO DE FORMULARIOS POR DELEGACIÓN GLOBAL EN EL DOCUMENTO
+(function() {
+    if (window._modalesSubmitHandlersBound) return;
+    window._modalesSubmitHandlersBound = true;
 
-    if (rawData) {
-        try {
-            let decoded = safeAtob(rawData);
-            rutina = JSON.parse(decoded);
-        } catch(e) {
-            console.warn("Could not parse rawData rutina", e);
+    document.addEventListener('submit', function(e) {
+        let form = e.target;
+        if (!form) return;
+
+        if (form.id === 'formCrearActividad') {
+            e.preventDefault();
+            let submitBtn = document.getElementById('btnSubmitCrear');
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Guardando...'; }
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: new FormData(form)
+            })
+            .then(async r => {
+                let contentType = r.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    let data = await r.json();
+                    if (r.ok && data.success) {
+                        cerrarTodosLosModales();
+                        window.location.reload();
+                    } else {
+                        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Guardar Actividad'; }
+                        let msg = data.message || 'Ocurrió un problema al guardar la actividad.';
+                        if (data.errors) {
+                            msg += '\n' + Object.values(data.errors).flat().join('\n');
+                        }
+                        alert(msg);
+                    }
+                } else {
+                    // Si el servidor devolvió una respuesta exitosa en HTML o redirección
+                    cerrarTodosLosModales();
+                    window.location.reload();
+                }
+            })
+            .catch(err => {
+                console.error("Error al enviar formulario via AJAX, realizando submit nativo:", err);
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Guardar Actividad'; }
+                form.submit();
+            });
+        } else if (form.id === 'formEditarActividad') {
+            e.preventDefault();
+            let submitBtn = document.getElementById('btnSubmitEditar');
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Actualizando...'; }
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: new FormData(form)
+            })
+            .then(async r => {
+                let contentType = r.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    let data = await r.json();
+                    if (r.ok && data.success) {
+                        cerrarTodosLosModales();
+                        window.location.reload();
+                    } else {
+                        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Actualizar Cambios'; }
+                        let msg = data.message || 'Ocurrió un problema al actualizar la actividad.';
+                        if (data.errors) {
+                            msg += '\n' + Object.values(data.errors).flat().join('\n');
+                        }
+                        alert(msg);
+                    }
+                } else {
+                    cerrarTodosLosModales();
+                    window.location.reload();
+                }
+            })
+            .catch(err => {
+                console.error("Error al actualizar via AJAX, realizando submit nativo:", err);
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Actualizar Cambios'; }
+                form.submit();
+            });
         }
+    });
+})();
+
+// FUNCIONES DE DISPARO DIRECTO DESDE BOTONES (ONCLICK FALLBACK / PRIMARY)
+function guardarNuevaActividad(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    let form = document.getElementById('formCrearActividad');
+    if (!form) return;
+
+    let tipo = document.getElementById('crear_tipo_actividad')?.value || 'asignada';
+    let empSelect = document.getElementById('crear_empleado_id');
+
+    let tituloVal = '';
+    let descVal = '';
+
+    if (tipo === 'rutinaria') {
+        let titRut = document.getElementById('crear_titulo_rutinaria');
+        let descRut = document.getElementById('crear_descripcion_rutinaria');
+        tituloVal = titRut ? titRut.value.trim() : '';
+        descVal = descRut ? descRut.value.trim() : '';
+    } else if (tipo === 'imprevista') {
+        let mot = document.getElementById('crear_motivo');
+        let titSen = document.getElementById('crear_titulo_imp_sencilla');
+        let titAdv = document.getElementById('crear_titulo_imp_avanzada');
+        let descReal = document.getElementById('crear_descripcion_imp_realizada');
+        let descSen = document.getElementById('crear_descripcion_imp_sencilla');
+        let descAdv = document.getElementById('crear_descripcion_imp_avanzada');
+
+        tituloVal = (mot && mot.value.trim()) ? mot.value.trim() : ((titSen && titSen.value.trim()) ? titSen.value.trim() : ((titAdv && titAdv.value.trim()) ? titAdv.value.trim() : ''));
+        descVal = (descReal && descReal.value.trim()) ? descReal.value.trim() : ((descSen && descSen.value.trim()) ? descSen.value.trim() : ((descAdv && descAdv.value.trim()) ? descAdv.value.trim() : ''));
+    } else {
+        let titAsig = document.getElementById('crear_titulo');
+        let descAsig = document.getElementById('crear_descripcion');
+        tituloVal = titAsig ? titAsig.value.trim() : '';
+        descVal = descAsig ? descAsig.value.trim() : '';
     }
 
-    if (!rutina && window.currentRutina) {
-        rutina = window.currentRutina;
-    }
-
-    if (!rutina) {
-        alert("No se pudo encontrar la información de la rutina para editar.");
+    if (empSelect && !empSelect.value) {
+        alert('Por favor selecciona el empleado responsable.');
         return;
     }
 
-    try {
-        window.currentRutina = rutina;
-        let baseUrl = getAppBaseUrl();
-        
-        let formEdit = document.getElementById('formEditarRutina');
-        if (formEdit) {
-            formEdit.action = `${baseUrl}/rutinas/${rutina.id}`;
-        }
-
-        let formDelete = document.getElementById('formEliminarRutina');
-        if (formDelete) {
-            formDelete.action = `${baseUrl}/rutinas/${rutina.id}`;
-        }
-        
-        if (document.getElementById('edit_rutina_titulo')) {
-            document.getElementById('edit_rutina_titulo').value = rutina.titulo || '';
-        }
-        if (document.getElementById('edit_rutina_descripcion')) {
-            document.getElementById('edit_rutina_descripcion').value = rutina.descripcion || '';
-        }
-        if (document.getElementById('edit_rutina_veces')) {
-            document.getElementById('edit_rutina_veces').value = rutina.veces_al_dia || rutina.veces || 1;
-        }
-        
-        abrirModal('modalEditarRutina');
-    } catch(err) {
-        console.error("Error al abrir modal de edición de rutina:", err);
-        alert("Ocurrió un error al cargar la rutina para editar.");
-    }
-}
-
-function confirmDeleteRutinaModal() {
-    let formDelete = document.getElementById('formEliminarRutina');
-    if (formDelete && formDelete.action) {
-        if (confirm('¿Seguro que deseas eliminar esta rutina definitivamente?')) {
-            formDelete.submit();
-        }
-    } else {
-        alert('No se encontró la información para eliminar la rutina.');
-    }
-}
-
-function openEditImprevistaModal(btn) {
-    let imprevisto = null;
-    let rawData = '';
-
-    if (btn) {
-        let elWithData = (btn.dataset && btn.dataset.imprevisto) ? btn : (btn.closest ? btn.closest('[data-imprevisto]') : null);
-        while (elWithData && (!elWithData.dataset || !elWithData.dataset.imprevisto)) {
-            elWithData = elWithData.parentElement ? elWithData.parentElement.closest('[data-imprevisto]') : null;
-        }
-        if (elWithData && elWithData.dataset && elWithData.dataset.imprevisto) {
-            rawData = elWithData.dataset.imprevisto;
-        }
-    }
-
-    if (rawData) {
-        try {
-            let decoded = safeAtob(rawData);
-            imprevisto = JSON.parse(decoded);
-        } catch(e) {
-            console.warn("Could not parse rawData imprevisto", e);
-        }
-    }
-
-    if (!imprevisto && window.currentImprevisto) {
-        imprevisto = window.currentImprevisto;
-    }
-
-    if (!imprevisto) {
-        alert("No se pudo encontrar la información del imprevisto para editar.");
+    if (!tituloVal) {
+        alert('Por favor ingresa un título para la actividad.');
         return;
     }
 
-    try {
-        window.currentImprevisto = imprevisto;
-        let baseUrl = getAppBaseUrl();
-        
-        let formEdit = document.getElementById('formEditarImprevista');
-        if (formEdit) {
-            formEdit.action = `${baseUrl}/actividades-imprevistas/${imprevisto.id}`;
-        }
-
-        let formDelete = document.getElementById('formEliminarImprevista');
-        if (formDelete) {
-            formDelete.action = `${baseUrl}/actividades-imprevistas/${imprevisto.id}`;
-        }
-        
-        if (document.getElementById('edit_imprevista_titulo')) {
-            document.getElementById('edit_imprevista_titulo').value = imprevisto.titulo || '';
-        }
-        if (document.getElementById('edit_imprevista_descripcion')) {
-            document.getElementById('edit_imprevista_descripcion').value = imprevisto.descripcion_detallada || imprevisto.descripcion || '';
-        }
-        if (document.getElementById('edit_imprevista_motivo')) {
-            document.getElementById('edit_imprevista_motivo').value = imprevisto.motivo || '';
-        }
-        if (document.getElementById('edit_imprevista_resultado')) {
-            document.getElementById('edit_imprevista_resultado').value = imprevisto.resultado_obtenido || '';
-        }
-        if (document.getElementById('edit_imprevista_estado')) {
-            document.getElementById('edit_imprevista_estado').value = imprevisto.estado || 'finalizada';
-        }
-        if (document.getElementById('edit_imprevista_empleado')) {
-            document.getElementById('edit_imprevista_empleado').value = imprevisto.empleado_id || '';
-        }
-        
-        abrirModal('modalEditarImprevista');
-    } catch(err) {
-        console.error("Error al abrir modal de edición de imprevisto:", err);
-        alert("Ocurrió un error al cargar el imprevisto para editar.");
+    let submitBtn = document.getElementById('btnSubmitCrear');
+    if (submitBtn) { 
+        submitBtn.disabled = true; 
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Guardando...'; 
     }
-}
 
-function confirmDeleteImprevistaModal() {
-    let formDelete = document.getElementById('formEliminarImprevista');
-    if (formDelete && formDelete.action) {
-        if (confirm('¿Seguro que deseas eliminar este imprevisto definitivamente?')) {
-            formDelete.submit();
-        }
-    } else {
-        alert('No se encontró la información para eliminar el imprevisto.');
-    }
-}
+    let actionUrl = form.action || "{{ route('actividades.store') }}";
 
-function handleRutinaCheck(cb, event) {
-    event.stopPropagation();
-    let rutinaId = cb.dataset.id;
-    let val = parseInt(cb.value);
-    let isChecked = cb.checked;
-    
-    // Determine new quantity of executions
-    let newQty = isChecked ? val : val - 1;
-    
-    // Select all checkboxes for this routine in the parent container
-    let container = cb.parentElement;
-    let cbs = container.querySelectorAll('.rutina-check-box');
-    cbs.forEach(item => {
-        let itemVal = parseInt(item.value);
-        if (itemVal <= newQty) {
-            item.checked = true;
-        } else {
-            item.checked = false;
-        }
-    });
-
-    let baseUrl = getAppBaseUrl();
-
-    // Send update request to server
-    fetch(`${baseUrl}/rutinas/${rutinaId}/set-ejecuciones`, {
-        method: "POST",
+    fetch(actionUrl, {
+        method: 'POST',
         headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": "{{ csrf_token() }}",
-            "Accept": "application/json"
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
-        body: JSON.stringify({ cantidad: newQty, cantidad_ejecuciones: newQty })
+        body: new FormData(form)
     })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            // Checkboxes already updated on UI side.
+    .then(async r => {
+        let contentType = r.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            let data = await r.json();
+            if (r.ok && data.success) {
+                cerrarTodosLosModales();
+                window.location.reload();
+            } else {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Guardar Actividad'; }
+                let msg = data.message || 'Ocurrió un problema al guardar la actividad.';
+                if (data.errors) {
+                    msg += '\n\n' + Object.values(data.errors).flat().join('\n');
+                }
+                alert(msg);
+            }
         } else {
-            alert('Error al registrar ejecución: ' + (data.message || 'No se pudo guardar.'));
-            location.reload();
-        }
-    })
-    .catch(err => {
-        console.error(err);
-        alert('Error de red al registrar ejecución.');
-        location.reload();
-    });
-}
-
-function actualizarEstadoRapido(nuevoEstado) {
-    let actividadId = document.getElementById('avance_actividad_id').value;
-    if (!actividadId) return;
-
-    let sel = document.getElementById('ficha_estado_select');
-    let colorMap = { 'pendiente': '#fef3c7', 'en_proceso': '#dbeafe', 'en_pausa': '#f3f4f6', 'finalizada': '#dcfce7', 'atrasada': '#fee2e2', 'cancelada': '#f1f5f9' };
-    let txtMap = { 'pendiente': '#92400e', 'en_proceso': '#1e40af', 'en_pausa': '#475569', 'finalizada': '#166534', 'atrasada': '#991b1b', 'cancelada': '#64748b' };
-    if (sel) {
-        sel.style.backgroundColor = colorMap[nuevoEstado] || '#f1f5f9';
-        sel.style.color = txtMap[nuevoEstado] || '#475569';
-    }
-
-    let baseUrl = getAppBaseUrl();
-
-    fetch(`${baseUrl}/actividades/${actividadId}/estado`, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": "{{ csrf_token() }}",
-            "Accept": "application/json"
-        },
-        body: JSON.stringify({ estado: nuevoEstado })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
+            cerrarTodosLosModales();
             window.location.reload();
         }
     })
     .catch(err => {
-        alert("Ocurrió un error al cambiar el estado.");
+        console.error("Error al guardar actividad via AJAX, intentando submit nativo:", err);
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Guardar Actividad'; }
+        form.submit();
     });
 }
+
+function guardarEdicionActividad(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    let form = document.getElementById('formEditarActividad');
+    if (!form) return;
+
+    let submitBtn = document.getElementById('btnSubmitEditar');
+    if (submitBtn) { 
+        submitBtn.disabled = true; 
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Actualizando...'; 
+    }
+
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: new FormData(form)
+    })
+    .then(async r => {
+        let contentType = r.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            let data = await r.json();
+            if (r.ok && data.success) {
+                cerrarTodosLosModales();
+                window.location.reload();
+            } else {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Actualizar Cambios'; }
+                let msg = data.message || 'Ocurrió un problema al actualizar la actividad.';
+                if (data.errors) {
+                    msg += '\n\n' + Object.values(data.errors).flat().join('\n');
+                }
+                alert(msg);
+            }
+        } else {
+            cerrarTodosLosModales();
+            window.location.reload();
+        }
+    })
+    .catch(err => {
+        console.error("Error al actualizar actividad via AJAX, intentando submit nativo:", err);
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Actualizar Cambios'; }
+        form.submit();
+    });
+}
+
+function guardarAvanceGenerico(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    let form = document.getElementById('formAvanceGenerico');
+    if (!form) return;
+
+    let notaInput = document.getElementById('input_avance_gen_resultado');
+    if (notaInput && !notaInput.value.trim()) {
+        let porc = document.getElementById('input_avance_gen_range')?.value || '50';
+        notaInput.value = 'Avance registrado al ' + porc + '%';
+    }
+
+    let submitBtn = document.getElementById('btnSubmitAvanceGen');
+    if (submitBtn) { 
+        submitBtn.disabled = true; 
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Guardando...'; 
+    }
+
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: new FormData(form)
+    })
+    .then(async r => {
+        let contentType = r.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            let data = await r.json();
+            if (r.ok && data.success) {
+                cerrarTodosLosModales();
+                window.location.reload();
+            } else {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Guardar Avance y Nota'; }
+                let msg = data.message || 'Ocurrió un problema al guardar el avance.';
+                if (data.errors) {
+                    msg += '\n\n' + Object.values(data.errors).flat().join('\n');
+                }
+                alert(msg);
+            }
+        } else {
+            cerrarTodosLosModales();
+            window.location.reload();
+        }
+    })
+    .catch(err => {
+        console.error("Error al guardar avance via AJAX, intentando submit nativo:", err);
+        if (submitBtn) { submitBtn.disabled = false; }
+        form.submit();
+    });
+}
+
+function setupAutoNumbering(elementId) {
+    let el = typeof elementId === 'string' ? document.getElementById(elementId) : elementId;
+    if (!el || el.dataset.autonumAttached) return;
+    el.dataset.autonumAttached = "true";
+
+    el.addEventListener('focus', function() {
+        if (!this.value || this.value.trim() === '') {
+            this.value = '1. ';
+        }
+    });
+
+    el.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            let start = this.selectionStart;
+            let end = this.selectionEnd;
+            let val = this.value;
+
+            let linesBefore = val.substring(0, start).split('\n');
+            let nextNum = linesBefore.length + 1;
+            let insertStr = '\n' + nextNum + '. ';
+
+            this.value = val.substring(0, start) + insertStr + val.substring(end);
+            this.selectionStart = this.selectionEnd = start + insertStr.length;
+        }
+    });
+}
+
+function openDevolverModalFromRow(btn, event, customDataset) {
+    if (event) event.stopPropagation();
+    let dataset = customDataset || (btn ? btn.dataset : null);
+    if (!dataset) return;
+    let id = dataset.id;
+    let tipo = dataset.tipo || 'asignada';
+    if (!id) return;
+
+    let baseUrl = window.APP_BASE_URL || '';
+    let form = document.getElementById('formDevolverActividad');
+    if (!form) return;
+
+    form.reset();
+
+    if (tipo === 'imprevista') {
+        form.action = `${baseUrl}/actividades-imprevistas/${id}/devolver`;
+    } else if (tipo === 'rutinaria') {
+        form.action = `${baseUrl}/rutinas/${id}/devolver`;
+    } else {
+        form.action = `${baseUrl}/actividades/${id}/devolver`;
+    }
+
+    let titleText = document.getElementById('devolverTituloText');
+    if (titleText) titleText.innerText = dataset.titulo || 'Actividad';
+
+    let range = document.getElementById('input_devolver_pct_range');
+    let display = document.getElementById('display_devolver_pct_val');
+    let currentPct = parseInt(dataset.avance || 50);
+    let suggestPct = currentPct >= 100 ? 50 : Math.max(0, currentPct - 25);
+
+    if (range) range.value = suggestPct;
+    if (display) display.innerText = `${suggestPct}%`;
+
+    let txt = document.getElementById('input_devolver_comentario');
+    if (txt) txt.value = '';
+
+    abrirModal('modalDevolverActividad');
+}
+
+function openDevolverModalFromDetalle() {
+    if (!window.currentDetailDataset) return;
+    cerrarModal('modalVerDetalle');
+    openDevolverModalFromRow(null, null, window.currentDetailDataset);
+}
+
+function guardarDevolucionActividad(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    let form = document.getElementById('formDevolverActividad');
+    if (!form) return;
+
+    let comment = document.getElementById('input_devolver_comentario');
+    if (comment && !comment.value.trim()) {
+        alert('Por favor especifica lo que faltó por realizar.');
+        comment.focus();
+        return;
+    }
+
+    let submitBtn = document.getElementById('btnSubmitDevolver');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Enviando...'; }
+
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: new FormData(form)
+    })
+    .then(async r => {
+        let contentType = r.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            let data = await r.json();
+            if (r.ok && data.success) {
+                cerrarTodosLosModales();
+                window.location.reload();
+            } else {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="bi bi-arrow-return-left me-1"></i> Regresar Actividad con Observaciones'; }
+                alert(data.message || 'Ocurrió un error al devolver la actividad.');
+            }
+        } else {
+            cerrarTodosLosModales();
+            window.location.reload();
+        }
+    })
+    .catch(err => {
+        console.error("Error al devolver actividad:", err);
+        if (submitBtn) { submitBtn.disabled = false; }
+        form.submit();
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    ['crear_acciones_realizadas', 'crear_observaciones', 'edit_acciones_realizadas', 'edit_observaciones', 'input_avance_gen_resultado'].forEach(id => {
+        setupAutoNumbering(id);
+    });
+});
 </script>

@@ -1,4 +1,4 @@
-@extends('actividades_diarias.actividades_diarias.layout_general')
+@extends(request()->ajax() ? 'actividades_diarias.actividades_diarias.layout_ajax' : 'actividades_diarias.actividades_diarias.layout_general')
 
 @section('title', 'Tablero de Actividades')
 

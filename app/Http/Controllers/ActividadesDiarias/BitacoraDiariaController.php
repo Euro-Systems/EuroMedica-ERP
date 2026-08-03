@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\ActividadesDiarias;
 
 use App\Http\Controllers\Controller;
-
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\AvanceActividad;
@@ -20,24 +19,43 @@ class BitacoraDiariaController extends Controller
             abort(403);
         }
 
-        if (!in_array($currentUser->rol, ['jefe', 'directivo', 'admin'])) {
-            return redirect()->route('bitacora.usuario', ['empleado' => $currentUser->id]);
+        // If employee or intern, render their own dates view directly
+        if (in_array($currentUser->rol, ['empleado', 'practicante'])) {
+            return $this->usuarioFechas($currentUser->id);
         }
 
-        $buscar   = $request->input('buscar');
-        $areaId   = session('active_area_id');
+        $buscar     = $request->input('buscar');
+        $areaId     = session('active_area_id');
         $areaActiva = $areaId ? \App\Models\Area::find($areaId) : null;
+
+        // Buscar los Jefes correspondientes al área activa
+        $jefesForAreaIds = [];
+        if ($areaActiva) {
+            $allJefes = User::where('rol', 'jefe')->where('activo', true)->get();
+            foreach ($allJefes as $jefe) {
+                if ($jefe->isJefeForArea($areaActiva) || $jefe->area_id == $areaId) {
+                    $jefesForAreaIds[] = $jefe->id;
+                }
+            }
+        }
 
         $query = User::query()->where('activo', true);
 
-        if ($areaId) {
-            // Filtrar por el área seleccionada
-            $query->where('area_id', $areaId);
+        if ($areaId === 'todas') {
+            // Ver todas las áreas: mostrar todos los usuarios activos
+        } elseif ($areaId) {
+            $query->where(function($q) use ($areaId, $jefesForAreaIds, $currentUser) {
+                $q->where('area_id', $areaId)
+                  ->orWhere('id', $currentUser->id);
+                if (!empty($jefesForAreaIds)) {
+                    $q->orWhereIn('id', $jefesForAreaIds);
+                }
+            });
         } elseif ($currentUser->rol === 'jefe') {
-            // Sin área seleccionada: solo sus subordinados directos
-            $query->where('jefe_id', $currentUser->id);
+            $query->where(function($q) use ($currentUser) {
+                $q->where('jefe_id', $currentUser->id)->orWhere('id', $currentUser->id);
+            });
         }
-        // Admin sin área: ve a todos
 
         if ($buscar) {
             $query->where(function($q) use ($buscar) {
@@ -47,6 +65,16 @@ class BitacoraDiariaController extends Controller
         }
 
         $usuarios = $query->with('area')->get();
+        if (!$usuarios->contains('id', $currentUser->id)) {
+            $usuarios->prepend($currentUser);
+        }
+
+        // Ordenar: Usuario actual (Admin/Jefe) primero, luego Jefes de área, luego empleados y practicantes
+        $usuarios = $usuarios->sortBy(function($u) use ($currentUser) {
+            if ($u->id === $currentUser->id) return 0;
+            if ($u->rol === 'jefe') return 1;
+            return 2;
+        })->values();
         $hoy = now()->toDateString();
         $userIds = $usuarios->pluck('id')->toArray();
 
@@ -83,14 +111,16 @@ class BitacoraDiariaController extends Controller
         }
 
         // Security check: employees can only see their own report
-        if (($currentUser->rol === 'empleado' || $currentUser->rol === 'practicante') && $currentUser->id != $empleado) {
-            return redirect()->route('bitacora.usuario', ['empleado' => $currentUser->id]);
+        if (in_array($currentUser->rol, ['empleado', 'practicante']) && $currentUser->id != $empleado) {
+            $empleado = $currentUser->id;
         }
 
-        // Boss security check
+        // Boss security check: allow if target user is subordinate OR belongs to the same area
         if ($currentUser->rol === 'jefe' && $currentUser->id != $empleado) {
             $targetUser = User::findOrFail($empleado);
-            if ($targetUser->jefe_id != $currentUser->id) {
+            $sameArea = $currentUser->area_id && ($targetUser->area_id == $currentUser->area_id);
+            $isSubordinate = ($targetUser->jefe_id == $currentUser->id);
+            if (!$sameArea && !$isSubordinate) {
                 abort(403, 'No tienes permiso para ver este empleado.');
             }
         }
@@ -120,7 +150,7 @@ class BitacoraDiariaController extends Controller
             ->get()
             ->keyBy('fecha_f');
 
-        // Merge all dates from the keys of the grouped collections
+        // Merge all dates
         $allDates = collect()
             ->concat($avancesGrouped->keys())
             ->concat($imprevistosGrouped->keys())
@@ -162,13 +192,15 @@ class BitacoraDiariaController extends Controller
         }
 
         // Security checks
-        if (($currentUser->rol === 'empleado' || $currentUser->rol === 'practicante') && $currentUser->id != $empleado) {
-            abort(403, 'No tienes permiso para ver este reporte.');
+        if (in_array($currentUser->rol, ['empleado', 'practicante']) && $currentUser->id != $empleado) {
+            $empleado = $currentUser->id;
         }
 
         if ($currentUser->rol === 'jefe' && $currentUser->id != $empleado) {
             $targetUser = User::findOrFail($empleado);
-            if ($targetUser->jefe_id != $currentUser->id) {
+            $sameArea = $currentUser->area_id && ($targetUser->area_id == $currentUser->area_id);
+            $isSubordinate = ($targetUser->jefe_id == $currentUser->id);
+            if (!$sameArea && !$isSubordinate) {
                 abort(403, 'No tienes permiso para ver este reporte.');
             }
         }
@@ -229,32 +261,30 @@ class BitacoraDiariaController extends Controller
             abort(403);
         }
 
-        // Security checks
-        if (($currentUser->rol === 'empleado' || $currentUser->rol === 'practicante') && $currentUser->id != $empleado) {
-            abort(403, 'No tienes permiso para ver este reporte.');
+        if (in_array($currentUser->rol, ['empleado', 'practicante']) && $currentUser->id != $empleado) {
+            $empleado = $currentUser->id;
         }
 
         if ($currentUser->rol === 'jefe' && $currentUser->id != $empleado) {
             $targetUser = User::findOrFail($empleado);
-            if ($targetUser->jefe_id != $currentUser->id) {
+            $sameArea = $currentUser->area_id && ($targetUser->area_id == $currentUser->area_id);
+            $isSubordinate = ($targetUser->jefe_id == $currentUser->id);
+            if (!$sameArea && !$isSubordinate) {
                 abort(403, 'No tienes permiso para ver este reporte.');
             }
         }
 
         $user = User::findOrFail($empleado);
 
-        // Load advances
         $avances = AvanceActividad::where('empleado_id', $user->id)
             ->whereDate('fecha_avance', $fecha)
             ->with('actividad')
             ->get();
 
-        // Load imprevistos
         $imprevistos = ActividadImprevista::where('empleado_id', $user->id)
             ->whereDate('fecha', $fecha)
             ->get();
 
-        // Load routine executions
         $ejecucionesRutina = EjecucionRutina::whereHas('rutina', function($q) use ($user) {
                 $q->where('empleado_id', $user->id);
             })
@@ -262,7 +292,6 @@ class BitacoraDiariaController extends Controller
             ->with('rutina')
             ->get();
 
-        // Calculate total hours
         $horasAvances = $avances->sum('horas_trabajadas');
         $horasImprevistas = $imprevistos->sum('horas_invertidas');
         $totalHoras = round($horasAvances + $horasImprevistas, 2);
@@ -276,7 +305,6 @@ class BitacoraDiariaController extends Controller
             'totalHoras'
         ));
 
-        return $pdf->download('evidencia_diaria_' . str_replace(' ', '_', $user->name) . '_' . $fecha . '.pdf');
+        return $pdf->stream('evidencia_diaria_' . str_replace(' ', '_', $user->name) . '_' . $fecha . '.pdf');
     }
 }
-

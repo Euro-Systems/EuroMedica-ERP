@@ -2,196 +2,311 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte de Evidencia Diaria - {{ $user->name }}</title>
+    <title>Reporte Diario de Actividades - {{ $user->name }}</title>
     <style>
         @page {
-            margin: 25px;
+            margin: 15px 18px;
         }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 10px;
-            color: #333333;
-            line-height: 1.4;
+            font-size: 8.5px;
+            color: #1e293b;
+            line-height: 1.3;
             margin: 0;
             padding: 0;
+            background-color: #ffffff;
         }
-        .header {
-            border-bottom: 2px solid #1e3a8a;
-            padding-bottom: 8px;
-            margin-bottom: 20px;
-        }
-        .header table {
-            width: 100%;
-        }
-        .header .title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #1e3a8a;
-            margin: 0;
-        }
-        .header .subtitle {
-            font-size: 10px;
-            color: #666666;
-            margin-top: 4px;
-        }
-        .meta-info {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 10px 15px;
-            margin-bottom: 20px;
-        }
-        .meta-info table {
-            width: 100%;
-        }
-        .meta-info td {
-            vertical-align: top;
-            font-size: 11px;
-        }
-        .badge {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 9px;
-            font-weight: bold;
-        }
-        .badge-avance { background-color: #e0e7ff; color: #3730a3; }
-        .badge-imprevisto { background-color: #fef3c7; color: #92400e; }
-        .badge-rutina { background-color: #dcfce7; color: #166534; }
         
-        .table-activities {
+        /* BANNER PÚRPURA CORPORATIVO */
+        .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-bottom: 8px;
         }
-        .table-activities th, .table-activities td {
-            border: 1px solid #cbd5e1;
-            padding: 8px;
+        .logo-box {
+            width: 180px;
+            background-color: #ffffff;
+            border: 2px solid #6b21a8;
+            padding: 6px 10px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .logo-title {
+            color: #6b21a8;
+            font-size: 13px;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+        .logo-sub {
+            color: #0284c7;
+            font-size: 9px;
+            font-weight: 700;
+        }
+        .title-banner {
+            background-color: #6b21a8;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 800;
+            text-align: center;
+            vertical-align: middle;
+            letter-spacing: 0.5px;
+        }
+
+        /* METADATOS DE ENCABEZADO */
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        .meta-table th {
+            background-color: #1e3a8a;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 8.5px;
+            padding: 4px 6px;
+            border: 1px solid #1d4ed8;
             text-align: left;
+            width: 11%;
+        }
+        .meta-table td {
+            background-color: #ffffff;
+            color: #1e293b;
+            font-size: 8.5px;
+            font-weight: 600;
+            padding: 4px 6px;
+            border: 1px solid #cbd5e1;
+            width: 22%;
+        }
+
+        /* TABLA PRINCIPAL DE ACTIVIDADES */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+        }
+        .data-table th {
+            background-color: #1e3a8a;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 8px;
+            padding: 4px 3px;
+            border: 1px solid #1d4ed8;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .data-table th.sub-th {
+            background-color: #2563eb;
+            color: #ffffff;
+            font-size: 7.5px;
+        }
+        .data-table td {
+            padding: 4px 3px;
+            border: 1px solid #cbd5e1;
+            font-size: 8px;
             vertical-align: top;
         }
-        .table-activities th {
-            background-color: #1e3a8a;
-            color: white;
-            font-weight: bold;
-            font-size: 10px;
-        }
-        .table-activities tr:nth-child(even) td {
+        .data-table tr:nth-child(even) {
             background-color: #f8fafc;
         }
-        .text-center {
-            text-align: center !important;
+
+        .row-num {
+            text-align: center;
+            font-weight: bold;
+            color: #1e3a8a;
         }
-        .text-right {
-            text-align: right !important;
+        .row-time {
+            text-align: center;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .pct-val {
+            text-align: center;
+            font-weight: bold;
+            color: #166534;
+        }
+
+        .badge-imp {
+            background-color: #ffedd5;
+            color: #9a3412;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 7px;
+        }
+        .badge-com {
+            background-color: #faf5ff;
+            color: #7c3aed;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 7px;
         }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <table>
-            <tr>
-                <td>
-                    <div class="title">Clínica Euromédica - Evidencia Diaria de Trabajo</div>
-                    <div class="subtitle">Línea de tiempo de actividades realizadas</div>
-                </td>
-                <td style="text-align: right; color: #666666; font-size: 9px; vertical-align: bottom;">
-                    Fecha de Reporte: {{ \Carbon\Carbon::parse($fecha)->format('d/m/Y') }}
-                </td>
-            </tr>
-        </table>
-    </div>
-
-    <div class="meta-info">
-        <table>
-            <tr>
-                <td>
-                    <strong>Empleado:</strong> {{ $user->name }}<br>
-                    <strong>Puesto / Rol:</strong> {{ ucfirst($user->rol) }}
-                </td>
-                <td>
-                    <strong>Área:</strong> {{ $user->area->nombre ?? 'N/A' }}<br>
-                    <strong>Correo:</strong> {{ $user->email }}
-                </td>
-                <td style="text-align: right; font-size: 13px;">
-                    <strong>Horas Totales Reportadas:</strong><br>
-                    <span style="color: #1e3a8a; font-weight: bold;">{{ $totalHoras }} hrs</span>
-                </td>
-            </tr>
-        </table>
-    </div>
+    <!-- ENCABEZADO SUPERIOR MORADO Y LOGO -->
+    <table class="header-table">
+        <tr>
+            <td class="logo-box">
+                <div class="logo-title">Clínica<br>EURO Médica</div>
+                <div class="logo-sub">+ Salud Integral</div>
+            </td>
+            <td class="title-banner">
+                REPORTE DIARIO DE ACTIVIDADES
+            </td>
+        </tr>
+    </table>
 
     @php
         $timelineItems = collect();
-        
+        $dirigidoANombre = 'Jefatura / Dirección';
+        $dirigidoADepto = $user->area->nombre ?? 'Administración';
+        $dirigidoAPuesto = 'Jefe de Área';
+
+        // 1. Avances Asignadas
         foreach($avances as $av) {
+            if ($av->actividad && $av->actividad->dirigidoA) {
+                $dirigidoANombre = $av->actividad->dirigidoA->name;
+            }
             $timelineItems->push((object)[
-                'time' => $av->hora_inicio . ' a ' . $av->hora_fin,
-                'sort_time' => $av->hora_inicio,
-                'type' => 'avance',
-                'badge' => 'Avance Asignado',
-                'badge_class' => 'badge-avance',
-                'title' => $av->actividad->titulo ?? 'Avance de Actividad',
-                'description' => $av->que_se_hizo,
-                'hours' => $av->horas_trabajadas
+                'hora_inicio' => $av->actividad->hora_inicio ?? ($av->created_at ? $av->created_at->format('H:i') : '09:00'),
+                'hora_fin'    => $av->actividad->hora_fin ?? '17:00',
+                'tarea'       => $av->actividad->titulo ?? 'Actividad Asignada',
+                'descripcion' => $av->comentario ?? $av->que_se_hizo ?? ($av->actividad->descripcion ?? 'En progreso'),
+                'porcentaje'  => ($av->porcentaje_avance ?? 50) . '%',
+                'acciones'    => $av->actividad->acciones_realizadas ?? 'Ejecución de actividades correspondientes al puesto',
+                'dep_area'    => $av->actividad->dependencia_area ?? ($user->area->nombre ?? '-'),
+                'dep_resp'    => $av->actividad->dependencia_responsable ?? '-',
+                'notas'       => $av->actividad->observaciones ?? '-',
+                'comentarios' => $av->actividad->comentarios_dirigido ?? '-'
             ]);
         }
-        
+
+        // 2. Imprevistas & Comida
         foreach($imprevistos as $imp) {
-            $timelineItems->push((object)[
-                'time' => 'Registro de Imprevisto',
-                'sort_time' => $imp->created_at->format('H:i:s'),
-                'type' => 'imprevisto',
-                'badge' => 'Imprevisto Urgente',
-                'badge_class' => 'badge-imprevisto',
-                'title' => $imp->titulo,
-                'description' => $imp->descripcion_detallada,
-                'hours' => $imp->horas_invertidas
-            ]);
+            if ($imp->dirigidoA) {
+                $dirigidoANombre = $imp->dirigidoA->name;
+            }
+            if (strtolower($imp->titulo) === 'hora de comida') {
+                $timelineItems->push((object)[
+                    'hora_inicio' => $imp->hora_inicio ?? '14:00',
+                    'hora_fin'    => $imp->hora_fin ?? '15:00',
+                    'tarea'       => 'Hora de Comida (Almuerzo)',
+                    'descripcion' => 'Hora de comida reglamentaria computada (1 hora)',
+                    'porcentaje'  => '100%',
+                    'acciones'    => 'Descanso de alimentos',
+                    'dep_area'    => '-',
+                    'dep_resp'    => '-',
+                    'notas'       => 'Hora de comida sin pendientes activos',
+                    'comentarios' => '-'
+                ]);
+            } else {
+                $timelineItems->push((object)[
+                    'hora_inicio' => $imp->hora_inicio ?? ($imp->created_at ? $imp->created_at->format('H:i') : '10:00'),
+                    'hora_fin'    => $imp->hora_fin ?? '11:00',
+                    'tarea'       => '[IMPREVISTO] ' . $imp->titulo,
+                    'descripcion' => $imp->resultado_obtenido ?? $imp->motivo ?? 'Atención de imprevisto urgente',
+                    'porcentaje'  => ($imp->porcentaje_avance ?? 100) . '%',
+                    'acciones'    => $imp->acciones_realizadas ?? 'Resolución inmediata de imprevisto',
+                    'dep_area'    => $imp->dependencia_area ?? ($user->area->nombre ?? '-'),
+                    'dep_resp'    => $imp->dependencia_responsable ?? '-',
+                    'notas'       => $imp->observaciones ?? ('Motivo: ' . ($imp->motivo ?? 'Urgencia')),
+                    'comentarios' => $imp->comentarios_dirigido ?? '-'
+                ]);
+            }
         }
-        
+
+        // 3. Rutinas
         foreach($ejecucionesRutina as $ej) {
+            $rut = $ej->rutina;
+            if ($rut && $rut->dirigidoA) {
+                $dirigidoANombre = $rut->dirigidoA->name;
+            }
             $timelineItems->push((object)[
-                'time' => \Carbon\Carbon::parse($ej->hora_ejecucion)->format('H:i') . ' hrs',
-                'sort_time' => $ej->hora_ejecucion,
-                'type' => 'rutina',
-                'badge' => 'Rutina Ejecutada',
-                'badge_class' => 'badge-rutina',
-                'title' => $ej->rutina->titulo ?? 'Rutina Diaria',
-                'description' => $ej->rutina->descripcion ?? 'Ejecución de tarea periódica.',
-                'hours' => 0 // Rutinas no cargan horas directamente a menos que tengan avances
+                'hora_inicio' => $rut->hora_inicio ?? '09:00',
+                'hora_fin'    => $rut->hora_fin ?? '17:00',
+                'tarea'       => '[RUTINA] ' . ($rut->titulo ?? 'Rutina Diaria'),
+                'descripcion' => $rut->descripcion ?? 'Ejecución periódica diaria completada',
+                'porcentaje'  => '100%',
+                'acciones'    => $rut->acciones_realizadas ?? 'Verificación y ejecución de tareas repetitivas',
+                'dep_area'    => $rut->dependencia_area ?? ($user->area->nombre ?? '-'),
+                'dep_resp'    => $rut->dependencia_responsable ?? '-',
+                'notas'       => $rut->observaciones ?? '-',
+                'comentarios' => $rut->comentarios_dirigido ?? '-'
             ]);
         }
-        
-        $timelineItems = $timelineItems->sortBy('sort_time');
     @endphp
 
-    <table class="table-activities">
+    <!-- METADATOS DE RESPONSABILIDAD (BLOQUE EXCEL OFICIAL) -->
+    <table class="meta-table">
+        <tr>
+            <th>Responsable:</th>
+            <td>{{ $user->name }}</td>
+            <th>Dirigido a:</th>
+            <td>{{ $dirigidoANombre }}</td>
+            <th>Fecha:</th>
+            <td>{{ \Carbon\Carbon::parse($fecha)->format('d/m/Y') }}</td>
+        </tr>
+        <tr>
+            <th>Departamento:</th>
+            <td>{{ $user->area->nombre ?? 'Sistemas / TI' }}</td>
+            <th>Departamento:</th>
+            <td>{{ $dirigidoADepto }}</td>
+            <th rowspan="2">Observaciones:</th>
+            <td rowspan="2" style="font-style: italic; font-size: 8px;">
+                Reporte oficial generado automáticamente por el ERP EuroMédica. Total de horas: {{ $totalHoras }} hrs.
+            </td>
+        </tr>
+        <tr>
+            <th>Puesto:</th>
+            <td>{{ ucfirst($user->rol ?? 'Empleado') }}</td>
+            <th>Puesto:</th>
+            <td>{{ $dirigidoAPuesto }}</td>
+        </tr>
+    </table>
+
+    <!-- TABLA DE ACTIVIDADES (ESTRUCTURA EXACTA AL FORMATO DE LA CLÍNICA) -->
+    <table class="data-table">
         <thead>
             <tr>
-                <th style="width: 15%;">Hora / Momento</th>
-                <th style="width: 18%;">Tipo</th>
-                <th style="width: 25%;">Actividad</th>
-                <th style="width: 34%;">Resumen de lo Realizado</th>
-                <th style="width: 8%;" class="text-center">Horas</th>
+                <th rowspan="2" style="width: 4%;">NUM</th>
+                <th colspan="2" style="width: 14%;">Horario</th>
+                <th rowspan="2" style="width: 18%;">Tarea</th>
+                <th colspan="2" style="width: 22%;">Estatus</th>
+                <th rowspan="2" style="width: 14%;">Acciones</th>
+                <th colspan="2" style="width: 14%;">Dependencia o Vinculación</th>
+                <th rowspan="2" style="width: 7%;">Notas y Observaciones</th>
+                <th rowspan="2" style="width: 7%;">Comentarios Destinatario</th>
+            </tr>
+            <tr>
+                <th class="sub-th">INICIO</th>
+                <th class="sub-th">TÉRMINO</th>
+                <th class="sub-th">Descripción</th>
+                <th class="sub-th">% Avance</th>
+                <th class="sub-th">Área</th>
+                <th class="sub-th">Responsable</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($timelineItems as $item)
+            @forelse($timelineItems as $idx => $item)
                 <tr>
-                    <td><strong>{{ $item->time }}</strong></td>
-                    <td>
-                        <span class="badge {{ $item->badge_class }}">{{ $item->badge }}</span>
-                    </td>
-                    <td><strong>{{ $item->title }}</strong></td>
-                    <td>{{ $item->description }}</td>
-                    <td class="text-center"><strong>{{ $item->hours > 0 ? $item->hours . ' hrs' : '-' }}</strong></td>
+                    <td class="row-num">{{ $idx + 1 }}</td>
+                    <td class="row-time">{{ $item->hora_inicio }}</td>
+                    <td class="row-time">{{ $item->hora_fin }}</td>
+                    <td><strong>{{ $item->tarea }}</strong></td>
+                    <td>{{ $item->descripcion }}</td>
+                    <td class="pct-val">{{ $item->porcentaje }}</td>
+                    <td>{{ $item->acciones }}</td>
+                    <td>{{ $item->dep_area }}</td>
+                    <td>{{ $item->dep_resp }}</td>
+                    <td>{{ $item->notas }}</td>
+                    <td>{{ $item->comentarios }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" style="text-align: center; color: #666; font-style: italic; padding: 20px;">
-                        No se registraron actividades para esta fecha.
+                    <td colspan="11" style="text-align: center; color: #64748b; font-style: italic; padding: 16px;">
+                        No existen actividades o avances registrados para el día seleccionado.
                     </td>
                 </tr>
             @endforelse

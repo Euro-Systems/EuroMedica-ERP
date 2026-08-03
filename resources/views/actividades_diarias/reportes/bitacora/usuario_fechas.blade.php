@@ -1,8 +1,8 @@
-@extends('actividades_diarias.actividades_diarias.layout_general')
+@extends(request()->ajax() ? 'actividades_diarias.actividades_diarias.layout_ajax' : 'actividades_diarias.actividades_diarias.layout_general')
 
 @section('title', 'Historial de Evidencias - ' . $user->name)
 
-@section('module-content')
+@section('actividades-content')
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
     <div>
         <h2 style="margin:0; color:#1e3a8a; font-size:20px; font-weight:800;">
@@ -28,7 +28,7 @@
             <tr>
                 <th>Fecha</th>
                 <th>Avances Planificados</th>
-                <th>Actividades Imprevistas</th>
+                <th>Actividades Personales</th>
                 <th>Rutinas Ejecutadas</th>
                 <th>Horas Reportadas</th>
                 <th>Acciones</th>
@@ -49,7 +49,7 @@
                 </td>
                 <td>
                     @if($item->count_imprevistos > 0)
-                        <span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:bold;">{{ $item->count_imprevistos }} imprevistos</span>
+                        <span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:bold;">{{ $item->count_imprevistos }} personales</span>
                     @else
                         <span style="color:#94a3b8;">-</span>
                     @endif

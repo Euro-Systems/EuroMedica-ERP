@@ -1,11 +1,17 @@
-@extends('actividades_diarias.actividades_diarias.layout_general')
+@extends(request()->ajax() ? 'actividades_diarias.actividades_diarias.layout_ajax' : 'actividades_diarias.actividades_diarias.layout_general')
 
 @section('title', 'Resumen General')
 
 @section('actividades-content')
+@php
+    $currentUser = auth()->user();
+    $isBossOrAdmin = $currentUser && in_array($currentUser->rol, ['jefe', 'admin', 'directivo']);
+    $activeAreaId = session('active_area_id');
+    $activeAreaObj = $activeAreaId ? $areas->firstWhere('id', $activeAreaId) : null;
+@endphp
+
 <!-- RESUMEN PARCIAL -->
-{{-- ===== ENCABEZADO GERENCIAL ===== --}}
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
     <div>
         <h2 style="margin:0; color:#1e3a8a; font-size:20px; font-weight:800;">
             <i class="bi bi-bar-chart-line-fill me-2" style="color:#3b82f6;"></i>Resumen General del Equipo
@@ -14,34 +20,102 @@
             Visión global de todas las actividades asignadas · {{ now()->format('d/m/Y') }}
         </p>
     </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <a href="{{ route('bitacora.pdf', ['empleado' => auth()->id(), 'fecha' => now()->toDateString()]) }}" target="_blank" class="btn-ver" style="background:#0284c7; color:white; border:none; padding:10px 18px; border-radius:8px; font-weight:800; font-size:13px; display:inline-flex; align-items:center; gap:6px; text-decoration:none; box-shadow:0 4px 6px rgba(2,132,199,0.2);">
+            <i class="bi bi-file-earmark-pdf-fill"></i> Reporte PDF Hoy
+        </a>
+        <!-- BOTÓN NEGRO PARA NUEVA ACTIVIDAD -->
+        <button type="button" onclick="abrirModalCrearActividad('asignada')" class="btn-ver" style="background:#0f172a; color:white; border:none; padding:10px 22px; border-radius:8px; font-weight:800; font-size:13px; display:flex; align-items:center; gap:8px; cursor:pointer; box-shadow:0 4px 6px rgba(0,0,0,0.15);">
+            <i class="bi bi-plus-lg" style="font-size:16px;"></i> + Nueva Actividad
+        </button>
+    </div>
 </div>
 
-<!-- Filtros y Búsqueda -->
-<div class="rh-card" style="margin-bottom:16px; padding:14px 18px; border-radius:12px;">
-    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-        <div style="flex:1; min-width:200px;">
-            <input type="text" id="search-query" oninput="filterActivities()" placeholder="🔍 Buscar por título o descripción..." style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px; outline:none; box-sizing:border-box;">
+<!-- TARJETA DESTACADA DEL ÁREA CONSULTADA ACTUAL -->
+<div style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: white; border-radius: 12px; padding: 14px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(37,99,235,0.25); flex-wrap:wrap; gap:12px;">
+    <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="background: rgba(255,255,255,0.2); width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            <i class="bi bi-buildings-fill"></i>
         </div>
-        <div style="width:170px;">
-            <select id="filter-status" onchange="filterActivities()" style="width:100%; padding:9px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px; background:#fff;">
+        <div>
+            <span style="font-size: 11px; text-transform: uppercase; font-weight: 800; opacity: 0.9; letter-spacing: 0.6px; display:block;">ÁREA SELECCIONADA ACTUALMENTE:</span>
+            <h3 style="margin: 2px 0 0 0; font-size: 19px; font-weight: 900; color: #ffffff;">
+                {{ $activeAreaObj ? $activeAreaObj->nombre : 'Todas las Áreas de la Clínica' }}
+            </h3>
+        </div>
+    </div>
+    <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 6px 16px; font-weight: 800; font-size: 13px;">
+        <i class="bi bi-people-fill me-1"></i> {{ count($actividades) }} Actividades Mostradas
+    </div>
+</div>
+
+@php
+    $atrasadasCount = 0;
+    foreach($actividades as $actCheck) {
+        $isAtrasada = ($actCheck->tiene_plazo ?? 'si') !== 'no' && $actCheck->fecha_estimada_fin && \Carbon\Carbon::parse($actCheck->fecha_estimada_fin)->isPast() && !in_array($actCheck->estado, ['finalizada']);
+        if ($isAtrasada || $actCheck->estado === 'atrasada') {
+            $atrasadasCount++;
+        }
+    }
+@endphp
+
+@if($atrasadasCount > 0)
+<div style="background:#fef2f2; border: 2px solid #ef4444; color:#991b1b; border-radius:12px; padding:12px 18px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 12px rgba(239,68,68,0.15); flex-wrap:wrap; gap:10px;">
+    <div style="display:flex; align-items:center; gap:10px;">
+        <span style="background:#ef4444; color:white; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:16px;">⚠️</span>
+        <div>
+            <strong style="font-size:14px; display:block;">ATENCIÓN: Se detectaron {{ $atrasadasCount }} actividades atrasadas o con plazo vencido</strong>
+            <span style="font-size:12px; opacity:0.9;">Haga clic en el filtro "Atrasadas" para revisarlas e interactuar con el responsable.</span>
+        </div>
+    </div>
+    <button type="button" onclick="document.getElementById('filter-status').value='atrasada'; filterActivities();" style="background:#991b1b; color:white; border:none; padding:8px 16px; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.15);">
+        Ver {{ $atrasadasCount }} Atrasada(s)
+    </button>
+</div>
+@endif
+
+<!-- Filtros y Búsqueda Completos -->
+<div class="rh-card" style="margin-bottom:16px; padding:14px 18px; border-radius:12px;">
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <div style="flex:1; min-width:220px;">
+            <input type="text" id="search-query" oninput="filterActivities()" placeholder="🔍 Buscar por colaborador, título o descripción..." style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px; outline:none; box-sizing:border-box;">
+        </div>
+        <div style="width:145px;">
+            <select id="filter-type" onchange="filterActivities()" style="width:100%; padding:9px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px; background:#fff; font-weight:600;">
+                <option value="">Todos los Tipos</option>
+                <option value="asignada">🟢 Asignada</option>
+                <option value="imprevista">🟠 Personales</option>
+                <option value="rutinaria">🔵 Rutinaria</option>
+            </select>
+        </div>
+        <div style="width:145px;">
+            <select id="filter-priority" onchange="filterActivities()" style="width:100%; padding:9px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px; background:#fff; font-weight:600;">
+                <option value="">Todas las Prioridades</option>
+                <option value="baja">Baja</option>
+                <option value="media">Media</option>
+                <option value="alta">Alta</option>
+                <option value="urgente">Urgente</option>
+            </select>
+        </div>
+        <div style="width:145px;">
+            <select id="filter-status" onchange="filterActivities()" style="width:100%; padding:9px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px; background:#fff; font-weight:600;">
                 <option value="">Todos los Estados</option>
                 <option value="pendiente">Pendiente</option>
                 <option value="en_proceso">En Proceso</option>
                 <option value="finalizada">Finalizada</option>
-                <option value="atrasada">Atrasada</option>
-                <option value="cancelada">Cancelada</option>
+                <option value="atrasada">🚨 Atrasada</option>
             </select>
         </div>
-        <div style="width:170px;">
-            <select id="filter-area" onchange="filterActivities()" style="width:100%; padding:9px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px; background:#fff;">
+        <div style="width:145px;">
+            <select id="filter-area" onchange="filterActivities()" style="width:100%; padding:9px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px; background:#fff;">
                 <option value="">Todas las Áreas</option>
                 @foreach($areas as $areaItem)
                     <option value="{{ $areaItem->id }}" {{ session('active_area_id') == $areaItem->id ? 'selected' : '' }}>{{ $areaItem->nombre }}</option>
                 @endforeach
             </select>
         </div>
-        <div style="width:170px;">
-            <select id="filter-employee" onchange="filterActivities()" style="width:100%; padding:9px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px; background:#fff;">
+        <div style="width:150px;">
+            <select id="filter-employee" onchange="filterActivities()" style="width:100%; padding:9px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px; background:#fff;">
                 <option value="">Todos los Empleados</option>
                 @foreach($empleadosRH as $emp)
                     <option value="{{ $emp['id'] ?? $emp->id }}">{{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}</option>
@@ -56,61 +130,121 @@
     <table class="rh-table" style="margin:0; border-collapse:collapse; width:100%;">
         <thead>
             <tr style="background:#1e3a8a; color:white;">
-                <th style="padding:15px; font-weight:bold; font-size:14px; border:none;">Actividad</th>
-                <th style="padding:15px; font-weight:bold; font-size:14px; border:none;">Asignado A</th>
-                <th style="padding:15px; font-weight:bold; font-size:14px; border:none; text-align:center;">Prioridad</th>
-                <th style="padding:15px; font-weight:bold; font-size:14px; border:none;">Progreso</th>
-                <th style="padding:15px; font-weight:bold; font-size:14px; border:none;">Descripción</th>
-                <th style="padding:15px; font-weight:bold; font-size:14px; border:none;">Plazo</th>
-                <th style="padding:15px; font-weight:bold; font-size:14px; border:none; text-align:center;">Acciones</th>
+                <th style="padding:8px 12px; font-weight:bold; font-size:12px; border:none;">Actividad</th>
+                <th style="padding:8px 12px; font-weight:bold; font-size:12px; border:none;">Asignado a</th>
+                <th style="padding:8px 12px; font-weight:bold; font-size:12px; border:none; text-align:center;">Prioridad</th>
+                <th style="padding:8px 12px; font-weight:bold; font-size:12px; border:none;">Progreso</th>
+                <th style="padding:8px 12px; font-weight:bold; font-size:12px; border:none;">Dependencia</th>
+                <th style="padding:8px 12px; font-weight:bold; font-size:12px; border:none;">Descripción</th>
+                <th style="padding:8px 12px; font-weight:bold; font-size:12px; border:none;">Plazo</th>
+                <th style="padding:8px 12px; font-weight:bold; font-size:12px; border:none; text-align:center;">Acciones</th>
             </tr>
         </thead>
         <tbody>
             @forelse($actividades as $act)
                 @php
-                   $borderColor = '#e2e8f0'; 
-                   if ($act->estado === 'finalizada') $borderColor = '#10b981'; 
-                   elseif ($act->estado === 'pendiente') $borderColor = '#facc15'; 
-                   elseif ($act->estado === 'en_pausa') $borderColor = '#f97316'; 
-                   elseif ($act->estado === 'atrasada') $borderColor = '#ef4444'; 
-                   
-                   $isImprevista = ($act->tipo === 'Imprevista');
-                   $isRutinaria = ($act->tipo === 'Rutinaria');
-                   
-                   if ($isImprevista) {
-                       $rowClick = "window.location.href='" . route('actividades-imprevistas.show', $act->id) . "'";
-                    } elseif ($isRutinaria) {
-                        $rowClick = "openEditRutinaModal(this)";
-                    } else {
-                       $rowClick = "openShowModal(this)";
+                   $tipoKey = strtolower($act->tipo ?? 'asignada');
+                   $isComida = strtolower($act->titulo ?? '') === 'hora de comida';
+                   if ($isComida) continue;
+
+                   if ($isComida) {
+                       $destroyRoute = route('actividades-imprevistas.destroy', $act->id);
+                       $descText = $act->descripcion_detallada ?? $act->descripcion;
+                       $rowBg = '#faf5ff';
+                       $rowBorder = '#8b5cf6';
+                   } elseif ($tipoKey === 'imprevista') {
+                       $destroyRoute = route('actividades-imprevistas.destroy', $act->id);
+                       $descText = $act->descripcion_detallada ?? $act->descripcion;
+                       $rowBg = '#fff7ed';
+                       $rowBorder = '#ea580c';
+                   } elseif ($tipoKey === 'rutinaria') {
+                       $destroyRoute = route('rutinas.destroy', $act->id);
+                       $descText = $act->descripcion;
+                       $rowBg = '#eff6ff';
+                       $rowBorder = '#2563eb';
+                   } else {
+                       $destroyRoute = route('actividades.destroy', $act->id);
+                       $descText = $act->descripcion;
+                       $rowBg = '#f0fdf4';
+                       $rowBorder = '#16a34a';
                    }
+
+                   $empNombre = $act->empleado ? $act->empleado->name : 'N/A';
+                   $empAreaId = $act->empleado ? ($act->empleado->area_id ?? '') : '';
+                   $empId     = $act->empleado_id;
+                   $creadorNombre = $act->creador ? $act->creador->name : ($isBossOrAdmin ? 'Jefe / Admin' : 'Empleado');
+                   $fechaDisplay = $tipoKey === 'rutinaria' ? 'Diaria' : (($act->fecha_inicio ? \Carbon\Carbon::parse($act->fecha_inicio)->format('d/m/Y') : '') . ' - ' . ($act->fecha_estimada_fin ? \Carbon\Carbon::parse($act->fecha_estimada_fin)->format('d/m/Y') : ''));
+                   $porcentaje = intval($act->porcentaje_avance ?? 0);
+                   $puedeAvance = ($act->permitir_registro_avance ?? 1) || $isBossOrAdmin;
+
+                    $ahora = \Carbon\Carbon::now();
+                    $esFinalizada = ($act->estado === 'finalizada');
+                    $tienePlazoVal = ($act->tiene_plazo ?? 'si') !== 'no';
+
+                    $plazoBadgeHtml = '';
+                    if ($esFinalizada) {
+                        $plazoBadgeHtml = '<span style="background:#dcfce7; color:#166534; font-size:11px; font-weight:800; padding:3px 8px; border-radius:10px; border:1px solid #86efac; display:inline-flex; align-items:center; gap:4px;"><i class="bi bi-check-circle-fill"></i> Finalizada</span>';
+                    } elseif (!$tienePlazoVal || (empty($act->hora_inicio) && empty($act->hora_fin) && empty($act->fecha_estimada_fin) && $tipoKey !== 'rutinaria')) {
+                        $plazoBadgeHtml = '<span style="color:#64748b; font-style:italic;">Sin plazo</span>';
+                    } elseif ($tipoKey === 'rutinaria') {
+                        $plazoBadgeHtml = '<span style="color:#1e40af; font-weight:700;">Diaria</span>';
+                    } else {
+                        $fechaFinStr = $act->fecha_estimada_fin ?? $act->fecha_inicio ?? $ahora->format('Y-m-d');
+                        $horaFinStr = $act->hora_fin ?? '23:59:59';
+                        try {
+                            $deadline = \Carbon\Carbon::parse($fechaFinStr . ' ' . $horaFinStr);
+                        } catch (\Exception $e) {
+                            $deadline = $ahora->copy()->addDays(1);
+                        }
+
+                        if ($ahora->greaterThan($deadline)) {
+                            $rowBg = '#fef2f2';
+                            $rowBorder = '#dc2626';
+                            $plazoBadgeHtml = '<span style="background:#fee2e2; color:#dc2626; font-size:11px; font-weight:800; padding:3px 8px; border-radius:10px; border:1.5px solid #fca5a5; display:inline-flex; align-items:center; gap:4px;" title="Actividad Atrasada / Plazo Expirado"><i class="bi bi-exclamation-triangle-fill"></i> VENCIDA</span>';
+                        } elseif ($ahora->diffInHours($deadline, false) <= 24) {
+                            $rowBg = '#fffbeb';
+                            $rowBorder = '#d97706';
+                            $plazoBadgeHtml = '<span style="background:#fef3c7; color:#d97706; font-size:11px; font-weight:800; padding:3px 8px; border-radius:10px; border:1.5px solid #fcd34d; display:inline-flex; align-items:center; gap:4px;" title="Plazo Próximo a Vencer"><i class="bi bi-clock-fill"></i> POR VENCER</span>';
+                        } else {
+                            $plazoBadgeHtml = '<span style="color:#1e293b; font-weight:600;">' . $fechaDisplay . '</span>';
+                        }
+                    }
                 @endphp
-                <tr class="tbl-row-gen" 
-                    style="cursor:pointer; border-bottom:1px solid #f1f5f9; border-left:4px solid {{ $borderColor }}; transition: background 0.2s;" 
-                    onmouseover="this.style.background='#f8fafc'" 
-                    onmouseout="this.style.background='white'"
-                    onclick="{{ $rowClick }}"
-                    data-id="{{ $act->id }}" 
-                    data-rutina="{!! $isRutinaria ? base64_encode(json_encode($act)) : '' !!}"
-                    data-actividad="{!! !$isRutinaria ? base64_encode(json_encode($act)) : '' !!}"
+                <tr class="tbl-row-gen" style="border-bottom:1px solid #e2e8f0; border-left:4px solid {{ $rowBorder }}; background:{{ $rowBg }}; cursor:pointer;"
+                    onclick="openShowModalFromRow(this)"
+                    data-tipo="{{ $tipoKey }}"
+                    data-id="{{ $act->id }}"
                     data-titulo="{{ $act->titulo }}"
-                    data-descripcion="{{ $act->descripcion }}"
-                    data-estado="{{ $act->estado }}"
-                    data-area="{{ $act->empleado ? ($act->empleado->area_id ?? '') : '' }}"
-                    data-empleado="{{ $act->empleado_id }}">
-                    <td style="padding:15px;">
-                        <span style="font-weight:bold; font-size:15px; color:#1e293b; display:inline-block;">{{ $act->titulo }}</span>
-                        @if($isRutinaria)
-                            <span style="background:#dbeafe; color:#1e40af; font-size:10px; padding:2px 6px; border-radius:10px; margin-left:5px; font-weight:bold; vertical-align:middle;">Rutinaria</span>
-                        @elseif($isImprevista)
-                            <span style="background:#fee2e2; color:#991b1b; font-size:10px; padding:2px 6px; border-radius:10px; margin-left:5px; font-weight:bold; vertical-align:middle;">Imprevista</span>
-                        @endif
+                    data-descripcion="{{ $descText }}"
+                    data-estado="{{ strtolower($act->estado) }}"
+                    data-prioridad="{{ strtolower($act->prioridad ?? 'media') }}"
+                    data-area="{{ $empAreaId }}"
+                    data-employee="{{ $empId }}"
+                    data-fechadisplay="{{ $fechaDisplay }}"
+                    data-empleadonombre="{{ $empNombre }}"
+                    data-creadornombre="{{ $creadorNombre }}"
+                    data-avance="{{ $porcentaje }}"
+                    data-motivo="{{ $act->motivo ?? '' }}"
+                    data-resultado="{{ $act->resultado_obtenido ?? '' }}"
+                    data-permitiravance="{{ $act->permitir_registro_avance ?? 1 }}"
+                    data-veces="{{ $act->veces_al_dia ?? 1 }}"
+                    data-ejecuciones="{{ $act->ejecuciones_hoy ?? 0 }}"
+                    data-depresp="{{ $act->dependencia_responsable ?? '' }}"
+                    data-depmotivo="{{ $act->dependencia_motivo ?? '' }}"
+                    data-atrasada="{{ (($act->tiene_plazo ?? 'si') !== 'no' && $act->fecha_estimada_fin && \Carbon\Carbon::parse($act->fecha_estimada_fin)->isPast() && !in_array($act->estado, ['finalizada'])) ? 'true' : 'false' }}"
+                    data-historial="{{ json_encode($act->historial_avances_list ?? []) }}">
+                    <td style="padding:6px 10px;">
+                        <span style="font-weight:700; font-size:13px; color:#1e293b; display:inline-block;">{{ $act->titulo }}</span>
                     </td>
-                    <td style="padding:15px; font-size:14px; color:#334155;">
-                        <span style="font-weight:600; display:block;">{{ $act->empleado ? $act->empleado->name : 'N/A' }}</span>
-                        <span style="font-size:12px; color:#64748b; display:block; margin-top:2px;">Área: {{ $act->empleado && $act->empleado->area ? $act->empleado->area->nombre : 'Sin Área' }}</span>
+                    <td style="padding:6px 10px;">
+                        <div style="background: #eff6ff; border: 1px solid #93c5fd; border-radius: 6px; padding: 3px 8px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                            <i class="bi bi-person-fill" style="color: #2563eb; font-size: 12px;"></i>
+                            <span style="font-weight: 800; font-size: 12px; color: #1e3a8a;">
+                                {{ $empNombre }}
+                            </span>
+                        </div>
                     </td>
-                    <td style="padding:15px; text-align:center;">
+                    <td style="padding:6px 10px; text-align:center;">
                         @php
                             $prioColors = [
                                 'baja' => ['bg' => '#f1f5f9', 'text' => '#475569'],
@@ -118,98 +252,104 @@
                                 'alta' => ['bg' => '#fef3c7', 'text' => '#92400e'],
                                 'urgente' => ['bg' => '#fee2e2', 'text' => '#991b1b']
                             ];
-                            $colors = $prioColors[strtolower($act->prioridad)] ?? ['bg' => '#f1f5f9', 'text' => '#475569'];
+                            $colors = $prioColors[strtolower($act->prioridad ?? 'media')] ?? ['bg' => '#f1f5f9', 'text' => '#475569'];
                         @endphp
-                        <span style="background:{{ $colors['bg'] }}; color:{{ $colors['text'] }}; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:bold; text-transform:uppercase;">
-                            {{ $act->prioridad }}
+                        <span style="background:{{ $colors['bg'] }}; color:{{ $colors['text'] }}; padding:2px 8px; border-radius:12px; font-size:10px; font-weight:bold; text-transform:uppercase;">
+                            {{ $act->prioridad ?? 'media' }}
                         </span>
                     </td>
-                    <td style="padding:15px; width:15%;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <div style="background:#e2e8f0; border-radius:4px; height:8px; flex:1; overflow:hidden;">
-                                <div class="progreso-bar-val" style="background:#22c55e; width:{{ $act->porcentaje_avance ?? 0 }}%; height:100%;"></div>
+                    <td style="padding:6px 10px; width:14%;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <div style="background:#e2e8f0; border-radius:4px; height:6px; flex:1; overflow:hidden;">
+                                <div class="progreso-bar-val" style="background:#22c55e; width:{{ $porcentaje }}%; height:100%;"></div>
                             </div>
-                            <span class="progreso-txt-val" style="font-size:12px; font-weight:bold; color:#475569; width:35px; text-align:right;">{{ $act->porcentaje_avance ?? 0 }}%</span>
+                            <span class="progreso-txt-val" style="font-size:11px; font-weight:bold; color:#475569; width:32px; text-align:right;">{{ $porcentaje }}%</span>
                         </div>
-                        <span class="estado-badge-val" style="font-size:11px; color: {{ $act->estado === 'finalizada' ? '#10b981' : ($act->estado === 'atrasada' ? '#991b1b' : '#ca8a04') }}; font-weight:bold; display:block; margin-top:4px;">
+                        <span class="estado-badge-val" style="font-size:10px; color: {{ $act->estado === 'finalizada' ? '#10b981' : ($act->estado === 'atrasada' ? '#991b1b' : '#ca8a04') }}; font-weight:bold; display:block; margin-top:2px;">
                             {{ ucfirst(str_replace('_', ' ', $act->estado)) }}
                         </span>
                     </td>
-                    <td style="padding:15px; font-size:13px; color:#475569; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ $act->descripcion }}">
-                        {{ $act->descripcion }}
-                    </td>
-                    <td style="padding:15px; font-size:13px; color:#475569;">
-                        @if($isRutinaria)
-                            <span>Diaria</span>
+                    <td style="padding:6px 10px; font-size:12px;">
+                        @if(!empty($act->dependencia_responsable) || !empty($act->dependencia_motivo))
+                            <div style="font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 4px;">
+                                <i class="bi bi-person-fill" style="color: #2563eb; font-size: 11px;"></i>
+                                {{ $act->dependencia_responsable ?? 'N/A' }}
+                            </div>
+                            @if(!empty($act->dependencia_motivo))
+                                <div style="font-size: 11px; color: #64748b; font-style: italic; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $act->dependencia_motivo }}">
+                                    {{ $act->dependencia_motivo }}
+                                </div>
+                            @endif
                         @else
-                            <span>Del {{ $act->fecha_inicio ? \Carbon\Carbon::parse($act->fecha_inicio)->format('d/m/Y') : 'N/A' }}</span><br>
-                            <span>Al {{ $act->fecha_estimada_fin ? \Carbon\Carbon::parse($act->fecha_estimada_fin)->format('d/m/Y') : 'N/A' }}</span>
+                            <span style="color:#94a3b8; font-style:italic;">-</span>
                         @endif
                     </td>
-                    <td style="padding:15px; text-align:center;" onclick="event.stopPropagation();">
-                        <div style="display:flex; gap:5px; justify-content:center; align-items:center;">
-                            @if($isRutinaria)
-                                <div style="display:flex; gap:6px; align-items:center; background:#f1f5f9; padding:4px 8px; border-radius:8px; border:1px solid #cbd5e1;">
-                                    @for($i = 1; $i <= $act->veces_al_dia; $i++)
-                                        <input type="checkbox" 
-                                               class="rutina-check-box" 
-                                               data-id="{{ $act->id }}" 
-                                               value="{{ $i }}" 
-                                               {{ $i <= $act->ejecuciones_hoy ? 'checked' : '' }} 
-                                               onclick="handleRutinaCheck(this, event)"
-                                               style="width: 15px; height: 15px; cursor: pointer; accent-color: #2563eb;"
-                                               title="Ejecución {{ $i }} de {{ $act->veces_al_dia }}">
-                                    @endfor
-                                </div>
-                                @if(in_array(auth()->user()->rol, ['jefe', 'directivo', 'admin']) || $act->empleado_id === auth()->id() || auth()->user()->hasPermission('actividades'))
-                                    <button type="button" class="btn-ver" style="background:#10b981; color:white; border:none; padding:4px 10px; font-size:11px; border-radius:6px; cursor:pointer;" onclick="event.stopPropagation(); openEditRutinaModal(this)" data-rutina="{!! base64_encode(json_encode($act)) !!}" title="Editar Rutina">
-                                        <i class="bi bi-pencil"></i>
+                    <td style="padding:6px 10px; font-size:12px; color:#475569; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ $descText }}">
+                        {{ $descText }}
+                    </td>
+                    <td style="padding:6px 10px; font-size:12px; color:#475569;">
+                        {!! $plazoBadgeHtml !!}
+                    </td>
+                    <td style="padding:6px 10px; text-align:center;" onclick="event.stopPropagation();">
+                        <div style="display:flex; justify-content:flex-end; align-items:center; gap:5px; width:100%;">
+                            @if($puedeAvance && $porcentaje < 100)
+                                    <button type="button" class="btn-ver" style="background:#c2410c; color:white; border:none; width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;"
+                                            onclick="openAvanceGenericoModal(this, event)"
+                                            data-tipo="{{ $tipoKey }}"
+                                            data-id="{{ $act->id }}"
+                                            data-titulo="{{ $act->titulo }}"
+                                            data-avance="{{ $porcentaje }}"
+                                            data-veces="{{ $act->veces_al_dia ?? 1 }}"
+                                            data-ejecuciones="{{ $act->ejecuciones_hoy ?? 0 }}"
+                                            title="Registrar Avance / Progreso y Nota">
+                                        <i class="bi bi-graph-up-arrow" style="font-size:12px;"></i>
                                     </button>
-                                    <form action="{{ route('rutinas.destroy', $act->id) }}" method="POST" style="display:inline; margin:0;" onsubmit="return confirm('¿Seguro que deseas eliminar esta rutina definitivamente?');" onclick="event.stopPropagation();">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn-ver" style="background:#ef4444; color:white; border:none; padding:4px 10px; font-size:11px; border-radius:6px; cursor:pointer;" title="Eliminar Rutina" onclick="event.stopPropagation();">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
                                 @endif
-                            @elseif($isImprevista)
-                                 @if(auth()->check() && (in_array(auth()->user()->rol, ['jefe', 'directivo', 'admin']) || $act->empleado_id === auth()->id() || auth()->user()->hasPermission('actividades')))
-                                     <button type="button" class="btn-ver" style="background:#10b981; color:white; border:none; padding:4px 10px; font-size:11px; border-radius:6px; cursor:pointer;" onclick="event.stopPropagation(); openEditImprevistaModal(this)" data-imprevisto="{!! base64_encode(json_encode($act)) !!}" title="Editar Imprevisto">
-                                         <i class="bi bi-pencil"></i>
-                                     </button>
-                                     <form action="{{ route('actividades-imprevistas.destroy', $act->id) }}" method="POST" style="display:inline; margin:0;" onsubmit="return confirm('¿Seguro que deseas eliminar este imprevisto definitivamente?');" onclick="event.stopPropagation();">
-                                         @csrf
-                                         @method('DELETE')
-                                         <button type="submit" class="btn-ver" style="background:#ef4444; color:white; border:none; padding:4px 10px; font-size:11px; border-radius:6px; cursor:pointer;" title="Eliminar Imprevisto" onclick="event.stopPropagation();">
-                                             <i class="bi bi-trash"></i>
-                                         </button>
-                                     </form>
-                                 @endif
-                            @else
-                                @if(auth()->check() && (in_array(auth()->user()->rol, ['jefe', 'directivo', 'admin']) || $act->empleado_id === auth()->id() || auth()->user()->hasPermission('actividades')))
-                                     <button type="button" class="btn-ver" style="background:#10b981; color:white; border:none; padding:4px 10px; font-size:11px; border-radius:6px; cursor:pointer;" onclick="event.stopPropagation(); openEditModalFromRow(this)" data-actividad="{!! base64_encode(json_encode($act)) !!}" title="Editar Actividad">
-                                         <i class="bi bi-pencil"></i>
-                                     </button>
-                                     <form action="{{ route('actividades.destroy', $act->id) }}" method="POST" style="display:inline; margin:0;" onsubmit="return confirm('¿Seguro que deseas eliminar esta actividad definitivamente?');" onclick="event.stopPropagation();">
-                                         @csrf
-                                         @method('DELETE')
-                                         <button type="submit" class="btn-ver" style="background:#ef4444; color:white; border:none; padding:4px 10px; font-size:11px; border-radius:6px; cursor:pointer;" title="Eliminar Actividad" onclick="event.stopPropagation();">
-                                             <i class="bi bi-trash"></i>
-                                         </button>
-                                     </form>
-                                @else
-                                    <span style="color:#64748b; font-size:12px;">-</span>
+
+                                @if($isBossOrAdmin)
+                                    <button type="button" class="btn-ver" style="background:#10b981; color:white; border:none; width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;"
+                                            onclick="openEditModalFromRow(this, event)"
+                                            data-tipo="{{ $tipoKey }}"
+                                            data-id="{{ $act->id }}"
+                                            data-titulo="{{ $act->titulo }}"
+                                            data-descripcion="{{ $descText }}"
+                                            data-estado="{{ $act->estado }}"
+                                            data-prioridad="{{ $act->prioridad ?? 'media' }}"
+                                            data-veces="{{ $act->veces_al_dia ?? 1 }}"
+                                            data-motivo="{{ $act->motivo ?? '' }}"
+                                            data-resultado="{{ $act->resultado_obtenido ?? '' }}"
+                                            data-avance="{{ $porcentaje }}"
+                                            data-empleado="{{ $act->empleado_id }}"
+                                            data-dirigido="{{ $act->dirigido_a_id ?? '' }}"
+                                            data-horainicio="{{ $act->hora_inicio ?? '' }}"
+                                            data-horafin="{{ $act->hora_fin ?? '' }}"
+                                            data-deparea="{{ $act->dependencia_area ?? '' }}"
+                                            data-depresp="{{ $act->dependencia_responsable ?? '' }}"
+                                            data-depmotivo="{{ $act->dependencia_motivo ?? '' }}"
+                                            data-acciones="{{ $act->acciones_realizadas ?? '' }}"
+                                            data-observaciones="{{ $act->observaciones ?? '' }}"
+                                            data-modalidad="{{ $act->modalidad ?? 'un_dia' }}"
+                                            data-fechainicio="{{ $act->fecha_inicio ?? '' }}"
+                                            data-fechafin="{{ $act->fecha_estimada_fin ?? '' }}"
+                                            data-horas="{{ $act->horas_invertidas ?? '' }}"
+                                            data-permitiravance="{{ $act->permitir_registro_avance ?? 0 }}"
+                                            title="Editar Actividad">
+                                        <i class="bi bi-pencil" style="font-size:12px;"></i>
+                                    </button>
+                                    <button type="button" class="btn-ver" style="background:#ef4444; color:white; border:none; width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;"
+                                            onclick="confirmarEliminarActividad('{{ $destroyRoute }}', event)"
+                                            title="Eliminar Actividad">
+                                        <i class="bi bi-trash" style="font-size:12px;"></i>
+                                    </button>
                                 @endif
-                            @endif
+                            </div>
                         </div>
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" style="padding:40px; text-align:center; color:#64748b;">
-                        <i class="bi bi-journal-x" style="font-size:36px; display:block; margin-bottom:10px; color:#94a3b8;"></i>
-                        No se encontraron actividades registradas.
+                    <td colspan="7" style="text-align:center; padding:30px; color:#64748b; font-style:italic;">
+                        No hay actividades registradas en el sistema.
                     </td>
                 </tr>
             @endforelse
@@ -218,93 +358,39 @@
 </div>
 
 <script>
-function aprobarActividad(id, btn, isImprevista) {
-    if (!confirm('¿Marcar esta actividad como finalizada/aprobada?')) return;
-    
-    btn.disabled = true;
-    let icon = btn.querySelector('i');
-    let originalClass = icon ? icon.className : '';
-    if (icon) {
-        icon.className = 'bi bi-arrow-repeat spinner-border spinner-border-sm';
-    }
-
-    let endpoint = isImprevista 
-        ? `/actividades-imprevistas/${id}/aprobar` 
-        : `/actividades/${id}/aprobar`;
-
-    fetch(endpoint, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-TOKEN": "{{ csrf_token() }}",
-            "Accept": "application/json"
-        }
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            console.error(data);
-            alert('Error: ' + (data.message || 'No tienes permisos.'));
-            btn.disabled = false;
-            if (icon) icon.className = originalClass;
-        }
-    })
-    .catch(err => {
-        btn.disabled = false;
-        if (icon) icon.className = originalClass;
-        console.error(err);
-        alert('Error de red.');
-    });
-}
-
-function toggleModalidadNueva(val) {
-    let container = document.getElementById('nueva_fecha_fin_container');
-    let input = document.getElementById('nueva_fecha_estimada_fin');
-    if (val === 'un_dia') {
-        container.style.display = 'none';
-        input.removeAttribute('required');
-    } else {
-        container.style.display = 'block';
-        input.setAttribute('required', 'required');
-    }
-}
-
 function filterActivities() {
-    let query = document.getElementById('search-query');
-    let status = document.getElementById('filter-status');
-    let area = document.getElementById('filter-area');
-    let employee = document.getElementById('filter-employee');
-
-    if (!query) return;
-
-    let queryVal = query.value.toLowerCase();
-    let statusVal = status.value;
-    let areaVal = area.value;
-    let employeeVal = employee.value;
+    let query = (document.getElementById('search-query')?.value || '').toLowerCase();
+    let type  = (document.getElementById('filter-type')?.value || '').toLowerCase();
+    let prio  = (document.getElementById('filter-priority')?.value || '').toLowerCase();
+    let status= (document.getElementById('filter-status')?.value || '').toLowerCase();
+    let area  = document.getElementById('filter-area')?.value || '';
+    let emp   = document.getElementById('filter-employee')?.value || '';
 
     document.querySelectorAll('.tbl-row-gen').forEach(row => {
-        let title = row.dataset.titulo ? row.dataset.titulo.toLowerCase() : '';
-        let desc = row.dataset.descripcion ? row.dataset.descripcion.toLowerCase() : '';
-        let matchesQuery = !queryVal || title.includes(queryVal) || desc.includes(queryVal);
-        let matchesStatus = !statusVal || row.dataset.estado === statusVal;
-        let matchesArea = !areaVal || row.dataset.area == areaVal;
-        let matchesEmployee = !employeeVal || row.dataset.empleado == employeeVal;
+        let text = row.innerText.toLowerCase();
+        let rowTipo = (row.dataset.tipo || '').toLowerCase();
+        let rowPrio = (row.dataset.prioridad || '').toLowerCase();
+        let rowEstado = (row.dataset.estado || '').toLowerCase();
+        let rowArea = row.dataset.area || '';
+        let rowEmp = row.dataset.employee || '';
+        let isAtrasada = row.dataset.atrasada === 'true';
 
-        if (matchesQuery && matchesStatus && matchesArea && matchesEmployee) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
+        let match = true;
+        if (query && !text.includes(query)) match = false;
+        if (type && rowTipo !== type) match = false;
+        if (prio && rowPrio !== prio) match = false;
+        if (status) {
+            if (status === 'atrasada') {
+                if (!isAtrasada && rowEstado !== 'atrasada') match = false;
+            } else if (rowEstado !== status) {
+                match = false;
+            }
         }
+        if (area && rowArea !== area) match = false;
+        if (emp && rowEmp !== emp) match = false;
+
+        row.style.display = match ? '' : 'none';
     });
 }
-
-document.addEventListener("DOMContentLoaded", function() {
-    filterActivities();
-});
-
-
 </script>
-<!-- END RESUMEN -->
 @endsection

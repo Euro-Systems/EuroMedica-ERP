@@ -21,7 +21,18 @@ class Actividad extends Model
         'prioridad',
         'estado',
         'impacto',
-        'modalidad'
+        'modalidad',
+        'permitir_registro_avance',
+        'dirigido_a_id',
+        'hora_inicio',
+        'hora_fin',
+        'acciones_realizadas',
+        'dependencia_area',
+        'dependencia_responsable',
+        'dependencia_motivo',
+        'observaciones',
+        'comentarios_dirigido',
+        'porcentaje_avance'
     ];
 
     public function empleado()
@@ -32,6 +43,11 @@ class Actividad extends Model
     public function jefe()
     {
         return $this->belongsTo(User::class, 'jefe_id');
+    }
+
+    public function dirigidoA()
+    {
+        return $this->belongsTo(User::class, 'dirigido_a_id');
     }
 
     public function area()

@@ -162,11 +162,11 @@
                     <table class="rh-table table-hover align-middle">
                         <thead>
                             <tr>
-                                <th>ID</th>
                                 <th>Nombre / Usuario</th>
                                 <th>Rol</th>
                                 <th>Jefe Directo</th>
                                 <th>Departamento / Área</th>
+                                <th>Puesto</th>
                                 <th>Contraseña</th>
                                 <th>Módulos Permitidos</th>
                                 <th style="width: 150px;">Acciones</th>
@@ -175,7 +175,6 @@
                         <tbody>
                             @foreach($users as $user)
                                 <tr>
-                                    <td>{{ $user->id }}</td>
                                     <td class="fw-bold">{{ $user->name }}</td>
                                     <td>
                                         @if($user->rol === 'admin')
@@ -203,6 +202,9 @@
                                         @else
                                             {{ $user->area ? $user->area->nombre : ($user->departamento ?? 'Sin asignar') }}
                                         @endif
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold text-dark">{{ $user->puesto ?? $user->cargo ?? 'Sin especificar' }}</span>
                                     </td>
                                     <td>
                                         <code class="px-2 py-1 bg-light rounded text-dark" style="font-size: 0.9rem;">

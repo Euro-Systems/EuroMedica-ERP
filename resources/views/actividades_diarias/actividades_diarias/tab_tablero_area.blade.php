@@ -1,6 +1,6 @@
 <!-- DIARIAS PARCIAL -->
 <div class="area-dashboard-container">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
         <div>
             <h2 style="margin:0; color:#1e3a8a; font-size:20px; font-weight:800;">
                 <i class="bi bi-calendar-check me-2" style="color:#3b82f6;"></i>Actividades Diarias: {{ $area->nombre }}
@@ -8,6 +8,17 @@
             <p style="margin:4px 0 0; color:#6b7280; font-size:13px;">
                 Monitoreo y asignación de tareas a los empleados de esta área · {{ now()->format('d/m/Y') }}
             </p>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" onclick="abrirModalCrearActividad('asignada')" class="btn-ver" style="background:#22c55e; color:white; border:none; padding:8px 14px; border-radius:8px; font-weight:bold; font-size:12px; display:flex; align-items:center; gap:6px; cursor:pointer;">
+                <i class="bi bi-plus-lg"></i> Asignar Actividad
+            </button>
+            <button type="button" onclick="abrirModalCrearActividad('imprevista')" class="btn-ver" style="background:#ea580c; color:white; border:none; padding:8px 14px; border-radius:8px; font-weight:bold; font-size:12px; display:flex; align-items:center; gap:6px; cursor:pointer;">
+                <i class="bi bi-person-fill"></i> Actividad Personal
+            </button>
+            <button type="button" onclick="abrirModalCrearActividad('rutinaria')" class="btn-ver" style="background:#3b82f6; color:white; border:none; padding:8px 14px; border-radius:8px; font-weight:bold; font-size:12px; display:flex; align-items:center; gap:6px; cursor:pointer;">
+                <i class="bi bi-arrow-repeat"></i> Crear Rutina
+            </button>
         </div>
     </div>
     
@@ -19,20 +30,14 @@
                     <span style="font-size:11px; color:#64748b; font-weight:500;">Rol: <span style="text-transform:capitalize;">{{ $emp->rol }}</span> | Email: {{ $emp->email }}</span>
                 </div>
                 <div style="display:flex; gap:6px; align-items:center;">
-                    <!-- Asignar Actividad (Tabla de notas) -->
-                    <button type="button" class="btn-ver" style="background:#22c55e; border:none; width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="abrirModalConEmpleado('modalNueva', {{ $emp->id }})" title="Asignar Actividad (Tabla de notas)">
+                    <button type="button" class="btn-ver" style="background:#22c55e; border:none; width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="abrirModalCrearActividad('asignada'); document.getElementById('crear_empleado_id').value={{ $emp->id }};" title="Asignar Actividad">
                         <i class="bi bi-journal-text" style="font-size:14px; color:white;"></i>
                     </button>
-                    
-                    <!-- Actividad Imprevista (Uno de alerta) -->
-                    <button type="button" class="btn-ver" style="background:#f59e0b; border:none; width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="abrirModalConEmpleado('modalNuevaImprevista', {{ $emp->id }})" title="Actividad Imprevista (Alerta)">
-                        <i class="bi bi-exclamation-triangle-fill" style="font-size:13px; color:white;"></i>
+                    <button type="button" class="btn-ver" style="background:#ea580c; border:none; width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="abrirModalCrearActividad('imprevista'); document.getElementById('crear_empleado_id').value={{ $emp->id }};" title="Actividad Personal">
+                        <i class="bi bi-person-fill" style="font-size:13px; color:white;"></i>
                     </button>
-                    
-                    <!-- Actividad Rutinaria (Dia y noche) -->
-                    <button type="button" class="btn-ver" style="background:#3b82f6; border:none; width:34px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; gap:2px; border-radius:6px; cursor:pointer;" onclick="abrirModalConEmpleado('modalNuevaRutina', {{ $emp->id }})" title="Actividad Rutinaria (Día y Noche)">
-                        <i class="bi bi-sun-fill" style="font-size:11px; color:white;"></i>
-                        <i class="bi bi-moon-stars-fill" style="font-size:10px; color:white;"></i>
+                    <button type="button" class="btn-ver" style="background:#3b82f6; border:none; width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;" onclick="abrirModalCrearActividad('rutinaria'); document.getElementById('crear_empleado_id').value={{ $emp->id }};" title="Crear Rutina">
+                        <i class="bi bi-arrow-repeat" style="font-size:13px; color:white;"></i>
                     </button>
                 </div>
             </div>
@@ -46,6 +51,7 @@
                     <thead>
                         <tr style="background:#1e3a8a; color:white;">
                             <th style="padding:6px 10px; border-radius:6px 0 0 6px; font-size:11px; font-weight:700;">Actividad</th>
+                            <th style="padding:6px 10px; font-size:11px; font-weight:700;">Dependencia</th>
                             <th style="padding:6px 10px; font-size:11px; font-weight:700;">Descripción</th>
                             <th style="padding:6px 10px; font-size:11px; font-weight:700;">Fecha Estimada</th>
                             <th style="padding:6px 10px; font-size:11px; font-weight:700;">Estado</th>
@@ -61,35 +67,81 @@
                            elseif ($actividad->estado === 'en_pausa') $borderColor = '#f97316'; 
                            elseif ($actividad->estado === 'atrasada') $borderColor = '#ef4444';
                            
-                           $isImprevista = ($actividad->tipo === 'Imprevista');
-                           $isRutinaria = ($actividad->tipo === 'Rutinaria');
-                           
-                           if ($isImprevista) {
-                               $rowClick = "window.location.href='" . route('actividades-imprevistas.show', $actividad->id) . "'";
-                           } elseif ($isRutinaria) {
-                               $rowClick = "openEditRutinaModal(this)";
+                           $tipoKey = strtolower($actividad->tipo ?? 'asignada');
+                           if ($tipoKey === 'imprevista') {
+                               $destroyRoute = route('actividades-imprevistas.destroy', $actividad->id);
+                               $descText = $actividad->descripcion_detallada ?? $actividad->descripcion;
+                           } elseif ($tipoKey === 'rutinaria') {
+                               $destroyRoute = route('rutinas.destroy', $actividad->id);
+                               $descText = $actividad->descripcion;
                            } else {
-                               $rowClick = "openShowModal(this)";
+                               $destroyRoute = route('actividades.destroy', $actividad->id);
+                               $descText = $actividad->descripcion;
                            }
                         @endphp
-                        <tr onclick="{{ $rowClick }}" 
-                            data-id="{{ $actividad->id }}" 
-                            data-rutina="{!! $isRutinaria ? base64_encode(json_encode($actividad)) : '' !!}"
-                            data-actividad="{!! !$isRutinaria ? base64_encode(json_encode($actividad)) : '' !!}" 
-                            data-area="{{ $actividad->area_id ?? 1 }}" 
-                            style="cursor:pointer; border-left:3px solid {{ $borderColor }};" 
-                            class="tr-hover tbl-row-gen">
+                        <tr style="border-left:3px solid {{ $borderColor }};" class="tr-hover tbl-row-gen">
                             <td style="padding:5px 10px; font-weight:600;">
                                 {{ $actividad->titulo }}
-                                @if($isRutinaria)
-                                    <span style="background:#dbeafe; color:#1e40af; font-size:9px; padding:1px 4px; border-radius:6px; margin-left:4px; font-weight:bold;">Rutina</span>
-                                @elseif($isImprevista)
-                                    <span style="background:#fee2e2; color:#991b1b; font-size:9px; padding:1px 4px; border-radius:6px; margin-left:4px; font-weight:bold;">Imprevista</span>
+                                @if($tipoKey === 'rutinaria')
+                                    <span style="background:#2563eb; color:#ffffff; font-size:9px; padding:2px 6px; border-radius:10px; margin-left:5px; font-weight:800; display:inline-flex; align-items:center; gap:3px; box-shadow:0 1px 3px rgba(37,99,235,0.3);"><i class="bi bi-arrow-repeat"></i> Rutina</span>
+                                @elseif($tipoKey === 'imprevista')
+                                    <span style="background:#ea580c; color:#ffffff; font-size:9px; padding:2px 6px; border-radius:10px; margin-left:5px; font-weight:800; display:inline-flex; align-items:center; gap:3px; box-shadow:0 1px 3px rgba(234,88,12,0.3);"><i class="bi bi-person-fill"></i> Personal</span>
+                                @else
+                                    <span style="background:#16a34a; color:#ffffff; font-size:9px; padding:2px 6px; border-radius:10px; margin-left:5px; font-weight:800; display:inline-flex; align-items:center; gap:3px; box-shadow:0 1px 3px rgba(22,163,74,0.3);"><i class="bi bi-check2-circle"></i> Asignada</span>
                                 @endif
                             </td>
-                            <td style="padding:5px 10px; color:#475569; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ $actividad->descripcion }}">{{ $actividad->descripcion }}</td>
+                            <td style="padding:5px 10px; font-size:11px;">
+                                @if(!empty($actividad->dependencia_responsable) || !empty($actividad->dependencia_motivo))
+                                    <div style="font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 4px;">
+                                        <i class="bi bi-person-fill" style="color: #2563eb; font-size: 11px;"></i>
+                                        {{ $actividad->dependencia_responsable ?? 'N/A' }}
+                                    </div>
+                                    @if(!empty($actividad->dependencia_motivo))
+                                        <div style="font-size: 10px; color: #64748b; font-style: italic; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $actividad->dependencia_motivo }}">
+                                            {{ $actividad->dependencia_motivo }}
+                                        </div>
+                                    @endif
+                                @else
+                                    <span style="color:#94a3b8; font-style:italic;">-</span>
+                                @endif
+                            </td>
+                            <td style="padding:5px 10px; color:#475569; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ $descText }}">{{ $descText }}</td>
                             <td style="padding:5px 10px; color:#475569;">
-                                {{ $isRutinaria ? 'Diaria' : ($actividad->fecha_estimada_fin ? \Carbon\Carbon::parse($actividad->fecha_estimada_fin)->format('d/m/Y') : 'N/A') }}
+                                @php
+                                    $ahora = \Carbon\Carbon::now();
+                                    $esFinalizada = ($actividad->estado === 'finalizada');
+                                    $tienePlazoVal = ($actividad->tiene_plazo ?? 'si') !== 'no';
+
+                                    $plazoBadgeHtmlTabular = '';
+                                    if ($esFinalizada) {
+                                        $plazoBadgeHtmlTabular = '<span style="background:#dcfce7; color:#166534; font-size:10px; font-weight:800; padding:2px 6px; border-radius:8px; border:1px solid #86efac; display:inline-flex; align-items:center; gap:3px;"><i class="bi bi-check-circle-fill"></i> Finalizada</span>';
+                                    } elseif (!$tienePlazoVal || (empty($actividad->hora_inicio) && empty($actividad->hora_fin) && empty($actividad->fecha_estimada_fin) && $tipoKey !== 'rutinaria')) {
+                                        $plazoBadgeHtmlTabular = '<span style="color:#64748b; font-style:italic;">Sin plazo</span>';
+                                    } elseif ($tipoKey === 'rutinaria') {
+                                        $plazoBadgeHtmlTabular = '<span style="color:#1e40af; font-weight:700;">Diaria</span>';
+                                    } else {
+                                        $fechaFinStr = $actividad->fecha_estimada_fin ?? $actividad->fecha_inicio ?? $ahora->format('Y-m-d');
+                                        $horaFinStr = $actividad->hora_fin ?? '23:59:59';
+                                        try {
+                                            $deadline = \Carbon\Carbon::parse($fechaFinStr . ' ' . $horaFinStr);
+                                        } catch (\Exception $e) {
+                                            $deadline = $ahora->copy()->addDays(1);
+                                        }
+
+                                        $fDisplay = $actividad->fecha_estimada_fin ? \Carbon\Carbon::parse($actividad->fecha_estimada_fin)->format('d/m/Y') : 'Hoy';
+
+                                        if ($ahora->greaterThan($deadline)) {
+                                            $borderColor = '#dc2626';
+                                            $plazoBadgeHtmlTabular = '<span style="background:#fee2e2; color:#dc2626; font-size:10px; font-weight:800; padding:2px 6px; border-radius:8px; border:1px solid #fca5a5; display:inline-flex; align-items:center; gap:3px;" title="Actividad Atrasada / Vencida"><i class="bi bi-exclamation-triangle-fill"></i> VENCIDA</span>';
+                                        } elseif ($ahora->diffInHours($deadline, false) <= 24) {
+                                            $borderColor = '#d97706';
+                                            $plazoBadgeHtmlTabular = '<span style="background:#fef3c7; color:#d97706; font-size:10px; font-weight:800; padding:2px 6px; border-radius:8px; border:1px solid #fcd34d; display:inline-flex; align-items:center; gap:3px;" title="Plazo Próximo a Vencer"><i class="bi bi-clock-fill"></i> POR VENCER</span>';
+                                        } else {
+                                            $plazoBadgeHtmlTabular = '<span style="color:#1e293b; font-weight:600;">' . $fDisplay . '</span>';
+                                        }
+                                    }
+                                @endphp
+                                {!! $plazoBadgeHtmlTabular !!}
                             </td>
                             <td style="padding:5px 10px;">
                                 <span class="estado-badge-val" style="font-weight:bold; font-size:11px; color: {{ $actividad->estado === 'finalizada' ? '#166534' : ($actividad->estado === 'atrasada' ? '#991b1b' : '#ca8a04') }};">
@@ -97,61 +149,51 @@
                                 </span>
                             </td>
                             <td style="padding:5px 10px; text-align:center;" onclick="event.stopPropagation();">
-                                <div style="display:flex; gap:4px; justify-content:center; align-items:center;">
-                                    @if($isRutinaria)
-                                        <div style="display:flex; gap:4px; align-items:center; background:#f1f5f9; padding:2px 5px; border-radius:6px; border:1px solid #cbd5e1;">
-                                            @for($i = 1; $i <= $actividad->veces_al_dia; $i++)
-                                                <input type="checkbox" 
-                                                       class="rutina-check-box" 
-                                                       data-id="{{ $actividad->id }}" 
-                                                       value="{{ $i }}" 
-                                                       {{ $i <= $actividad->ejecuciones_hoy ? 'checked' : '' }} 
-                                                       onclick="handleRutinaCheck(this, event)"
-                                                       style="width: 13px; height: 13px; cursor: pointer; accent-color: #2563eb;"
-                                                       title="Ejecución {{ $i }} de {{ $actividad->veces_al_dia }}">
-                                            @endfor
-                                        </div>
-                                        @if(in_array(auth()->user()->rol, ['jefe', 'directivo', 'admin']) || $actividad->empleado_id === auth()->id() || auth()->user()->hasPermission('actividades'))
-                                            <button type="button" class="btn-ver" style="background:#10b981; color:white; border:none; padding:3px 6px; font-size:10px; border-radius:4px; cursor:pointer;" onclick="event.stopPropagation(); openEditRutinaModal(this)" data-rutina="{!! base64_encode(json_encode($actividad)) !!}" title="Editar Rutina">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <form action="{{ route('rutinas.destroy', $actividad->id) }}" method="POST" style="display:inline; margin:0;" onsubmit="return confirm('¿Seguro que deseas eliminar esta rutina definitivamente?');" onclick="event.stopPropagation();">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn-ver" style="background:#ef4444; color:white; border:none; padding:3px 6px; font-size:10px; border-radius:4px; cursor:pointer;" title="Eliminar Rutina" onclick="event.stopPropagation();">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        @endif
-                                     @elseif($isImprevista)
-                                         @if(auth()->check() && (in_array(auth()->user()->rol, ['jefe', 'directivo', 'admin']) || $actividad->empleado_id === auth()->id() || auth()->user()->hasPermission('actividades')))
-                                             <button type="button" class="btn-ver" style="background:#10b981; color:white; border:none; padding:3px 6px; font-size:10px; border-radius:4px; cursor:pointer;" onclick="event.stopPropagation(); openEditImprevistaModal(this)" data-imprevisto="{!! base64_encode(json_encode($actividad)) !!}" title="Editar Imprevisto">
-                                                 <i class="bi bi-pencil"></i>
-                                             </button>
-                                             <form action="{{ route('actividades-imprevistas.destroy', $actividad->id) }}" method="POST" style="display:inline; margin:0;" onsubmit="return confirm('¿Seguro que deseas eliminar este imprevisto definitivamente?');" onclick="event.stopPropagation();">
-                                                 @csrf
-                                                 @method('DELETE')
-                                                 <button type="submit" class="btn-ver" style="background:#ef4444; color:white; border:none; padding:3px 6px; font-size:10px; border-radius:4px; cursor:pointer;" title="Eliminar Imprevisto" onclick="event.stopPropagation();">
-                                                     <i class="bi bi-trash"></i>
-                                                 </button>
-                                             </form>
-                                         @endif
-                                    @else
-                                        @if(auth()->check() && (in_array(auth()->user()->rol, ['jefe', 'directivo', 'admin']) || $actividad->empleado_id === auth()->id() || auth()->user()->hasPermission('actividades')))
-                                            <button type="button" class="btn-ver" style="background:#10b981; color:white; border:none; padding:3px 6px; font-size:10px; border-radius:4px; cursor:pointer;" onclick="event.stopPropagation(); openEditModalFromRow(this)" data-actividad="{!! base64_encode(json_encode($actividad)) !!}" title="Editar Actividad">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <form action="{{ route('actividades.destroy', $actividad->id) }}" method="POST" style="display:inline; margin:0;" onsubmit="return confirm('¿Seguro que deseas eliminar esta actividad definitivamente?');" onclick="event.stopPropagation();">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn-ver" style="background:#ef4444; color:white; border:none; padding:3px 6px; font-size:10px; border-radius:4px; cursor:pointer;" title="Eliminar Actividad" onclick="event.stopPropagation();">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        @else
-                                            <span style="color:#64748b; font-size:11px;">-</span>
-                                        @endif
-                                    @endif
+                                <div style="display:flex; justify-content:flex-end; align-items:center; gap:4px; width:100%;">
+                                    <button type="button" class="btn-ver" style="background:#c2410c; color:white; border:none; width:26px; height:26px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;"
+                                            onclick="openAvanceGenericoModal(this, event)"
+                                            data-tipo="{{ $tipoKey }}"
+                                            data-id="{{ $actividad->id }}"
+                                            data-titulo="{{ $actividad->titulo }}"
+                                            data-avance="{{ $actividad->porcentaje_avance ?? 0 }}"
+                                            data-veces="{{ $actividad->veces_al_dia ?? 1 }}"
+                                            data-ejecuciones="{{ $actividad->ejecuciones_hoy ?? 0 }}"
+                                            title="Registrar Avance / Progreso y Nota">
+                                        <i class="bi bi-graph-up-arrow" style="font-size:12px;"></i>
+                                    </button>
+                                    <button type="button" class="btn-ver" style="background:#10b981; color:white; border:none; width:26px; height:26px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;"
+                                                onclick="openEditModalFromRow(this)"
+                                                data-tipo="{{ $tipoKey }}"
+                                                data-id="{{ $actividad->id }}"
+                                                data-titulo="{{ $actividad->titulo }}"
+                                                data-descripcion="{{ $descText }}"
+                                                data-estado="{{ $actividad->estado }}"
+                                                data-prioridad="{{ $actividad->prioridad ?? 'media' }}"
+                                                data-veces="{{ $actividad->veces_al_dia ?? 1 }}"
+                                                data-motivo="{{ $actividad->motivo ?? '' }}"
+                                                data-resultado="{{ $actividad->resultado_obtenido ?? '' }}"
+                                                data-empleado="{{ $actividad->empleado_id }}"
+                                                data-dirigido="{{ $actividad->dirigido_a_id ?? '' }}"
+                                                data-horainicio="{{ $actividad->hora_inicio ?? '' }}"
+                                                data-horafin="{{ $actividad->hora_fin ?? '' }}"
+                                                data-deparea="{{ $actividad->dependencia_area ?? '' }}"
+                                                data-depresp="{{ $actividad->dependencia_responsable ?? '' }}"
+                                                data-depmotivo="{{ $actividad->dependencia_motivo ?? '' }}"
+                                                data-acciones="{{ $actividad->acciones_realizadas ?? '' }}"
+                                                data-observaciones="{{ $actividad->observaciones ?? '' }}"
+                                                data-modalidad="{{ $actividad->modalidad ?? 'un_dia' }}"
+                                                data-fechainicio="{{ $actividad->fecha_inicio ?? '' }}"
+                                                data-fechafin="{{ $actividad->fecha_estimada_fin ?? '' }}"
+                                                data-horas="{{ $actividad->horas_invertidas ?? '' }}"
+                                                data-permitiravance="{{ $actividad->permitir_registro_avance ?? 0 }}"
+                                                title="Editar Actividad">
+                                            <i class="bi bi-pencil" style="font-size:12px;"></i>
+                                        </button>
+                                        <button type="button" class="btn-ver" style="background:#ef4444; color:white; border:none; width:26px; height:26px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer;"
+                                                onclick="confirmarEliminarActividad('{{ $destroyRoute }}', event)" title="Eliminar Actividad">
+                                            <i class="bi bi-trash" style="font-size:12px;"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -159,46 +201,14 @@
                     </tbody>
                 </table>
             @else
-                <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:6px; padding:10px; text-align:center; color:#64748b; font-size:12px;">
-                    <i class="bi bi-info-circle me-1"></i> Este empleado no tiene actividades asignadas.
+                <div style="text-align:center; padding:15px; color:#94a3b8; font-size:13px; font-style:italic; background:#f8fafc; border-radius:6px;">
+                    Sin actividades asignadas el día de hoy
                 </div>
             @endif
         </div>
     @empty
-        <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px; padding:20px; text-align:center; color:#64748b; font-size:13px;">
-            <i class="bi bi-people-fill" style="font-size:24px; display:block; margin-bottom:8px;"></i>
-            No hay empleados asignados a esta área actualmente.
+        <div style="text-align:center; padding:40px; color:#64748b; font-size:14px; background:white; border-radius:10px;">
+            No hay empleados en esta área.
         </div>
     @endforelse
 </div>
-
-<script>
-function toggleModalidadNueva(val) {
-    let container = document.getElementById('nueva_fecha_fin_container');
-    let input = document.getElementById('nueva_fecha_estimada_fin');
-    if (val === 'un_dia') {
-        container.style.display = 'none';
-        input.removeAttribute('required');
-    } else {
-        container.style.display = 'block';
-        input.setAttribute('required', 'required');
-    }
-}
-
-function abrirModalConEmpleado(modalId, empleadoId) {
-    let modal = document.getElementById(modalId);
-    if (modal) {
-        let select = modal.querySelector('select[name="empleado_id"]');
-        if (select) {
-            select.value = empleadoId;
-        } else {
-            let input = modal.querySelector('input[name="empleado_id"]');
-            if (input) {
-                input.value = empleadoId;
-            }
-        }
-    }
-    abrirModal(modalId);
-}
-</script>
-<!-- END AREA PARCIAL -->

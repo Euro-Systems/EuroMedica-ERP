@@ -148,10 +148,10 @@
                             <label class="form-label fw-bold text-dark">Departamentos a cargo (Jefe)</label>
                             <p class="text-muted small">Selecciona los departamentos de los que este usuario será responsable (puedes marcar varios).</p>
                             <div class="row bg-light p-3 rounded border border-light-subtle mb-3">
-                                @foreach(['TI', 'ADD', 'MKT', 'Recursos Humanos', 'ADE', 'Nómina', 'Operaciones', 'Administración'] as $dep)
+                                @foreach(['TI', 'ADD', 'MKT', 'Recursos Humanos', 'ADE', 'Nómina', 'Enfermería', 'Operaciones', 'Administración'] as $dep)
                                     <div class="col-md-4 mb-2">
                                         <div class="form-check">
-                                            <input class="form-check-input dept-checkbox" type="checkbox" name="departamentos_jefe[]" value="{{ $dep }}" id="dept_{{ str_replace(' ', '_', $dep) }}"
+                                            <input class="form-check-input dept-checkbox" type="checkbox" name="departamentos_jefe[]" value="{{ $dep }}" id="dept_{{ str_replace(' ', '_', $dep) }}" onchange="filterSubordinadosByDept()"
                                                 {{ in_array($dep, array_map('trim', explode(' / ', $user->departamento))) ? 'checked' : '' }}>
                                             <label class="form-check-label fw-semibold" for="dept_{{ str_replace(' ', '_', $dep) }}">
                                                 {{ $dep }}
@@ -163,15 +163,21 @@
 
                             <div class="mt-4">
                                 <label class="form-label fw-bold text-dark">Asignar subordinados libres o actuales</label>
-                                <p class="text-muted small">Selecciona los empleados o practicantes que pertenecerán a este jefe.</p>
+                                <p class="text-muted small">Selecciona los empleados o practicantes que pertenecerán a este jefe (solo se muestran los del departamento seleccionado arriba).</p>
+                                <div id="no-sub-dept-msg" class="alert alert-info py-2 px-3 small mb-2" style="display: none;"></div>
                                 <div class="row bg-white p-3 rounded border border-light-subtle mb-3">
                                     @forelse($subordinados as $sub)
-                                        <div class="col-md-6 mb-2">
+                                        @php
+                                            $subDeptName = $sub->area ? $sub->area->nombre : ($sub->departamento ?? '');
+                                            $isAssignedToThisJefe = ($sub->jefe_id === $user->id);
+                                        @endphp
+                                        <div class="col-md-6 mb-2 subordinado-item" data-dept="{{ strtolower(trim($subDeptName)) }}">
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" name="subordinados[]" value="{{ $sub->id }}" id="sub_{{ $sub->id }}"
-                                                    {{ (is_array(old('subordinados')) && in_array($sub->id, old('subordinados'))) || (!old('subordinados') && $sub->jefe_id === $user->id) ? 'checked' : '' }}>
+                                                    {{ (is_array(old('subordinados')) && in_array($sub->id, old('subordinados'))) || (!old('subordinados') && $isAssignedToThisJefe) ? 'checked' : '' }}
+                                                    {{ $isAssignedToThisJefe ? 'data-was-checked-originally="true"' : '' }}>
                                                 <label class="form-check-label fw-semibold" for="sub_{{ $sub->id }}">
-                                                    {{ $sub->name }} <span class="text-muted fw-normal">({{ ucfirst($sub->rol) }})</span>
+                                                    {{ $sub->name }} <span class="text-muted fw-normal">({{ ucfirst($sub->rol) }}{{ $subDeptName ? ' - ' . $subDeptName : '' }})</span>
                                                 </label>
                                             </div>
                                         </div>
@@ -511,7 +517,57 @@
                 });
             });
             handleRolChange();
+            filterSubordinadosByDept();
         });
+
+        function filterSubordinadosByDept() {
+            const checkedDepts = Array.from(document.querySelectorAll('.dept-checkbox:checked'))
+                                    .map(cb => cb.value.trim().toLowerCase());
+
+            const items = document.querySelectorAll('.subordinado-item');
+            let visibleCount = 0;
+
+            items.forEach(item => {
+                const itemDept = (item.dataset.dept || '').toLowerCase();
+                let show = false;
+
+                if (checkedDepts.length > 0) {
+                    for (let d of checkedDepts) {
+                        if (itemDept.includes(d) || d.includes(itemDept) ||
+                            (d === 'ti' && (itemDept.includes('ti') || itemDept.includes('sistemas'))) ||
+                            (d === 'mkt' && (itemDept.includes('mkt') || itemDept.includes('marketing'))) ||
+                            (d === 'recursos humanos' && (itemDept.includes('recursos humanos') || itemDept.includes('rh')))) {
+                            show = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (show) {
+                    item.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                    const chk = item.querySelector('input[type="checkbox"]');
+                    if (chk && !chk.dataset.wasCheckedOriginally) {
+                        chk.checked = false;
+                    }
+                }
+            });
+
+            const msg = document.getElementById('no-sub-dept-msg');
+            if (msg) {
+                if (checkedDepts.length === 0) {
+                    msg.innerText = 'Selecciona al menos un departamento a cargo arriba para ver a los subordinados correspondientes.';
+                    msg.style.display = 'block';
+                } else if (visibleCount === 0) {
+                    msg.innerText = 'No hay personal registrado perteneciente al departamento o departamentos seleccionados.';
+                    msg.style.display = 'block';
+                } else {
+                    msg.style.display = 'none';
+                }
+            }
+        }
     </script>
 </body>
 </html>

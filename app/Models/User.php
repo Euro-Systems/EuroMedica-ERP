@@ -25,6 +25,7 @@ class User extends Authenticatable
         'rol',
         'activo',
         'departamento',
+        'puesto',
         'permisos',
         'jefe_id',
         'password_plain',
