@@ -9,7 +9,25 @@
                 Monitoreo y asignación de tareas a los empleados de esta área · {{ now()->format('d/m/Y') }}
             </p>
         </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            @php
+                $diasFiltro = [];
+                for($i = 0; $i < 15; $i++) {
+                    $d = \Carbon\Carbon::today()->subDays($i);
+                    $diasFiltro[] = [
+                        'valor' => $d->toDateString(),
+                        'etiqueta' => $i === 0 ? 'Hoy (' . $d->format('d/m') . ')' : ($i === 1 ? 'Ayer (' . $d->format('d/m') . ')' : $d->format('d/m/Y'))
+                    ];
+                }
+            @endphp
+            <select id="filter-date-mis-actividades" onchange="window.location.href='?fecha_filtro='+this.value" style="padding:8px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px; background:#fff; font-weight:600; color:#1e3a8a; cursor:pointer;" title="Filtrar actividades por fecha">
+                @foreach($diasFiltro as $df)
+                    <option value="{{ $df['valor'] }}" {{ (isset($filtroFecha) && $filtroFecha == $df['valor']) ? 'selected' : '' }}>
+                        {{ $df['etiqueta'] }}
+                    </option>
+                @endforeach
+            </select>
+            
             <button type="button" onclick="abrirModalCrearActividad('asignada')" class="btn-ver" style="background:#22c55e; color:white; border:none; padding:8px 14px; border-radius:8px; font-weight:bold; font-size:12px; display:flex; align-items:center; gap:6px; cursor:pointer;">
                 <i class="bi bi-plus-lg"></i> Asignar Actividad
             </button>
@@ -115,7 +133,7 @@
                                     $plazoBadgeHtmlTabular = '';
                                     if ($esFinalizada) {
                                         $plazoBadgeHtmlTabular = '<span style="background:#dcfce7; color:#166534; font-size:10px; font-weight:800; padding:2px 6px; border-radius:8px; border:1px solid #86efac; display:inline-flex; align-items:center; gap:3px;"><i class="bi bi-check-circle-fill"></i> Finalizada</span>';
-                                    } elseif (!$tienePlazoVal || (empty($actividad->hora_inicio) && empty($actividad->hora_fin) && empty($actividad->fecha_estimada_fin) && $tipoKey !== 'rutinaria')) {
+                                    } elseif (!$tienePlazoVal || $actividad->tiempo_estimado === 'Sin plazo' || (empty($actividad->hora_inicio) && empty($actividad->hora_fin) && empty($actividad->fecha_estimada_fin) && $tipoKey !== 'rutinaria')) {
                                         $plazoBadgeHtmlTabular = '<span style="color:#64748b; font-style:italic;">Sin plazo</span>';
                                     } elseif ($tipoKey === 'rutinaria') {
                                         $plazoBadgeHtmlTabular = '<span style="color:#1e40af; font-weight:700;">Diaria</span>';
@@ -168,6 +186,11 @@
                                                 data-titulo="{{ $actividad->titulo }}"
                                                 data-descripcion="{{ $descText }}"
                                                 data-estado="{{ $actividad->estado }}"
+                                                data-acciones="{{ $actividad->acciones_realizadas ?? '' }}"
+                                                data-observaciones="{{ $actividad->observaciones ?? '' }}"
+                                                data-deparea="{{ $actividad->dependencia_area ?? '' }}"
+                                                data-depresp="{{ $actividad->dependencia_responsable ?? '' }}"
+                                                data-depmotivo="{{ $actividad->dependencia_motivo ?? '' }}"
                                                 data-prioridad="{{ $actividad->prioridad ?? 'media' }}"
                                                 data-veces="{{ $actividad->veces_al_dia ?? 1 }}"
                                                 data-motivo="{{ $actividad->motivo ?? '' }}"

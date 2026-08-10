@@ -57,7 +57,7 @@ class ActividadesImprevistasController extends Controller
             $request->merge(['descripcion_detallada' => $desc, 'descripcion' => $desc]);
         }
         if (empty($request->input('resultado_obtenido'))) {
-            $request->merge(['resultado_obtenido' => 'Atendido y resuelto']);
+            $request->merge(['resultado_obtenido' => 'N/A']);
         }
         if ($request->input('tiene_plazo') === 'no') {
             $request->merge(['estado' => 'pendiente']);
@@ -82,6 +82,7 @@ class ActividadesImprevistasController extends Controller
             'dependencia_responsable' => 'nullable|string',
             'dependencia_motivo' => 'nullable|string',
             'observaciones'      => 'nullable|string',
+            'observaciones_imp'  => 'nullable|string',
             'comentarios_dirigido' => 'nullable|string',
         ]);
 
@@ -89,11 +90,20 @@ class ActividadesImprevistasController extends Controller
 
         $data = $request->all();
 
-        if ($request->input('tiene_plazo') === 'no') {
+        if (empty($data['horas_invertidas'])) {
+            $data['horas_invertidas'] = 0;
+        }
+
+        if ($request->input('tiene_plazo') === 'no' || $request->input('sin_hora_estimada') == 1) {
             $data['hora_inicio'] = null;
             $data['hora_fin'] = null;
             $data['horas_invertidas'] = 0;
+        }
+
+        if ($request->input('estado_personal_radio') === 'pendiente') {
             $data['estado'] = 'pendiente';
+            // DO NOT clear hora_inicio/fin here, because they might have an estimated time!
+            $data['horas_invertidas'] = 0; // If pending, usually time invested is 0
         }
 
         $currentUser = Auth::user();
@@ -120,17 +130,26 @@ class ActividadesImprevistasController extends Controller
         $imprevisto = ActividadImprevista::create($data);
 
         $colabs = $request->input('colaboradores') ?: $request->input('empleados_compartidos');
+        $nombresColabs = [];
         if (($request->input('_colaboro_imp_radio') === 'si' || $request->input('_colaboro') === 'si') && is_array($colabs)) {
             $creadorUser = \App\Models\User::find($data['empleado_id']);
             $nombreCreador = $creadorUser ? $creadorUser->name : 'un compañero';
 
             foreach ($colabs as $colabId) {
                 if ($colabId != $data['empleado_id']) {
+                    $u = \App\Models\User::find($colabId);
+                    if ($u) {
+                        $nombresColabs[] = $u->name;
+                    }
+                    
                     $colabData = $data;
                     $colabData['empleado_id'] = $colabId;
-                    $colabData['titulo'] = '[Colaboración] ' . $data['titulo'];
-                    $colabData['motivo'] = 'Colaboró en la actividad "' . $data['titulo'] . '" con ' . $nombreCreador;
-                    $colabData['descripcion_detallada'] = 'Colaboró en la actividad "' . $data['titulo'] . '" con ' . $nombreCreador . '. ' . ($data['descripcion_detallada'] ?? '');
+                    
+                    // Solo agregamos la nota en observaciones de que es una colaboracin, 
+                    // mantenemos el ttulo y descripcin originales para que no se modifique al editar.
+                    $notaColaboracion = "Asignado como colaborador por " . $nombreCreador;
+                    $colabData['observaciones'] = empty($colabData['observaciones']) ? $notaColaboracion : $colabData['observaciones'] . "\n" . $notaColaboracion;
+
 
                     $colabEmpleado = \App\Models\User::find($colabId);
                     if ($colabEmpleado) {
@@ -138,6 +157,11 @@ class ActividadesImprevistasController extends Controller
                     }
                     ActividadImprevista::create($colabData);
                 }
+            }
+            
+            if (!empty($nombresColabs)) {
+                $imprevisto->colaboradores_texto = implode(', ', $nombresColabs);
+                $imprevisto->save();
             }
         }
 
@@ -174,10 +198,15 @@ class ActividadesImprevistasController extends Controller
             'dependencia_responsable',
             'dependencia_motivo',
             'observaciones',
+            'observaciones_imp',
             'dirigido_a_id'
         ];
 
         $inputData = $request->only($allowedKeys);
+        if (isset($inputData['observaciones_imp']) && !empty($inputData['observaciones_imp'])) {
+            $inputData['observaciones'] = $inputData['observaciones_imp'];
+            unset($inputData['observaciones_imp']);
+        }
         $data = [];
 
         foreach ($inputData as $key => $val) {
@@ -188,6 +217,19 @@ class ActividadesImprevistasController extends Controller
 
         if ($request->has('empleado_id') && Auth::user() && in_array(Auth::user()->rol, ['jefe', 'admin'])) {
             $data['empleado_id'] = $request->empleado_id;
+        }
+
+        if ($request->has('sin_horario')) {
+            $data['hora_inicio'] = null;
+            $data['hora_fin'] = null;
+        }
+
+        if (empty($data['observaciones']) && !empty($request->observaciones_imp)) {
+            $data['observaciones'] = $request->observaciones_imp;
+        }
+
+        if (empty($data['porcentaje_avance'])) {
+            $data['porcentaje_avance'] = 0;
         }
 
         if ($request->has('porcentaje_avance')) {
@@ -203,13 +245,34 @@ class ActividadesImprevistasController extends Controller
         }
 
         $fileHtml = $this->processUploadedFiles($request);
-        if ($request->filled('comentario_avance') || $fileHtml !== '') {
-            $notaAvance = '[' . now()->format('H:i') . ' hrs] ' . ($request->input('comentario_avance') ?? '') . $fileHtml;
-            if (!empty($imprevisto->resultado_obtenido) && $imprevisto->resultado_obtenido !== 'Atendido y resuelto') {
-                $data['resultado_obtenido'] = $imprevisto->resultado_obtenido . "\n" . $notaAvance;
-            } else {
-                $data['resultado_obtenido'] = $notaAvance;
+        $esAvance = $request->has('comentario_avance'); // Check if it's an advance from the advance form
+
+        if ($esAvance) {
+            // Prevent overwriting the main activity's original schedule
+            unset($data['hora_inicio']);
+            unset($data['hora_fin']);
+            
+            // Add hours to total instead of replacing
+            if ($request->has('horas_invertidas') || $request->has('sin_horario')) {
+                $horasSuma = $request->has('sin_horario') ? 0 : (float)$request->input('horas_invertidas', 0);
+                $data['horas_invertidas'] = (float)$imprevisto->horas_invertidas + $horasSuma;
             }
+
+            $historial = $imprevisto->historial_avances ? json_decode($imprevisto->historial_avances, true) : [];
+            $nuevoAvance = [
+                'hora_inicio' => $request->input('hora_inicio'),
+                'hora_fin' => $request->input('hora_fin'),
+                'horas_invertidas' => $request->has('sin_horario') ? 0 : (float)$request->input('horas_invertidas', 0),
+                'porcentaje_avance' => $request->input('porcentaje_avance'),
+                'comentario' => $request->input('comentario_avance') . $fileHtml,
+                'fecha' => now()->toDateTimeString(),
+            ];
+            $historial[] = $nuevoAvance;
+            $data['historial_avances'] = json_encode($historial);
+        } else {
+            // Only update resultado_obtenido directly if it's NOT an advance (e.g. editing the activity directly)
+            // But wait, the previous logic handled fileHtml here. If fileHtml is present and not an advance?
+            // Usually fileHtml is only for advances.
         }
 
         if (empty($data['resultado_obtenido']) && empty($imprevisto->resultado_obtenido)) {
@@ -309,12 +372,26 @@ class ActividadesImprevistasController extends Controller
         }
 
         $estadoNuevo = $porcentajeAjustado > 0 ? 'en_proceso' : 'pendiente';
-        $notaFinal = "\n↩️ [Devuelta por el Jefe - Ajustada al {$porcentajeAjustado}%]: " . $comentarioJefe;
+        $notaFinal = "↩️ [Devuelta por el Jefe - Ajustada al {$porcentajeAjustado}%]: " . $comentarioJefe;
+        $horaDevolucion = $request->input('hora_devolucion', now()->format('H:i'));
+
+        $historial = $imprevisto->historial_avances ? json_decode($imprevisto->historial_avances, true) : [];
+        if (!is_array($historial)) $historial = [];
+
+        $historial[] = [
+            'fecha' => now()->toDateString(),
+            'hora_inicio' => $horaDevolucion,
+            'hora_fin' => $horaDevolucion,
+            'horas_invertidas' => 0,
+            'porcentaje_avance' => $porcentajeAjustado,
+            'comentario' => $notaFinal
+        ];
 
         $imprevisto->update([
             'porcentaje_avance' => $porcentajeAjustado,
             'estado' => $estadoNuevo,
-            'resultado_obtenido' => ($imprevisto->resultado_obtenido ?? '') . $notaFinal
+            'historial_avances' => json_encode($historial),
+            'resultado_obtenido' => ($imprevisto->resultado_obtenido ?? '') . "\n" . $notaFinal
         ]);
 
         return response()->json(['success' => true, 'message' => 'Actividad personal devuelta al empleado con las observaciones registradas.']);

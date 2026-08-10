@@ -29,7 +29,9 @@ class ActividadImprevista extends Model
         'dependencia_area',
         'dependencia_responsable',
         'dependencia_motivo',
-        'comentarios_dirigido'
+        'comentarios_dirigido',
+        'colaboradores_texto',
+        'historial_avances'
     ];
 
     public function empleado()

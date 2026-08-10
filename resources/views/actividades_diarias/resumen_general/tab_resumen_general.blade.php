@@ -21,9 +21,9 @@
         </p>
     </div>
     <div style="display:flex; gap:10px; align-items:center;">
-        <a href="{{ route('bitacora.pdf', ['empleado' => auth()->id(), 'fecha' => now()->toDateString()]) }}" target="_blank" class="btn-ver" style="background:#0284c7; color:white; border:none; padding:10px 18px; border-radius:8px; font-weight:800; font-size:13px; display:inline-flex; align-items:center; gap:6px; text-decoration:none; box-shadow:0 4px 6px rgba(2,132,199,0.2);">
+        <button type="button" onclick="abrirModalDescargaPDF('{{ route('bitacora.pdf', ['empleado' => auth()->id(), 'fecha' => now()->toDateString()]) }}')" class="btn-ver" style="background:#0284c7; color:white; border:none; padding:10px 18px; border-radius:8px; font-weight:800; font-size:13px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; box-shadow:0 4px 6px rgba(2,132,199,0.2);">
             <i class="bi bi-file-earmark-pdf-fill"></i> Reporte PDF Hoy
-        </a>
+        </button>
         <!-- BOTÓN NEGRO PARA NUEVA ACTIVIDAD -->
         <button type="button" onclick="abrirModalCrearActividad('asignada')" class="btn-ver" style="background:#0f172a; color:white; border:none; padding:10px 22px; border-radius:8px; font-weight:800; font-size:13px; display:flex; align-items:center; gap:8px; cursor:pointer; box-shadow:0 4px 6px rgba(0,0,0,0.15);">
             <i class="bi bi-plus-lg" style="font-size:16px;"></i> + Nueva Actividad
@@ -119,6 +119,25 @@
                 <option value="">Todos los Empleados</option>
                 @foreach($empleadosRH as $emp)
                     <option value="{{ $emp['id'] ?? $emp->id }}">{{ $emp['name'] ?? $emp['nombre'] ?? 'Usuario' }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div style="width:150px;">
+            @php
+                $diasFiltro = [];
+                for($i = 0; $i < 15; $i++) {
+                    $d = \Carbon\Carbon::today()->subDays($i);
+                    $diasFiltro[] = [
+                        'valor' => $d->toDateString(),
+                        'etiqueta' => $i === 0 ? 'Hoy (' . $d->format('d/m') . ')' : ($i === 1 ? 'Ayer (' . $d->format('d/m') . ')' : $d->format('d/m/Y'))
+                    ];
+                }
+            @endphp
+            <select id="filter-date-backend" onchange="window.location.href='?fecha_filtro='+this.value" style="width:100%; padding:9px; border-radius:8px; border:1px solid #cbd5e1; font-size:13px; background:#fff; font-weight:600; color:#1e3a8a;">
+                @foreach($diasFiltro as $df)
+                    <option value="{{ $df['valor'] }}" {{ (isset($filtroFecha) && $filtroFecha == $df['valor']) ? 'selected' : '' }}>
+                        {{ $df['etiqueta'] }}
+                    </option>
                 @endforeach
             </select>
         </div>
@@ -348,8 +367,8 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" style="text-align:center; padding:30px; color:#64748b; font-style:italic;">
-                        No hay actividades registradas en el sistema.
+                    <td colspan="8" style="text-align:center; padding:30px; color:#64748b; font-style:italic;">
+                        No hay actividades registradas en esta fecha.
                     </td>
                 </tr>
             @endforelse
@@ -394,3 +413,64 @@ function filterActivities() {
 }
 </script>
 @endsection
+
+<!-- MODAL PARA DESCARGA PDF CON OBSERVACIONES -->
+<div id="modalDescargaPDF" class="rh-modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+    <div class="rh-modal-content" style="max-width: 500px; background: white; border: 3px solid #0284c7; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); padding: 22px;">
+        <span class="rh-modal-close" onclick="cerrarModalPDF()" style="float: right; font-size: 24px; font-weight: bold; cursor: pointer; color: #64748b;">&times;</span>
+        
+        <div style="margin-bottom: 18px;">
+            <h2 style="margin: 0 0 6px 0; color: #0284c7; font-size: 19px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-file-earmark-pdf-fill"></i> Descargar Reporte
+            </h2>
+            <p style="margin: 0; font-size: 13px; color: #475569; font-weight: 700;">Ingresa las observaciones para este PDF</p>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+            <label style="font-weight: 800; font-size: 13px; color: #0f172a; display: block; margin-bottom: 6px;">Observaciones *</label>
+            <textarea id="observaciones_pdf_input" rows="4" style="width: 100%; padding: 10px; border: 2px solid #0284c7; border-radius: 8px; font-family: inherit; font-weight: 500; color: #1e293b; resize: vertical;" placeholder="Observaciones: Reporte oficial..."></textarea>
+        </div>
+
+        <div style="text-align: right; margin-top: 20px;">
+            <button type="button" onclick="cerrarModalPDF()" style="background: #e2e8f0; color: #475569; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer; margin-right: 10px;">
+                Cancelar
+            </button>
+            <button type="button" onclick="generarPDF()" style="background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer;">
+                <i class="bi bi-download me-1"></i> Generar PDF
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let urlDescargaPDF = '';
+
+    function abrirModalDescargaPDF(url) {
+        urlDescargaPDF = url;
+        let modal = document.getElementById('modalDescargaPDF');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.getElementById('observaciones_pdf_input').value = '';
+            document.getElementById('observaciones_pdf_input').focus();
+        }
+    }
+
+    function cerrarModalPDF() {
+        let modal = document.getElementById('modalDescargaPDF');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    function generarPDF() {
+        let observaciones = document.getElementById('observaciones_pdf_input').value;
+        if (!observaciones.trim()) {
+            alert('Por favor ingresa las observaciones.');
+            return;
+        }
+
+        let finalUrl = urlDescargaPDF + (urlDescargaPDF.includes('?') ? '&' : '?') + 'observaciones_pdf=' + encodeURIComponent(observaciones);
+        window.open(finalUrl, '_blank');
+        cerrarModalPDF();
+    }
+</script>

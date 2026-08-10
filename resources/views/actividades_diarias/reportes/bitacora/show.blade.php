@@ -14,18 +14,18 @@
 .diagram-card { background: #ffffff; border-radius: 12px; padding: 16px; border: 2px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); transition: transform 0.2s; }
 .diagram-card:hover { transform: translateY(-2px); }
 
-/* Temas de Nodos */
-.node-asignada { background: #16a34a; }
-.card-asignada { border-color: #16a34a; background: #f0fdf4; }
+/* Temas de Nodos y Cards con colores vivos */
+.node-asignada { background: linear-gradient(135deg, #22c55e, #16a34a); box-shadow: 0 4px 10px rgba(22, 163, 74, 0.4); }
+.card-asignada { border-color: #22c55e; background: #f0fdf4; border-width: 2px; }
 
-.node-imprevista { background: #ea580c; }
-.card-imprevista { border-color: #ea580c; background: #fff7ed; }
+.node-imprevista { background: linear-gradient(135deg, #f97316, #ea580c); box-shadow: 0 4px 10px rgba(234, 88, 12, 0.4); }
+.card-imprevista { border-color: #f97316; background: #fff7ed; border-width: 2px; }
 
-.node-rutinaria { background: #2563eb; }
-.card-rutinaria { border-color: #2563eb; background: #eff6ff; }
+.node-rutinaria { background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4); }
+.card-rutinaria { border-color: #3b82f6; background: #eff6ff; border-width: 2px; }
 
-.node-comida { background: #8b5cf6; }
-.card-comida { border-color: #8b5cf6; background: #faf5ff; }
+.node-comida { background: linear-gradient(135deg, #a855f7, #9333ea); box-shadow: 0 4px 10px rgba(147, 51, 234, 0.4); }
+.card-comida { border-color: #a855f7; background: #faf5ff; border-width: 2px; }
 </style>
 
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
@@ -41,9 +41,9 @@
         <a href="{{ route('bitacora.usuario', ['empleado' => $user->id]) }}" class="btn-ver" style="background:#6b7280; text-decoration:none; font-size:13px; font-weight:bold; padding:8px 16px; display:inline-flex; align-items:center; gap:6px;">
             <i class="bi bi-arrow-left"></i> Volver a Fechas
         </a>
-        <a href="{{ route('bitacora.pdf', ['empleado' => $user->id, 'fecha' => $fecha]) }}" class="btn-ver" style="background:#0f172a; color:white; text-decoration:none; font-size:13px; font-weight:800; padding:9px 18px; border-radius:8px; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 6px rgba(0,0,0,0.15);" target="_blank">
+        <button type="button" onclick="abrirModalDescargaPDF('{{ route('bitacora.pdf', ['empleado' => $user->id, 'fecha' => $fecha]) }}')" class="btn-ver" style="background:#0f172a; color:white; text-decoration:none; border:none; font-size:13px; font-weight:800; padding:9px 18px; border-radius:8px; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 6px rgba(0,0,0,0.15); cursor:pointer;">
             <i class="bi bi-file-earmark-pdf-fill" style="color:#ef4444; font-size:16px;"></i> Descargar Reporte PDF (Diagrama)
-        </a>
+        </button>
         @if(auth()->user() && in_array(auth()->user()->rol, ['jefe', 'admin']))
             <a href="{{ route('bitacora.index') }}" class="btn-ver" style="background:#475569; text-decoration:none; font-size:13px; font-weight:bold; padding:8px 16px; display:inline-flex; align-items:center; gap:6px;">
                 <i class="bi bi-people-fill"></i> Directorio
@@ -140,7 +140,7 @@
                 if (strtolower($imp->titulo) === 'hora de comida') {
                     $timelineItems->push((object)[
                         'time' => ($imp->hora_inicio ?? '14:00') . ' a ' . ($imp->hora_fin ?? '15:00'),
-                        'sort_time' => $imp->hora_inicio ?? '14:00:00',
+                        'sort_time' => $imp->hora_inicio ? $imp->hora_inicio . ':00' : '14:00:00',
                         'type' => 'comida',
                         'icon' => 'bi-cup-hot',
                         'node_class' => 'node-comida',
@@ -282,5 +282,73 @@ function changeDate(event) {
         window.location.href = `/bitacora/{{ $user->id }}/${dateVal}`;
     }
 }
+
+let urlDescargaPDF = '';
+
+function abrirModalDescargaPDF(url) {
+    urlDescargaPDF = url;
+    let modal = document.getElementById('modalDescargaPDF');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('observaciones_pdf_input').value = '';
+        document.getElementById('observaciones_pdf_input').focus();
+    }
+}
+
+function cerrarModalPDF() {
+    let modal = document.getElementById('modalDescargaPDF');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function generarPDF(sinObservaciones = false) {
+    let observaciones = '';
+    
+    if (sinObservaciones) {
+        observaciones = 'Reporte oficial generado automáticamente por el ERP EuroMédica.';
+    } else {
+        observaciones = document.getElementById('observaciones_pdf_input').value;
+        if (!observaciones.trim()) {
+            alert('Por favor ingresa las observaciones o utiliza el botón "Sin Observaciones".');
+            return;
+        }
+    }
+
+    let finalUrl = urlDescargaPDF + (urlDescargaPDF.includes('?') ? '&' : '?') + 'observaciones_pdf=' + encodeURIComponent(observaciones);
+    window.open(finalUrl, '_blank');
+    cerrarModalPDF();
+}
 </script>
+
+<!-- MODAL PARA DESCARGA PDF CON OBSERVACIONES -->
+<div id="modalDescargaPDF" class="rh-modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+    <div class="rh-modal-content" style="max-width: 500px; background: white; border: 3px solid #0284c7; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); padding: 22px;">
+        <span class="rh-modal-close" onclick="cerrarModalPDF()" style="float: right; font-size: 24px; font-weight: bold; cursor: pointer; color: #64748b;">&times;</span>
+        
+        <div style="margin-bottom: 18px;">
+            <h2 style="margin: 0 0 6px 0; color: #0284c7; font-size: 19px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-file-earmark-pdf-fill"></i> Descargar Reporte
+            </h2>
+            <p style="margin: 0; font-size: 13px; color: #475569; font-weight: 700;">Ingresa las observaciones para este PDF</p>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+            <label style="font-weight: 800; font-size: 13px; color: #0f172a; display: block; margin-bottom: 6px;">Observaciones *</label>
+            <textarea id="observaciones_pdf_input" rows="4" style="width: 100%; padding: 10px; border: 2px solid #0284c7; border-radius: 8px; font-family: inherit; font-weight: 500; color: #1e293b; resize: vertical;" placeholder="Observaciones: Reporte oficial..."></textarea>
+        </div>
+
+        <div style="text-align: right; margin-top: 20px;">
+            <button type="button" onclick="cerrarModalPDF()" style="background: #e2e8f0; color: #475569; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer; margin-right: 10px;">
+                Cancelar
+            </button>
+            <button type="button" onclick="generarPDF(true)" style="background: #64748b; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer; margin-right: 10px;">
+                <i class="bi bi-file-earmark-x me-1"></i> Sin Observaciones
+            </button>
+            <button type="button" onclick="generarPDF(false)" style="background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer;">
+                <i class="bi bi-download me-1"></i> Generar PDF
+            </button>
+        </div>
+    </div>
+</div>
 @endsection

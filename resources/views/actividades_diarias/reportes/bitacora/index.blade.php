@@ -41,7 +41,7 @@
             <tr>
                 <th>Empleado</th>
                 <th>Área</th>
-                <th>Horas Hoy</th>
+                <th>Horas estimadas</th>
                 <th>Estado</th>
             </tr>
         </thead>

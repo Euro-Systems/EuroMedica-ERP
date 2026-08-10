@@ -75,11 +75,11 @@
                     @csrf
                     <div>
                         <label style="font-size:11px; color:#64748b; display:block; font-weight:bold;">Hora de Inicio:</label>
-                        <input type="time" name="hora_inicio" value="{{ now()->format('H:i') }}" onchange="calcComidaFin(this.value)" style="padding:5px; border-radius:6px; border:1px solid #d1d5db; font-size:13px;" required>
+                        <input type="time" name="hora_inicio" value="{{ now()->format('H:i') }}" oninput="calcComidaFin(this.value)" style="padding:5px; border-radius:6px; border:1px solid #d1d5db; font-size:13px;" required>
                     </div>
                     <div>
                         <label style="font-size:11px; color:#64748b; display:block; font-weight:bold;">Hora de Fin (1h):</label>
-                        <input type="time" id="comida_hora_fin" name="hora_fin" value="{{ now()->addHour()->format('H:i') }}" style="padding:5px; border-radius:6px; border:1px solid #d1d5db; font-size:13px; background:#f1f5f9;" readonly>
+                        <input type="time" id="comida_hora_fin" name="hora_fin" value="{{ now()->addHour()->format('H:i') }}" style="padding:5px; border-radius:6px; border:1px solid #d1d5db; font-size:13px; background:#ffffff;" required>
                     </div>
                     <button type="submit" class="btn-ver" style="background:#8b5cf6; padding:8px 15px; font-size:13px; margin-top:15px; color:white; border:none; border-radius:6px; font-weight:bold;"><i class="bi bi-check-circle"></i> Registrar Comida</button>
                 </form>

@@ -263,14 +263,20 @@
                         </div>
 
                         <!-- Si es SÍ: Despliega Dependencia Responsable y Motivo -->
-                        <div id="bloque_dependencia_asig" style="display: none; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1.5px solid #15803d;">
+                        <div id="bloque_dependencia_asig" style="display: none; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 10px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1.5px solid #15803d;">
+                            <div>
+                                <label style="font-weight: 800; font-size: 12px; color: #166534; display: block; margin-bottom: 4px;" id="labelDepArea">
+                                    Área
+                                </label>
+                                <input type="text" name="dependencia_area" id="crear_dependencia_area" placeholder="Ej: Sistemas..."
+                                       style="width: 100%; padding: 9px; border: 1.5px solid #15803d; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
+                            </div>
                             <div>
                                 <label style="font-weight: 800; font-size: 12px; color: #166534; display: block; margin-bottom: 4px;" id="labelDepResp">
-                                    Dependencia - Responsable
+                                    Responsable
                                 </label>
                                 <input type="text" name="dependencia_responsable" id="crear_dependencia_responsable" placeholder="Ej: Ing. Juan Pérez..."
                                        style="width: 100%; padding: 9px; border: 1.5px solid #15803d; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
-                                <input type="hidden" name="dependencia_area" id="crear_dependencia_area" value="">
                             </div>
                             <div>
                                 <label style="font-weight: 800; font-size: 12px; color: #166534; display: block; margin-bottom: 4px;" id="labelDepMotivo">
@@ -341,7 +347,29 @@
                     </div>
                 </div>
 
-                <!-- 4. PREGUNTA: ¿Se realizó / comenzó o está pendiente? -->
+                <!-- Contenedor flotante de Hora Estimada -->
+                <div id="wrapper_hora_estimada" style="display: none; background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                    <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                        <i class="bi bi-clock-history" style="color: #c2410c;"></i> Hora estimada *
+                    </label>
+
+                    <div id="imprevista_horas_box" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 10px;">
+                        <div>
+                            <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Hora de Inicio *</label>
+                            <input type="time" name="hora_inicio" id="crear_imp_hora_inicio" value="{{ now()->format('H:i') }}" oninput="calcImpHorasInvertidas()" onchange="calcImpHorasInvertidas()" style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 6px; background: white; font-weight: 700; color: #1e293b;">
+                        </div>
+                        <div>
+                            <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Hora Estimada de Término *</label>
+                            <input type="time" name="hora_fin" id="crear_imp_hora_fin" value="{{ now()->addHour()->format('H:i') }}" oninput="calcImpHorasInvertidas()" onchange="calcImpHorasInvertidas()" style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 6px; background: white; font-weight: 700; color: #1e293b;">
+                        </div>
+                    </div>
+                    
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412; margin-top: 8px;">
+                        <input type="checkbox" name="sin_hora_estimada" id="crear_imp_sin_hora" value="1" onchange="toggleImprevistaHoras()" style="accent-color: #c2410c; width: 16px; height: 16px;"> No hay hora estimada
+                    </label>
+                </div>
+
+                <!-- 5. PREGUNTA: ¿Se realizó / comenzó o está pendiente? -->
                 <div style="background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
                     <label style="font-weight: 800; font-size: 14px; color: #9a3412; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
                         <i class="bi bi-question-circle-fill" style="color: #c2410c; font-size: 16px;"></i> ¿Se realizó / comenzó o está pendiente? *
@@ -373,6 +401,8 @@
                                   style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
                     </div>
 
+                    <div id="ph_hora_realizada"></div>
+
                     <!-- Porcentaje de Completitud -->
                     <div style="background: #ffffff; border: 2px solid #c2410c; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -402,21 +432,17 @@
                         </div>
                         <div>
                             <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Notas y Observaciones</label>
-                            <textarea name="observaciones" id="crear_observaciones_imp" rows="2" placeholder="Notas u observaciones..."
+                            <textarea name="observaciones_imp" id="crear_observaciones_imp" rows="2" placeholder="Notas u observaciones..."
                                       style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
                         </div>
                     </div>
 
-                    <!-- Tiempo Invertido (Horas) -->
-                    <div style="margin-bottom: 16px;">
-                        <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Tiempo Invertido (Horas) *</label>
-                        <input type="number" step="0.5" min="0.1" name="horas_invertidas" id="crear_horas_invertidas" value="1.0"
-                               style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; background: white; font-weight: 700; color: #1e293b;">
-                    </div>
+                    <!-- Tiempo Invertido (Oculto) -->
+                    <input type="hidden" name="horas_invertidas" id="crear_horas_invertidas" value="1.0">
 
                     <!-- Resultado Obtenido -->
                     <div style="margin-bottom: 16px;">
-                        <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Resultado Obtenido</label>
+                        <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Resultados obtenidos al momento</label>
                         <textarea name="resultado_obtenido" id="crear_resultado_obtenido" rows="2" placeholder="¿Cuál fue el resultado obtenido o solución realizada?"
                                   style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 500; color: #1e293b;"></textarea>
                     </div>
@@ -435,9 +461,14 @@
                             </label>
                         </div>
 
-                        <div id="bloque_dependencia_imp" style="display: none; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1.5px solid #c2410c;">
+                        <div id="bloque_dependencia_imp" style="display: none; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 10px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1.5px solid #c2410c;">
                             <div>
-                                <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Dependencia - Responsable</label>
+                                <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Área</label>
+                                <input type="text" name="dependencia_area" id="crear_dependencia_area_imp" placeholder="Área..."
+                                       style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
+                            </div>
+                            <div>
+                                <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Responsable</label>
                                 <input type="text" name="dependencia_responsable" id="crear_dependencia_responsable_imp" placeholder="Nombre de la persona..."
                                        style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
                             </div>
@@ -452,40 +483,8 @@
 
                 <!-- B) SI MARCA "Pendiente" -->
                 <div id="bloque_personal_pendiente" style="display: none;">
-                    <!-- Pregunta ¿Es una actividad sencilla? -->
-                    <div style="background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
-                        <label style="font-weight: 800; font-size: 14px; color: #9a3412; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                            <i class="bi bi-question-circle-fill" style="color: #c2410c; font-size: 16px;"></i> ¿Es una actividad sencilla?
-                        </label>
-                        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
-                                <input type="radio" name="_sencilla_imp" value="si" onchange="toggleSencillaImp('si')" style="accent-color: #c2410c; width: 16px; height: 16px;"> Sí
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
-                                <input type="radio" name="_sencilla_imp" value="no" onchange="toggleSencillaImp('no')" style="accent-color: #c2410c; width: 16px; height: 16px;"> No
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- SI MARCA SÍ EN SENCILLA (Título y Descripción únicamente) -->
-                    <div id="bloque_sencilla_imp_si" style="display: none; background: #ffffff; border: 2px solid #c2410c; border-radius: 10px; padding: 16px; margin-bottom: 16px;">
-                        <div style="margin-bottom: 16px;">
-                            <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Tarea / Título de la Actividad *</label>
-                            <input type="text" name="titulo_imp_sencilla" id="crear_titulo_imp_sencilla" placeholder="Ej: Revisar correo del cliente"
-                                   style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; background: white; font-weight: 600; color: #1e293b;">
-                        </div>
-                        <div>
-                            <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: block; margin-bottom: 6px;">Descripción de la actividad *</label>
-                            <textarea name="descripcion_imp_sencilla" id="crear_descripcion_imp_sencilla" rows="3" placeholder="Explica detalladamente la actividad..."
-                                      style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- SI MARCA NO EN SENCILLA (Configuración Avanzada) -->
-                    <div id="bloque_avanzado_imp_pendiente" style="display: none; background: #ffffff; border: 2px solid #c2410c; border-radius: 10px; padding: 16px; margin-bottom: 16px;">
-                        <h4 style="margin: 0 0 14px 0; color: #9a3412; font-size: 14px; font-weight: 800; border-bottom: 1px dashed #fed7aa; padding-bottom: 6px;">
-                            <i class="bi bi-sliders me-1"></i> Configuración Avanzada de la Actividad
-                        </h4>
+                    <!-- Configuración de Actividad Pendiente -->
+                    <div id="bloque_avanzado_imp_pendiente" style="display: block; background: #ffffff; border: 2px solid #c2410c; border-radius: 10px; padding: 16px; margin-bottom: 16px;">
 
                         <!-- Tarea / Título de la Actividad * -->
                         <div style="margin-bottom: 16px;">
@@ -500,7 +499,7 @@
                             <textarea name="descripcion_imp_avanzada" id="crear_descripcion_imp_avanzada" rows="3" placeholder="Explica detalladamente la actividad..."
                                       style="width: 100%; padding: 10px; border: 2px solid #c2410c; border-radius: 8px; font-family: inherit; background: white; font-weight: 500; color: #1e293b;"></textarea>
                         </div>
-
+                        
                         <!-- Acciones a realizar & Notas y Observaciones -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
                             <div>
@@ -595,15 +594,20 @@
                                 </label>
                             </div>
 
-                            <div id="bloque_dependencia_imp_pend" style="display: none; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1.5px solid #c2410c;">
+                            <div id="bloque_dependencia_imp_pend" style="display: none; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 10px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1.5px solid #c2410c;">
                                 <div>
-                                    <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Dependencia - Responsable</label>
-                                    <input type="text" name="dependencia_responsable_pend" placeholder="Nombre de la persona..."
+                                    <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Área</label>
+                                    <input type="text" name="dependencia_area" id="crear_dependencia_area_imp_pend" placeholder="Área..."
+                                           style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
+                                </div>
+                                <div>
+                                    <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Responsable</label>
+                                    <input type="text" name="dependencia_responsable" id="crear_dependencia_responsable_imp_pend" placeholder="Nombre de la persona..."
                                            style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
                                 </div>
                                 <div>
                                     <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Motivo / Razón</label>
-                                    <input type="text" name="dependencia_motivo_pend" placeholder="Ej: Entrega de reporte..."
+                                    <input type="text" name="dependencia_motivo" id="crear_dependencia_motivo_imp_pend" placeholder="Ej: Entrega de reporte..."
                                            style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
                                 </div>
                             </div>
@@ -664,6 +668,18 @@
                 </div>
             @endif
 
+            <!-- SECCIÓN: MARCAR COMO COMPLETADA AL EDITAR -->
+            <div id="seccion_marcar_completada" style="display: none; background: #f0fdf4; border: 2px solid #166534; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;">
+                <label style="font-weight: 800; font-size: 13px; color: #166534; display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 8px;">
+                    <input type="checkbox" name="marcar_completada" id="chk_marcar_completada" value="1" style="width: 18px; height: 18px; accent-color: #166534;" onchange="toggleNotasCompletada()">
+                    <i class="bi bi-check-circle-fill"></i> Marcar esta actividad como FINALIZADA / COMPLETADA
+                </label>
+                <div id="box_notas_completada" style="display: none; margin-top: 10px;">
+                    <label style="font-weight: bold; font-size: 12px; color: #166534; display: block; margin-bottom: 6px;">Resultados / Explicación del trabajo finalizado *</label>
+                    <textarea name="notas_completada" id="txt_notas_completada" rows="2" style="width: 100%; padding: 8px; border: 1px solid #166534; border-radius: 6px;"></textarea>
+                </div>
+            </div>
+
             <div style="margin-top: 24px; text-align: right; border-top: 2px solid #cbd5e1; padding-top: 16px;">
                 <button type="button" class="btn-ver" style="background: #64748b; color: white; margin-right: 10px; font-weight: 700; padding: 10px 18px; border-radius: 8px;" onclick="cerrarModal('modalCrearActividad')">Cancelar</button>
                 <button type="button" class="btn-form" id="btnSubmitCrear" onclick="guardarNuevaActividad(event)" style="background: #15803d; color: white; padding: 10px 24px; font-size: 14px; font-weight: 800; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer;">Guardar Actividad</button>
@@ -719,6 +735,45 @@
             <div id="edit_bloque_descripcion" style="margin-bottom: 16px;">
                 <label style="font-weight: 800; font-size: 13px; color: #334155; display: block; margin-bottom: 6px;" id="labelEditDescripcion">Descripción Detallada</label>
                 <textarea name="descripcion" id="edit_descripcion" rows="3" style="width: 100%; padding: 10px; border: 2px solid #15803d; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 500; color: #1e293b;"></textarea>
+            </div>
+
+            <!-- CAMPOS COMUNES EDIT -->
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 800; font-size: 13px; color: #475569; display: block; margin-bottom: 6px;" class="edit-dynamic-label">Acciones a Realizar *</label>
+                <textarea name="acciones_realizadas" id="edit_acciones_realizadas" rows="2" style="width: 100%; padding: 10px; border: 2px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-weight: 500; color: #1e293b; resize: vertical;" required></textarea>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 800; font-size: 13px; color: #475569; display: block; margin-bottom: 6px;" class="edit-dynamic-label">Notas y Observaciones Generales</label>
+                <textarea name="observaciones" id="edit_observaciones" rows="2" style="width: 100%; padding: 10px; border: 2px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-weight: 500; color: #1e293b; resize: vertical;"></textarea>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 800; font-size: 13px; color: #475569; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;" class="edit-dynamic-label">
+                    <input type="checkbox" id="edit_dependencia_checkbox" onchange="toggleEditDependenciaFields()" style="width: 18px; height: 18px;">
+                    ¿Esta actividad depende de otra área o persona?
+                </label>
+                
+                <div id="edit_dependencia_fields" style="display: none; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px dashed #cbd5e1; gap: 10px; grid-template-columns: 1fr 1fr;">
+                    <div style="grid-column: 1 / -1; margin-bottom: 10px;">
+                        <label style="font-size: 12px; font-weight: bold; color: #475569;">Motivo / Razón de la dependencia *</label>
+                        <input type="text" name="dependencia_motivo" id="edit_dependencia_motivo" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: bold; color: #475569;">Área *</label>
+                        <select name="dependencia_area" id="edit_dependencia_area" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            <option value="">Seleccione área</option>
+                            @php $areasList = $areas ?? \App\Models\Area::all(); @endphp
+                            @foreach($areasList as $area)
+                                <option value="{{ $area->nombre }}">{{ $area->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: bold; color: #475569;">Responsable *</label>
+                        <input type="text" name="dependencia_responsable" id="edit_dependencia_responsable" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    </div>
+                </div>
             </div>
 
             <!-- CAMPOS EDITAR: ASIGNADA -->
@@ -795,6 +850,127 @@
             @csrf
             @method('PUT')
             <input type="hidden" name="_tipo_actividad_gen" id="avance_tipo_gen_hidden" value="asignada">
+
+            <!-- HORARIOS DE INICIO Y FIN -->
+            <div id="boxAvanceHorarioGen" style="background: #ffffff; border: 2px solid #c2410c; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                <label id="labelAvanceHorarioHeader" style="font-weight: 800; font-size: 13px; color: #9a3412; display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
+                    <i id="iconAvanceHorarioHeader" class="bi bi-clock-history" style="color: #c2410c;"></i> Horario de la Actividad
+                </label>
+                <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                    <div style="flex: 1;">
+                        <label id="labelHoraInicioGen" style="font-size: 11px; font-weight: 700; color: #c2410c; display: block; margin-bottom: 4px;">Hora Inicio</label>
+                        <input type="time" name="hora_inicio" id="avance_hora_inicio" onchange="calcularHorasAvance()" style="width: 100%; padding: 8px; border: 1.5px solid #fed7aa; border-radius: 6px; font-family: inherit; font-weight: 600; color: #1e293b;" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label id="labelHoraFinGen" style="font-size: 11px; font-weight: 700; color: #c2410c; display: block; margin-bottom: 4px;">Hora Término</label>
+                        <input type="time" name="hora_fin" id="avance_hora_fin" onchange="calcularHorasAvance()" style="width: 100%; padding: 8px; border: 1.5px solid #fed7aa; border-radius: 6px; font-family: inherit; font-weight: 600; color: #1e293b;" required>
+                    </div>
+                </div>
+                <div style="margin-bottom: 12px; font-size: 11px; font-weight: 700; color: #047857;" id="mensaje_calculo_horas"></div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <input type="checkbox" name="sin_horario" id="avance_sin_horario" value="true" onchange="toggleAvanceHorario()">
+                        No se sabe con exactitud el horario (N/A)
+                    </label>
+                </div>
+            </div>
+            <script>
+            function calcularHorasAvance() {
+                let horaInicio = document.getElementById('avance_hora_inicio').value;
+                let horaFin = document.getElementById('avance_hora_fin').value;
+                let msgContainer = document.getElementById('mensaje_calculo_horas');
+                let inputHoras = document.getElementById('input_avance_gen_horas');
+
+                if (horaInicio && horaFin) {
+                    let dInicio = new Date('1970-01-01T' + horaInicio + ':00');
+                    let dFin = new Date('1970-01-01T' + horaFin + ':00');
+                    
+                    if (dFin < dInicio) {
+                        dFin.setDate(dFin.getDate() + 1); // Cruce de medianoche
+                    }
+
+                    let diffMs = dFin - dInicio;
+                    let diffHrs = diffMs / (1000 * 60 * 60);
+                    let diffMins = Math.round((diffHrs % 1) * 60);
+                    let fullHrs = Math.floor(diffHrs);
+
+                    if (diffHrs > 0) {
+                        inputHoras.value = diffHrs.toFixed(2);
+                        msgContainer.innerHTML = '🕒 Tiempo calculado: ' + fullHrs + ' hrs y ' + diffMins + ' min (' + diffHrs.toFixed(2) + ' hrs). Se sumará al total.';
+                    } else {
+                        msgContainer.innerHTML = '';
+                    }
+                } else {
+                    msgContainer.innerHTML = '';
+                }
+            }
+
+            function toggleAvanceHorario() {
+                let isChecked = document.getElementById('avance_sin_horario').checked;
+                document.getElementById('avance_hora_inicio').disabled = isChecked;
+                document.getElementById('avance_hora_fin').disabled = isChecked;
+                if (isChecked) {
+                    document.getElementById('avance_hora_inicio').required = false;
+                    document.getElementById('avance_hora_fin').required = false;
+                    document.getElementById('avance_hora_inicio').value = '';
+                    document.getElementById('avance_hora_fin').value = '';
+                    document.getElementById('mensaje_calculo_horas').innerHTML = '';
+                } else {
+                    document.getElementById('avance_hora_inicio').required = true;
+                    document.getElementById('avance_hora_fin').required = true;
+                }
+            }
+            </script>
+
+            <!-- SECCIÓN DE DEPENDENCIA -->
+            <div style="background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                <label style="font-weight: 800; font-size: 13px; color: #9a3412; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                    <i class="bi bi-person-badge-fill" style="color: #c2410c;"></i> ¿Depende de alguien más a partir de este avance?
+                </label>
+                <div style="display: flex; gap: 16px; margin-bottom: 8px; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
+                        <input type="radio" name="_depende_avance_radio" value="no" onchange="toggleDependenciaAvance('no')" checked style="accent-color: #c2410c; width: 16px; height: 16px;"> No / Ya estaba definida
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 700; color: #9a3412;">
+                        <input type="radio" name="_depende_avance_radio" value="si" onchange="toggleDependenciaAvance('si')" style="accent-color: #c2410c; width: 16px; height: 16px;"> Sí, agregar o actualizar dependencia
+                    </label>
+                </div>
+
+                <div id="bloque_dependencia_avance" style="display: none; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 10px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1.5px solid #c2410c;">
+                    <div>
+                        <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Área</label>
+                        <input type="text" name="dependencia_area" id="avance_dependencia_area" placeholder="Área..."
+                               style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
+                    </div>
+                    <div>
+                        <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Responsable</label>
+                        <input type="text" name="dependencia_responsable" id="avance_dependencia_responsable" placeholder="Nombre de la persona..."
+                               style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
+                    </div>
+                    <div>
+                        <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Motivo / Razón</label>
+                        <input type="text" name="dependencia_motivo" id="avance_dependencia_motivo" placeholder="Ej: Entrega de reporte..."
+                               style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 8px; background: white; font-weight: 600; color: #1e293b;">
+                    </div>
+                </div>
+            </div>
+            <script>
+            function toggleDependenciaAvance(val) {
+                let bloque = document.getElementById('bloque_dependencia_avance');
+                let inArea = document.getElementById('avance_dependencia_area');
+                let inResp = document.getElementById('avance_dependencia_responsable');
+                let inMotivo = document.getElementById('avance_dependencia_motivo');
+
+                if (val === 'si') {
+                    bloque.style.display = 'grid';
+                } else {
+                    bloque.style.display = 'none';
+                    inArea.value = '';
+                    inResp.value = '';
+                    inMotivo.value = '';
+                }
+            }
+            </script>
             
             <!-- PANEL SELECCIÓN DE PORCENTAJE (DESLIZANTE PARA ASIGNADAS/IMPREVISTAS) -->
             <div id="boxAvanceSliderGen" style="background: #ffffff; border: 2px solid #c2410c; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
@@ -832,7 +1008,7 @@
                 <label style="font-weight: 800; font-size: 13px; color: #166534; display: block; margin-bottom: 6px;" id="labelHorasTrabajadasGen">
                     <i class="bi bi-clock-history me-1"></i> Horas Computadas / Invertidas (Horas) *
                 </label>
-                <input type="number" step="0.5" min="0.1" name="horas_trabajadas" id="input_avance_gen_horas" value="1.0"
+                <input type="number" step="0.5" min="0.0" name="horas_invertidas" id="input_avance_gen_horas" value="0.0"
                        style="width: 100%; padding: 9px; border: 2px solid #15803d; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 700; color: #1e293b;">
             </div>
 
@@ -1000,6 +1176,15 @@
                        style="width: 100%; accent-color: #dc2626; cursor: pointer; height: 8px;">
             </div>
 
+            <!-- HORA DE LA DEVOLUCIÓN -->
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 800; font-size: 13px; color: #991b1b; display: block; margin-bottom: 6px;">
+                    <i class="bi bi-clock-history me-1"></i> Hora de la Devolución *
+                </label>
+                <input type="time" name="hora_devolucion" id="input_devolver_hora" required
+                       style="width: 100%; padding: 10px; border: 2px solid #dc2626; border-radius: 8px; font-family: inherit; font-weight: 600; color: #1e293b;">
+            </div>
+
             <!-- INSTRUCCIONES Y OBSERVACIONES OBLIGATORIAS -->
             <div style="margin-bottom: 18px;">
                 <label style="font-weight: 800; font-size: 13px; color: #991b1b; display: block; margin-bottom: 6px;">
@@ -1099,6 +1284,21 @@ function cerrarTodosLosModales() {
     });
 }
 
+function toggleNotasCompletada() {
+    let chk = document.getElementById('chk_marcar_completada');
+    let box = document.getElementById('box_notas_completada');
+    let txt = document.getElementById('txt_notas_completada');
+    if (chk && box && txt) {
+        if (chk.checked) {
+            box.style.display = 'block';
+            txt.required = true;
+        } else {
+            box.style.display = 'none';
+            txt.required = false;
+        }
+    }
+}
+
 function abrirModal(id) {
     cerrarTodosLosModales();
     let m = document.getElementById(id);
@@ -1193,6 +1393,22 @@ function openAvanceGenericoModal(btn, event) {
     if (submitBtn) { submitBtn.style.background = themeColor; }
     if (labelNota) { labelNota.style.color = textColor; }
     if (inputNota) { inputNota.style.border = `2px solid ${themeColor}`; }
+
+    let boxHorario = document.getElementById('boxAvanceHorarioGen');
+    let labelHorarioHead = document.getElementById('labelAvanceHorarioHeader');
+    let iconHorarioHead = document.getElementById('iconAvanceHorarioHeader');
+    let labelHoraInicio = document.getElementById('labelHoraInicioGen');
+    let labelHoraFin = document.getElementById('labelHoraFinGen');
+    let inputHoraInicio = document.getElementById('avance_hora_inicio');
+    let inputHoraFin = document.getElementById('avance_hora_fin');
+
+    if (boxHorario) { boxHorario.style.border = `2px solid ${themeColor}`; }
+    if (labelHorarioHead) { labelHorarioHead.style.color = textColor; }
+    if (iconHorarioHead) { iconHorarioHead.style.color = themeColor; }
+    if (labelHoraInicio) { labelHoraInicio.style.color = themeColor; }
+    if (labelHoraFin) { labelHoraFin.style.color = themeColor; }
+    if (inputHoraInicio) { inputHoraInicio.style.border = `1.5px solid ${borderLight}`; }
+    if (inputHoraFin) { inputHoraFin.style.border = `1.5px solid ${borderLight}`; }
 
     let boxArchivo    = document.getElementById('boxArchivoAvanceGen');
     let labelAdjunto  = document.getElementById('labelAdjuntoAvanceGen');
@@ -1524,14 +1740,51 @@ function calcularDiferenciaHorasCreacion() {
     }
 }
 
+function toggleImprevistaHoras() {
+    let cb = document.getElementById('crear_imp_sin_hora');
+    let box = document.getElementById('imprevista_horas_box');
+    let inputHoras = document.getElementById('crear_horas_invertidas');
+    if (cb && cb.checked) {
+        if (box) box.style.display = 'none';
+        if (inputHoras) inputHoras.value = 0;
+    } else {
+        if (box) box.style.display = 'grid';
+        calcImpHorasInvertidas();
+    }
+}
+
+function calcImpHorasInvertidas() {
+    let h1 = document.getElementById('crear_imp_hora_inicio');
+    let h2 = document.getElementById('crear_imp_hora_fin');
+    let inputHoras = document.getElementById('crear_horas_invertidas');
+
+    if (!h1 || !h2 || !inputHoras) return;
+    if (!h1.value || !h2.value) return;
+
+    let p1 = h1.value.split(':');
+    let p2 = h2.value.split(':');
+
+    let d1 = new Date(2000, 0, 1, parseInt(p1[0]), parseInt(p1[1]));
+    let d2 = new Date(2000, 0, 1, parseInt(p2[0]), parseInt(p2[1]));
+
+    if (d2 < d1) d2.setDate(d2.getDate() + 1);
+
+    let diffMs = d2 - d1;
+    let diffHoras = diffMs / (1000 * 60 * 60);
+
+    inputHoras.value = parseFloat(diffHoras.toFixed(2));
+}
+
 function toggleDependenciaAsig(val) {
     let bloque = document.getElementById('bloque_dependencia_asig');
     if (bloque) {
         bloque.style.display = (val === 'si') ? 'grid' : 'none';
     }
     if (val === 'no') {
+        let inputArea = document.getElementById('crear_dependencia_area');
         let inputResp = document.getElementById('crear_dependencia_responsable');
         let inputMot  = document.getElementById('crear_dependencia_motivo');
+        if (inputArea) inputArea.value = '';
         if (inputResp) inputResp.value = '';
         if (inputMot)  inputMot.value = '';
     }
@@ -1932,30 +2185,41 @@ function toggleEstadoPersonal(val) {
     let blkRealizada = document.getElementById('bloque_personal_realizada');
     let blkPendiente = document.getElementById('bloque_personal_pendiente');
     let hiddenEstado = document.getElementById('crear_estado_imprevisto');
+    let wrp = document.getElementById('wrapper_hora_estimada');
+    let phReal = document.getElementById('ph_hora_realizada');
 
     if (val === 'realizada') {
-        if (blkRealizada) blkRealizada.style.display = 'block';
-        if (blkPendiente) blkPendiente.style.display = 'none';
+        if (blkRealizada) {
+            blkRealizada.style.display = 'block';
+            blkRealizada.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
+        }
+        if (blkPendiente) {
+            blkPendiente.style.display = 'none';
+            blkPendiente.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+        }
         if (hiddenEstado) hiddenEstado.value = 'finalizada';
+        
+        if (wrp && phReal) {
+            phReal.appendChild(wrp);
+            wrp.style.display = 'block';
+            wrp.querySelectorAll('input').forEach(el => el.disabled = false);
+        }
     } else {
-        if (blkRealizada) blkRealizada.style.display = 'none';
-        if (blkPendiente) blkPendiente.style.display = 'block';
+        if (blkRealizada) {
+            blkRealizada.style.display = 'none';
+            blkRealizada.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+        }
+        if (blkPendiente) {
+            blkPendiente.style.display = 'block';
+            blkPendiente.querySelectorAll('input, select, textarea').forEach(el => el.disabled = false);
+        }
         if (hiddenEstado) hiddenEstado.value = 'pendiente';
+        if (wrp) {
+            wrp.style.display = 'none';
+            wrp.querySelectorAll('input').forEach(el => el.disabled = true);
+        }
     }
 }
-
-function toggleSencillaImp(val) {
-    let blkSencilla = document.getElementById('bloque_sencilla_imp_si');
-    let blkAdv = document.getElementById('bloque_avanzado_imp_pendiente');
-    if (val === 'si') {
-        if (blkSencilla) blkSencilla.style.display = 'block';
-        if (blkAdv) blkAdv.style.display = 'none';
-    } else if (val === 'no') {
-        if (blkSencilla) blkSencilla.style.display = 'none';
-        if (blkAdv) blkAdv.style.display = 'block';
-    }
-}
-
 function toggleDependenciaImp(val) {
     let blk = document.getElementById('bloque_dependencia_imp');
     if (blk) blk.style.display = (val === 'si') ? 'grid' : 'none';
@@ -2017,8 +2281,6 @@ function abrirModalCrearActividad(tipo = 'asignada', soloPersonal = false) {
     let idsToHide = [
         'bloque_personal_realizada',
         'bloque_personal_pendiente',
-        'bloque_sencilla_imp_si',
-        'bloque_avanzado_imp_pendiente',
         'sub_box_tipo_plazo_imp',
         'seccion_fechas_imp',
         'boxHorario_imp',
@@ -2098,6 +2360,20 @@ function openEditModalFromRow(btn, event) {
     if (subtitle)    subtitle.innerText = 'Modifica los datos de esta actividad:';
     if (submitBtn)   submitBtn.innerText = 'Actualizar Actividad';
 
+    // Show "Marcar como Completada" for Asignadas that are not finalizada
+    let secMarcar = document.getElementById('seccion_marcar_completada');
+    if (secMarcar) {
+        if (tipo === 'asignada' && dataset.estado !== 'finalizada' && dataset.estado !== 'realizada') {
+            secMarcar.style.display = 'block';
+            let chkMarcar = document.getElementById('chk_marcar_completada');
+            if(chkMarcar) { chkMarcar.checked = false; toggleNotasCompletada(); }
+            let txtMarcar = document.getElementById('txt_notas_completada');
+            if(txtMarcar) txtMarcar.value = '';
+        } else {
+            secMarcar.style.display = 'none';
+        }
+    }
+
     // Set employee checkbox if present
     let empId = dataset.empleado;
     if (empId) {
@@ -2127,8 +2403,6 @@ function openEditModalFromRow(btn, event) {
 
         if (document.getElementById('crear_dirigido_a_id_imp')) document.getElementById('crear_dirigido_a_id_imp').value = dataset.dirigido || '';
         if (document.getElementById('crear_motivo')) document.getElementById('crear_motivo').value = motVal;
-        if (document.getElementById('crear_titulo_imp_sencilla')) document.getElementById('crear_titulo_imp_sencilla').value = motVal;
-        if (document.getElementById('crear_descripcion_imp_sencilla')) document.getElementById('crear_descripcion_imp_sencilla').value = descVal;
         if (document.getElementById('crear_acciones_realizadas_imp')) document.getElementById('crear_acciones_realizadas_imp').value = accVal;
         if (document.getElementById('crear_observaciones_imp')) document.getElementById('crear_observaciones_imp').value = obsVal;
         if (document.getElementById('crear_resultado_obtenido')) document.getElementById('crear_resultado_obtenido').value = resVal;
@@ -2142,23 +2416,50 @@ function openEditModalFromRow(btn, event) {
         } else {
             if (radPendiente) radPendiente.checked = true;
             toggleEstadoPersonal('pendiente');
-
-            let hasAdv = (accVal || obsVal || dataset.prioridad);
-            let rSenSi = document.querySelector('input[name="_sencilla_imp"][value="si"]');
-            let rSenNo = document.querySelector('input[name="_sencilla_imp"][value="no"]');
-            if (hasAdv) {
-                if (rSenNo) rSenNo.checked = true;
-                toggleSencillaImp('no');
-            } else {
-                if (rSenSi) rSenSi.checked = true;
-                toggleSencillaImp('si');
-            }
         }
+
+        if (document.getElementById('crear_titulo_imp_avanzada')) document.getElementById('crear_titulo_imp_avanzada').value = motVal;
+        if (document.getElementById('crear_descripcion_imp_avanzada')) document.getElementById('crear_descripcion_imp_avanzada').value = descVal;
+        if (document.getElementById('crear_descripcion_imp_realizada')) document.getElementById('crear_descripcion_imp_realizada').value = descVal;
 
         let slider = document.getElementById('crear_porcentaje_imprevisto');
         if (slider) {
             slider.value = porcVal;
             updateImprevistoPorcentajeDisplay(porcVal);
+        }
+        
+        // Dependencias imprevistas
+        let depAreaVal = dataset.deparea || '';
+        let depRespVal = dataset.depresp || '';
+        let depMotVal  = dataset.depmotivo || '';
+        let hasDep = (depAreaVal !== '' || depRespVal !== '' || depMotVal !== '');
+        
+        if (hasDep) {
+            if (estVal === 'realizada' || estVal === 'finalizada') {
+                let rdSi = document.querySelector('input[name="_depende_imp_radio"][value="si"]');
+                if (rdSi) rdSi.checked = true;
+                toggleDependenciaImp('si');
+                if (document.getElementById('crear_dependencia_area_imp')) document.getElementById('crear_dependencia_area_imp').value = depAreaVal;
+                if (document.getElementById('crear_dependencia_responsable_imp')) document.getElementById('crear_dependencia_responsable_imp').value = depRespVal;
+                if (document.getElementById('crear_dependencia_motivo_imp')) document.getElementById('crear_dependencia_motivo_imp').value = depMotVal;
+            } else {
+                let rdSiP = document.querySelector('input[name="_depende_imp_pend_radio"][value="si"]');
+                if (rdSiP) rdSiP.checked = true;
+                toggleDependenciaImpPend('si');
+                if (document.getElementById('crear_dependencia_area_imp_pend')) document.getElementById('crear_dependencia_area_imp_pend').value = depAreaVal;
+                if (document.getElementById('crear_dependencia_responsable_imp_pend')) document.getElementById('crear_dependencia_responsable_imp_pend').value = depRespVal;
+                if (document.getElementById('crear_dependencia_motivo_imp_pend')) document.getElementById('crear_dependencia_motivo_imp_pend').value = depMotVal;
+            }
+        } else {
+            if (estVal === 'realizada' || estVal === 'finalizada') {
+                let rdNo = document.querySelector('input[name="_depende_imp_radio"][value="no"]');
+                if (rdNo) rdNo.checked = true;
+                toggleDependenciaImp('no');
+            } else {
+                let rdNoP = document.querySelector('input[name="_depende_imp_pend_radio"][value="no"]');
+                if (rdNoP) rdNoP.checked = true;
+                toggleDependenciaImpPend('no');
+            }
         }
     } else { // asignada
         if (document.getElementById('crear_titulo')) document.getElementById('crear_titulo').value = dataset.titulo || '';
@@ -2198,6 +2499,7 @@ function openEditModalFromRow(btn, event) {
         if (hasDep) {
             if (rDepSi) rDepSi.checked = true;
             toggleDependenciaAsig('si');
+            if (document.getElementById('crear_dependencia_area')) document.getElementById('crear_dependencia_area').value = dataset.deparea || '';
             if (document.getElementById('crear_dependencia_responsable')) document.getElementById('crear_dependencia_responsable').value = depRespVal;
             if (document.getElementById('crear_dependencia_motivo')) document.getElementById('crear_dependencia_motivo').value = depMotVal;
         } else {

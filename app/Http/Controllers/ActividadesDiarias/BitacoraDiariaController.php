@@ -254,7 +254,7 @@ class BitacoraDiariaController extends Controller
         ));
     }
 
-    public function exportPdf($empleado, $fecha)
+    public function exportPdf(Request $request, $empleado, $fecha)
     {
         $currentUser = auth()->user();
         if (!$currentUser) {
@@ -296,13 +296,16 @@ class BitacoraDiariaController extends Controller
         $horasImprevistas = $imprevistos->sum('horas_invertidas');
         $totalHoras = round($horasAvances + $horasImprevistas, 2);
 
+        $observacionesPdf = $request->query('observaciones_pdf');
+
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('actividades_diarias.reportes.bitacora.pdf_timeline', compact(
             'user',
             'fecha',
             'avances',
             'imprevistos',
             'ejecucionesRutina',
-            'totalHoras'
+            'totalHoras',
+            'observacionesPdf'
         ));
 
         return $pdf->stream('evidencia_diaria_' . str_replace(' ', '_', $user->name) . '_' . $fecha . '.pdf');

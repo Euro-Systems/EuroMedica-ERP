@@ -84,6 +84,11 @@ class ActividadesController extends Controller
             }
             $userIds = $allUsersForWorkspace->pluck('id')->toArray();
 
+            $filtroFecha = $request->input('fecha_filtro');
+            if (!$filtroFecha) {
+                $filtroFecha = now()->toDateString();
+            }
+
             // Bulk query activities for all users in the workspace
             $allUserActividades = Actividad::where(function($q) use ($userIds, $areaId, $currentUser) {
                 $q->whereIn('empleado_id', $userIds)
@@ -92,18 +97,15 @@ class ActividadesController extends Controller
                     $q->orWhere('jefe_id', $currentUser->id);
                 }
             })
-            ->where(function($q) {
-                $q->where('estado', '!=', 'finalizada')
-                  ->orWhereDate('updated_at', '>=', now()->subDays(7));
-            })
+            ->whereDate('fecha_inicio', $filtroFecha)
             ->orderBy('created_at', 'desc')
             ->get()
             ->groupBy('empleado_id');
 
-            // Bulk query routines with preloaded today's executions
+            // Bulk query routines with preloaded executions
             $allUserRutinas = \App\Models\Rutina::whereIn('empleado_id', $userIds)
-                ->with(['ejecuciones' => function($q) {
-                    $q->whereDate('fecha', today());
+                ->with(['ejecuciones' => function($q) use ($filtroFecha) {
+                    $q->whereDate('fecha', $filtroFecha);
                 }])
                 ->orderBy('created_at', 'desc')
                 ->get()
@@ -112,6 +114,7 @@ class ActividadesController extends Controller
             // Bulk query imprevistas
             $allUserImprevistas = \App\Models\ActividadImprevista::whereIn('empleado_id', $userIds)
                 ->where('titulo', '!=', 'Hora de Comida')
+                ->whereDate('fecha', $filtroFecha)
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->groupBy('empleado_id');
@@ -165,7 +168,7 @@ class ActividadesController extends Controller
                 $q->whereDate('fecha', today())->orWhereDate('created_at', today());
             })->first();
 
-        return view('actividades_diarias.actividades_diarias.spa_panel_principal', compact('area', 'empleadosRH', 'rutinas', 'areas', 'comidaRegistrada'));
+        return view('actividades_diarias.actividades_diarias.spa_panel_principal', compact('area', 'empleadosRH', 'rutinas', 'areas', 'comidaRegistrada', 'filtroFecha'));
     }
 
     public function resumen()
@@ -193,15 +196,19 @@ class ActividadesController extends Controller
             $subordinateIds = $querySub->pluck('id')->toArray();
         }
         
-        $normalActividades = Actividad::whereIn('empleado_id', $subordinateIds)
-            ->where(function($q) {
-                $q->where('estado', '!=', 'finalizada')
-                  ->orWhereDate('updated_at', '>=', now()->subDays(7));
-            })
-            ->with(['empleado', 'avances' => function($q) {
+        $filtroFecha = $request->input('fecha_filtro'); 
+        if (!$filtroFecha) {
+            $filtroFecha = now()->toDateString();
+        }
+
+        $queryNormal = Actividad::whereIn('empleado_id', $subordinateIds);
+        $queryNormal->whereDate('fecha_inicio', $filtroFecha);
+        
+        $normalActividades = $queryNormal->with(['empleado', 'avances' => function($q) {
                 $q->with('empleado')->orderBy('created_at', 'desc');
             }])->orderBy('created_at', 'desc')->get()->map(function($a) {
             $a->tipo = 'Asignada';
+            $a->fecha_grupo = $a->created_at ? $a->created_at->format('Y-m-d') : now()->format('Y-m-d');
             $a->fecha_display = $a->fecha_estimada_fin ? \Carbon\Carbon::parse($a->fecha_estimada_fin)->format('d/m/Y') : 'N/A';
             $a->historial_avances_list = $a->avances->map(function($av) {
                 return [
@@ -214,11 +221,15 @@ class ActividadesController extends Controller
             return $a;
         });
 
-        $resumenImprevistas = \App\Models\ActividadImprevista::whereIn('empleado_id', $subordinateIds)
-            ->where('titulo', '!=', 'Hora de Comida')
-            ->with('empleado')
+        $queryImprevistas = \App\Models\ActividadImprevista::whereIn('empleado_id', $subordinateIds)
+            ->where('titulo', '!=', 'Hora de Comida');
+        if ($filtroFecha) {
+            $queryImprevistas->whereDate('fecha', $filtroFecha);
+        }
+        $resumenImprevistas = $queryImprevistas->with('empleado')
             ->orderBy('created_at', 'desc')->get()->map(function($i) {
                 $i->tipo = 'Imprevista';
+                $i->fecha_grupo = $i->created_at ? $i->created_at->format('Y-m-d') : now()->format('Y-m-d');
                 $i->fecha_display = $i->created_at ? $i->created_at->format('d/m/Y') : 'N/A';
                 $i->porcentaje_avance = $i->porcentaje_avance ?? (($i->estado === 'finalizada') ? 100 : (($i->estado === 'en_proceso') ? 50 : 0));
                 $i->historial_avances_list = [
@@ -232,12 +243,20 @@ class ActividadesController extends Controller
                 return $i;
             });
 
-        $resumenRutinas = \App\Models\Rutina::whereIn('empleado_id', $subordinateIds)
-            ->with(['empleado', 'ejecuciones' => function($q) {
+        $queryRutinas = \App\Models\Rutina::whereIn('empleado_id', $subordinateIds);
+        if ($filtroFecha) {
+            $queryRutinas->with(['empleado', 'ejecuciones' => function($q) use ($filtroFecha) {
+                $q->whereDate('fecha', $filtroFecha);
+            }]);
+        } else {
+            $queryRutinas->with(['empleado', 'ejecuciones' => function($q) {
                 $q->whereDate('fecha', today());
-            }])
-            ->orderBy('created_at', 'desc')->get()->map(function($r) {
+            }]);
+        }
+        
+        $resumenRutinas = $queryRutinas->orderBy('created_at', 'desc')->get()->map(function($r) use ($filtroFecha) {
                 $r->tipo = 'Rutinaria';
+                $r->fecha_grupo = $filtroFecha ?: now()->format('Y-m-d');
                 $r->fecha_display = 'Diaria';
                 $r->veces_al_dia = ($r->veces_al_dia && $r->veces_al_dia > 0) ? intval($r->veces_al_dia) : 1;
                 
@@ -288,7 +307,7 @@ class ActividadesController extends Controller
         $empleadosRH = $this->getEmpleados();
         $rutinas = \App\Models\Rutina::with('empleado')->orderBy('created_at', 'desc')->get();
 
-        return view('actividades_diarias.resumen_general.tab_resumen_general', compact('actividades', 'pendientes', 'en_proceso', 'finalizadas', 'atrasadas', 'areas', 'empleadosRH', 'rutinas'));
+        return view('actividades_diarias.resumen_general.tab_resumen_general', compact('actividades', 'pendientes', 'en_proceso', 'finalizadas', 'atrasadas', 'areas', 'empleadosRH', 'rutinas', 'filtroFecha'));
     }
 
     public function selectArea($id)
@@ -462,12 +481,18 @@ class ActividadesController extends Controller
         }
 
         // Create main activity
-        Actividad::create($data);
+        $actividad = Actividad::create($data);
 
         // If it is shared, also create for other employees
+        $nombresCompartidos = [];
         if (($request->input('_colaboro_asig_radio') === 'si' || $request->input('_compartida') === 'si') && is_array($request->input('empleados_compartidos'))) {
             foreach ($request->input('empleados_compartidos') as $compartidoId) {
                 if ($compartidoId != $data['empleado_id']) {
+                    $empShared = User::find($compartidoId);
+                    if ($empShared) {
+                        $nombresCompartidos[] = $empShared->name;
+                    }
+                    
                     $sharedData = $data;
                     $sharedData['empleado_id'] = $compartidoId;
                     
@@ -478,8 +503,14 @@ class ActividadesController extends Controller
                         $sharedData['area_id'] = session('active_area_id', 1);
                     }
                     
+                    
                     Actividad::create($sharedData);
                 }
+            }
+            
+            if (!empty($nombresCompartidos)) {
+                $actividad->colaboradores_texto = implode(', ', $nombresCompartidos);
+                $actividad->save();
             }
         }
 
@@ -547,6 +578,11 @@ class ActividadesController extends Controller
                 $data['estado'] = 'en_proceso';
             }
 
+            if ($request->filled('comentario_avance')) {
+                unset($data['hora_inicio']);
+                unset($data['hora_fin']);
+            }
+
             $actividad->update($data);
 
             $fileHtml = $this->processUploadedFiles($request);
@@ -567,12 +603,35 @@ class ActividadesController extends Controller
                 'fecha_avance' => now()->toDateString(),
                 'estado_aprobacion' => 'aprobado',
                 'motivo' => 'Actualización directa',
-                'hora_inicio' => now()->format('H:i'),
-                'hora_fin' => now()->format('H:i'),
-                'horas_trabajadas' => max(0.1, floatval($request->input('horas_trabajadas', 1.0)))
+                'hora_inicio' => $request->has('sin_horario') ? null : $request->input('hora_inicio', now()->format('H:i')),
+                'hora_fin' => $request->has('sin_horario') ? null : $request->input('hora_fin', now()->format('H:i')),
+                'horas_trabajadas' => $request->has('sin_horario') ? 0 : floatval($request->input('horas_invertidas', 0))
             ]);
         } else {
-            $actividad->update($data);
+            if ($request->has('marcar_completada') && $request->marcar_completada == '1') {
+                $data['estado'] = 'finalizada';
+                $data['porcentaje_avance'] = 100;
+                $actividad->update($data);
+                
+                $comentarioNota = $request->input('notas_completada', 'Actividad marcada como completada directamente.');
+                
+                \App\Models\AvanceActividad::create([
+                    'actividad_id' => $actividad->id,
+                    'empleado_id' => $actividad->empleado_id ?? (Auth::id() ?? 1),
+                    'que_se_hizo' => $comentarioNota,
+                    'comentario' => $comentarioNota,
+                    'resultado_final' => 'Actividad Completada 100%',
+                    'porcentaje_avance' => 100,
+                    'fecha_avance' => now()->toDateString(),
+                    'estado_aprobacion' => 'aprobado',
+                    'motivo' => 'Marcada como completada desde edición',
+                    'hora_inicio' => $request->has('sin_horario') ? null : $request->input('hora_inicio', now()->format('H:i')),
+                    'hora_fin' => $request->has('sin_horario') ? null : $request->input('hora_fin', now()->format('H:i')),
+                    'horas_trabajadas' => $request->has('sin_horario') ? 0 : floatval($request->input('horas_invertidas', 0))
+                ]);
+            } else {
+                $actividad->update($data);
+            }
         }
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -776,7 +835,10 @@ class ActividadesController extends Controller
             'hora_fin' => $request->hora_fin,
             'horas_invertidas' => 1,
             'impacto' => 'Administración',
-            'fecha' => today()->toDateString()
+            'fecha' => today()->toDateString(),
+            'estado' => 'finalizada',
+            'porcentaje_avance' => 100,
+            'resultado_obtenido' => 'Descanso de alimentos completado'
         ]);
         
         return back()->with('success', 'Hora de comida registrada con éxito.');
@@ -886,6 +948,8 @@ class ActividadesController extends Controller
 
         $notaFinal = "↩️ [Devuelta por el Jefe - Avance ajustado al {$porcentajeAjustado}%]: " . $comentarioJefe;
 
+        $horaDevolucion = $request->input('hora_devolucion', now()->format('H:i'));
+
         \App\Models\AvanceActividad::create([
             'actividad_id' => $actividad->id,
             'empleado_id' => $currentUser->id,
@@ -897,8 +961,8 @@ class ActividadesController extends Controller
             'estado_aprobacion' => 'rechazado',
             'aprobado_por_id' => $currentUser->id,
             'comentario_jefe' => $comentarioJefe,
-            'hora_inicio' => now()->format('H:i'),
-            'hora_fin' => now()->format('H:i'),
+            'hora_inicio' => $horaDevolucion,
+            'hora_fin' => $horaDevolucion,
             'horas_trabajadas' => 0
         ]);
 

@@ -137,6 +137,8 @@ class RutinasController extends Controller
                 $notaVal = $comentario ? $comentario : ("Ejecución " . $idx . " de " . $rutina->veces_al_dia . " realizada");
                 $horas[] = [
                     'hora' => $horaActual,
+                    'hora_inicio' => $request->has('sin_horario') ? null : $request->input('hora_inicio'),
+                    'hora_fin' => $request->has('sin_horario') ? null : $request->input('hora_fin'),
                     'nota' => $notaVal
                 ];
             }
@@ -148,8 +150,15 @@ class RutinasController extends Controller
                 if (is_array($horas[$lastIndex])) {
                     $horas[$lastIndex]['nota'] = $comentario;
                     $horas[$lastIndex]['hora'] = $horaActual;
+                    $horas[$lastIndex]['hora_inicio'] = $request->has('sin_horario') ? null : $request->input('hora_inicio');
+                    $horas[$lastIndex]['hora_fin'] = $request->has('sin_horario') ? null : $request->input('hora_fin');
                 } else {
-                    $horas[$lastIndex] = ['hora' => $horaActual, 'nota' => $comentario];
+                    $horas[$lastIndex] = [
+                        'hora' => $horaActual, 
+                        'hora_inicio' => $request->has('sin_horario') ? null : $request->input('hora_inicio'),
+                        'hora_fin' => $request->has('sin_horario') ? null : $request->input('hora_fin'),
+                        'nota' => $comentario
+                    ];
                 }
             }
         }
@@ -247,8 +256,12 @@ class RutinasController extends Controller
         $horas = is_array($ejecucion->horas_registro) ? $ejecucion->horas_registro : [];
         $horas = array_slice($horas, 0, $ejecucionAjustada);
 
+        $horaDevolucion = $request->input('hora_devolucion', now()->format('H:i'));
+
         $horas[] = [
-            'hora' => now()->format('H:i'),
+            'hora_inicio' => $horaDevolucion,
+            'hora_fin' => $horaDevolucion,
+            'hora' => $horaDevolucion,
             'nota' => "↩️ [Devuelta por el Jefe]: " . $comentarioJefe
         ];
 
