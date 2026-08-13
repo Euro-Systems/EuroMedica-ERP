@@ -390,7 +390,7 @@
                     </div>
                     <div class="form-group">
                         <label>Marca</label>
-                        <input type="text" id="vehiculo-marca" placeholder="Ej: Toyota">
+                        <input type="text" id="vehiculo-marca" placeholder="Ej: Toyota" oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')">
                     </div>
                     <div class="form-group">
                         <label>Modelo</label>
@@ -402,7 +402,7 @@
                     </div>
                     <div class="form-group">
                         <label>Color</label>
-                        <input type="text" id="vehiculo-color" placeholder="Ej: Blanco">
+                        <input type="text" id="vehiculo-color" placeholder="Ej: Blanco" oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')">
                     </div>
                     <div class="form-group">
                         <label>Transmisión</label>
@@ -426,11 +426,11 @@
                     </div>
                     <div class="form-group">
                         <label>Seguro del Auto</label>
-                        <input type="text" id="vehiculo-seguro_auto" placeholder="Ej: Qualitas">
+                        <input type="text" id="vehiculo-seguro_auto" placeholder="Ej: Qualitas" oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')">
                     </div>
                     <div class="form-group">
                         <label>Teléfono Seguro</label>
-                        <input type="text" id="vehiculo-telefono_seguro" placeholder="Ej: 55 1234 5678">
+                        <input type="text" id="vehiculo-telefono_seguro" placeholder="Ej: 55 1234 5678" oninput="this.value = this.value.replace(/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '')">
                     </div>
                     <div class="form-group">
                         <label>Inicio de Seguro</label>
