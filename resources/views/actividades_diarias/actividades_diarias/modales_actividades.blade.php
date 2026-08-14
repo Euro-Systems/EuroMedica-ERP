@@ -220,11 +220,11 @@
                             <div id="seccion_fechas_asignada" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid #86efac; margin-bottom: 8px;">
                                 <div>
                                     <label style="font-weight: 800; font-size: 12px; color: #166534; display: block; margin-bottom: 4px;">Fecha de Inicio *</label>
-                                    <input type="date" name="fecha_inicio" id="crear_fecha_inicio" value="{{ date('Y-m-d') }}" style="width: 100%; padding: 8px; border: 1.5px solid #15803d; border-radius: 6px; background: white; font-weight: 700; color: #1e293b;">
+                                    <input type="date" name="fecha_inicio" id="crear_fecha_inicio" value="{{ now()->toDateString() }}" style="width: 100%; padding: 8px; border: 1.5px solid #15803d; border-radius: 6px; background: white; font-weight: 700; color: #1e293b;">
                                 </div>
                                 <div>
                                     <label style="font-weight: 800; font-size: 12px; color: #166534; display: block; margin-bottom: 4px;">Fecha Estimada de Término *</label>
-                                    <input type="date" name="fecha_estimada_fin" id="crear_fecha_fin" value="{{ date('Y-m-d') }}" style="width: 100%; padding: 8px; border: 1.5px solid #15803d; border-radius: 6px; background: white; font-weight: 700; color: #1e293b;">
+                                    <input type="date" name="fecha_estimada_fin" id="crear_fecha_fin" value="{{ now()->toDateString() }}" style="width: 100%; padding: 8px; border: 1.5px solid #15803d; border-radius: 6px; background: white; font-weight: 700; color: #1e293b;">
                                 </div>
                             </div>
 
@@ -559,11 +559,11 @@
                                 <div id="seccion_fechas_imp" style="display: none; grid-template-columns: 1fr 1fr; gap: 14px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid #fed7aa; margin-bottom: 8px;">
                                     <div>
                                         <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Fecha de Inicio *</label>
-                                        <input type="date" name="fecha_inicio_imp" value="{{ date('Y-m-d') }}" style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 6px; background: white; font-weight: 700; color: #1e293b;">
+                                        <input type="date" name="fecha_inicio_imp" value="{{ now()->toDateString() }}" style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 6px; background: white; font-weight: 700; color: #1e293b;">
                                     </div>
                                     <div>
                                         <label style="font-weight: 800; font-size: 12px; color: #9a3412; display: block; margin-bottom: 4px;">Fecha Estimada de Término *</label>
-                                        <input type="date" name="fecha_estimada_fin_imp" value="{{ date('Y-m-d') }}" style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 6px; background: white; font-weight: 700; color: #1e293b;">
+                                        <input type="date" name="fecha_estimada_fin_imp" value="{{ now()->toDateString() }}" style="width: 100%; padding: 8px; border: 1.5px solid #c2410c; border-radius: 6px; background: white; font-weight: 700; color: #1e293b;">
                                     </div>
                                 </div>
 

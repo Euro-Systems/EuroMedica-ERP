@@ -31,7 +31,7 @@ class AvancesActividadController extends Controller
         $data['motivo'] = 'No aplica';
         $data['hora_inicio'] = now()->format('H:i');
         $data['hora_fin'] = now()->format('H:i');
-        $data['horas_trabajadas'] = 0;
+        $data['horas_trabajadas'] = $request->input('horas_invertidas', 0);
         
         // Remove dependence on porcentaje_avance as requested
         $data['porcentaje_avance'] = 0; 

@@ -29,8 +29,6 @@ class RecursosHumanosController extends Controller
     public function sync(Request $request)
     {
         try {
-            file_put_contents(storage_path("logs/rh_sync_debug.json"), json_encode($request->all(), JSON_PRETTY_PRINT));
-            
             // 1. EMPLEADOS
             $empleados = collect($request->input('empleados', []));
             $empIds = $empleados->pluck('id')->filter();
