@@ -14,13 +14,11 @@ class ActividadesController extends Controller
     public function index()
     {
         $currentUser = auth()->user();
-        if ($currentUser && !in_array($currentUser->rol, ['jefe', 'admin'])) {
+        if ($currentUser && !in_array($currentUser->rol, ['jefe', 'admin', 'directivo'])) {
             return redirect()->route('actividades.mias');
         }
 
-        $this->checkDefaults();
-        $areas = \App\Models\Area::all();
-        return view('actividades_diarias.actividades_diarias.seleccion_de_area', compact('areas'));
+        return redirect()->route('actividades.resumen');
     }
 
     public function spa_master()
@@ -35,11 +33,19 @@ class ActividadesController extends Controller
         $this->checkDefaults();
         $currentUser = auth()->user();
         
+        if ($currentUser && !in_array($currentUser->rol, ['jefe', 'admin', 'directivo'])) {
+            return redirect()->route('actividades.mias');
+        }
+
+        $areaId = $id;
+        if ($areaId !== 'todas' && !$currentUser->canViewArea($areaId)) {
+            abort(403, 'No tienes permiso para acceder a esta área.');
+        }
+
         $empleadosRH = $this->getEmpleados();
         $areas = \App\Models\Area::all();
         $rutinas = \App\Models\Rutina::with('empleado')->orderBy('created_at', 'desc')->get();
 
-        $areaId = $id;
         session(['active_area_id' => $areaId]);
 
         if ($areaId === 'todas') {
@@ -429,8 +435,10 @@ class ActividadesController extends Controller
         if (empty($data['empleado_id']) || $data['empleado_id'] === 'self') {
             $data['empleado_id'] = Auth::id() ?? 1;
         }
-        if (empty($data['prioridad'])) {
-            $data['prioridad'] = 'media';
+        if ($request->input('tiene_prioridad') === 'si') {
+            $data['prioridad'] = $request->input('prioridad') ?: 'media';
+        } else {
+            $data['prioridad'] = null;
         }
         if (empty($data['modalidad'])) {
             $data['modalidad'] = 'un_dia';
@@ -559,7 +567,14 @@ class ActividadesController extends Controller
             $data['fecha_inicio'] = $data['fecha_inicio'] ?? $actividad->fecha_inicio ?? now()->toDateString();
             $data['fecha_estimada_fin'] = $data['fecha_estimada_fin'] ?? $actividad->fecha_estimada_fin ?? $data['fecha_inicio'];
             $data['tiempo_estimado'] = 'Sin plazo';
-            $data['prioridad'] = 'baja';
+        }
+
+        if ($request->has('tiene_prioridad')) {
+            if ($request->input('tiene_prioridad') === 'si') {
+                $data['prioridad'] = $request->input('prioridad') ?: 'media';
+            } else {
+                $data['prioridad'] = null;
+            }
         }
 
         if (array_key_exists('tiempo_estimado', $data) && empty($data['tiempo_estimado'])) {
@@ -787,6 +802,40 @@ class ActividadesController extends Controller
             $prioKey = strtolower($item->prioridad ?? 'media');
             return $prioWeights[$prioKey] ?? 3;
         })->values();
+
+        // Obtener actividades creadas/asignadas por mí a otros
+        $queryAsignadasPorMi = Actividad::where('jefe_id', $userId)
+            ->where('empleado_id', '!=', $userId)
+            ->with(['empleado', 'avances']);
+        if ($nombre) { $queryAsignadasPorMi->where('titulo', 'LIKE', "%{$nombre}%"); }
+        if ($fecha) {
+            $queryAsignadasPorMi->where(function($q) use ($fecha) {
+                $q->whereDate('fecha_inicio', '<=', $fecha)->whereDate('fecha_estimada_fin', '>=', $fecha);
+            });
+        }
+        if (!$nombre && !$fecha) {
+            $queryAsignadasPorMi->where(function($q) {
+                $q->where('estado', '!=', 'finalizada')->orWhereDate('updated_at', '>=', now()->subDays(7));
+            });
+        }
+        $asignadasPorMi = $queryAsignadasPorMi->orderBy('fecha_estimada_fin', 'asc')->get()->map(function($i) {
+            $i->tipo = 'Asignada';
+            $i->fecha_display = $i->fecha_estimada_fin ? \Carbon\Carbon::parse($i->fecha_estimada_fin)->format('d/m/Y') : 'N/A';
+            $i->horas = $i->tiempo_estimado ?? 'N/A';
+            $i->historial_avances_list = $i->avances ? $i->avances->map(function($av) {
+                return [
+                    'fecha' => $av->created_at ? $av->created_at->format('d/m/Y H:i') : ($av->fecha_avance ?? ''),
+                    'porcentaje' => $av->porcentaje_avance ?? 0,
+                    'empleado' => $av->empleado ? $av->empleado->name : 'Empleado',
+                    'nota' => $av->comentario ?? $av->que_se_hizo ?? 'Sin notas'
+                ];
+            })->values()->toArray() : [];
+            return $i;
+        });
+        $asignadasPorMi = $asignadasPorMi->sortBy(function($item) use ($prioWeights) {
+            $prioKey = strtolower($item->prioridad ?? 'media');
+            return $prioWeights[$prioKey] ?? 3;
+        })->values();
         
         $comidaRegistrada = \App\Models\ActividadImprevista::where('empleado_id', $userId)
             ->where('titulo', 'Hora de Comida')
@@ -799,7 +848,7 @@ class ActividadesController extends Controller
         $empleadosRH = $this->getEmpleados();
         $rutinas = \App\Models\Rutina::with('empleado')->orderBy('created_at', 'desc')->get();
 
-        return view('actividades_diarias.mis_actividades.tab_mis_actividades', compact('listado', 'nombre', 'fecha', 'comidaRegistrada', 'areas', 'empleadosRH', 'rutinas'));
+        return view('actividades_diarias.mis_actividades.tab_mis_actividades', compact('listado', 'asignadasPorMi', 'nombre', 'fecha', 'comidaRegistrada', 'areas', 'empleadosRH', 'rutinas'));
     }
 
     public function registrarComida(Request $request)
@@ -967,6 +1016,55 @@ class ActividadesController extends Controller
         ]);
 
         return response()->json(['success' => true, 'message' => 'Actividad devuelta al empleado con las observaciones registradas.']);
+    }
+
+    public function darSeguimiento(Request $request, $id)
+    {
+        $currentUser = Auth::user();
+        if (!$currentUser) {
+            return response()->json(['success' => false, 'message' => 'No autorizado.'], 401);
+        }
+
+        $request->validate([
+            'fecha_seguimiento' => 'required|date|after_or_equal:today',
+            'comentario'        => 'required|string',
+            'tipo_actividad'    => 'required|string'
+        ]);
+
+        $tipo = strtolower($request->input('tipo_actividad'));
+        $fechaSeg = $request->input('fecha_seguimiento');
+        $comentario = trim($request->input('comentario'));
+
+        if ($tipo === 'imprevista') {
+            $actividad = \App\Models\ActividadImprevista::findOrFail($id);
+        } elseif ($tipo === 'rutinaria') {
+            $actividad = \App\Models\Rutina::findOrFail($id);
+        } else {
+            $actividad = Actividad::findOrFail($id);
+        }
+
+        $actividad->update([
+            'en_seguimiento' => true,
+            'fecha_seguimiento' => $fechaSeg
+        ]);
+
+        if ($tipo === 'asignada' || empty($tipo)) {
+            $notaFinal = "📅 [SEGUIMIENTO] Se programó continuar la actividad el día " . \Carbon\Carbon::parse($fechaSeg)->format('d/m/Y') . ". Motivo: " . $comentario;
+            
+            \App\Models\AvanceActividad::create([
+                'actividad_id' => $actividad->id,
+                'empleado_id' => $currentUser->id,
+                'que_se_hizo' => $notaFinal,
+                'comentario' => $notaFinal,
+                'resultado_final' => 'Actividad puesta en seguimiento',
+                'porcentaje_avance' => $actividad->porcentaje_avance ?? 0,
+                'fecha_avance' => now()->toDateString(),
+                'horas_trabajadas' => 0,
+                'motivo' => 'Seguimiento',
+            ]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Seguimiento registrado con éxito.']);
     }
 }
 

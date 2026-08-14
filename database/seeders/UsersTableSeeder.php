@@ -17,10 +17,21 @@ class UsersTableSeeder extends Seeder
     public function run(): void
     {
         // Desactivar temporalmente los checks de claves foráneas para truncar de manera limpia
-        DB::statement('PRAGMA foreign_keys = OFF;');
+        $driver = DB::getDriverName();
+        if ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = OFF;');
+        } else {
+            DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
+        }
+
         User::truncate();
         Area::truncate();
-        DB::statement('PRAGMA foreign_keys = ON;');
+
+        if ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = ON;');
+        } else {
+            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+        }
 
         // Crear las áreas correspondientes
         $tiArea = Area::create(['nombre' => 'TI', 'activo' => true]);
@@ -45,6 +56,19 @@ class UsersTableSeeder extends Seeder
             'permisos' => 'todos',
         ]);
 
+        // 1.5. Director General (Directivo)
+        $directorGeneral = User::create([
+            'name' => 'Director General',
+            'email' => null,
+            'password' => Hash::make('EuroMedica'),
+            'password_plain' => Crypt::encryptString('EuroMedica'),
+            'area_id' => null,
+            'rol' => 'directivo',
+            'activo' => true,
+            'departamento' => 'Dirección General',
+            'permisos' => 'todos',
+        ]);
+
         // 2. Kevin (Jefe TI, ADD, MKT)
         $kevin = User::create([
             'name' => 'Kevin',
@@ -56,6 +80,7 @@ class UsersTableSeeder extends Seeder
             'activo' => true,
             'departamento' => 'TI / ADD / MKT',
             'permisos' => 'sistemas,administracion,otros',
+            'jefe_id' => $directorGeneral->id,
         ]);
 
         // 3. Jose (Practicante TI, bajo Kevin)
@@ -111,6 +136,7 @@ class UsersTableSeeder extends Seeder
             'activo' => true,
             'departamento' => 'Recursos Humanos',
             'permisos' => 'rh,nomina',
+            'jefe_id' => $directorGeneral->id,
         ]);
 
         // 7. Samantha (Empleada RH, bajo Edwin)

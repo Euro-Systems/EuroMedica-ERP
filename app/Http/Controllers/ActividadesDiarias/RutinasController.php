@@ -99,6 +99,14 @@ class RutinasController extends Controller
             'dependencia_motivo' => $request->input('dependencia_motivo'),
         ];
 
+        if ($request->has('tiene_prioridad')) {
+            if ($request->input('tiene_prioridad') === 'si') {
+                $updateData['prioridad'] = $request->input('prioridad') ?: 'media';
+            } else {
+                $updateData['prioridad'] = null;
+            }
+        }
+
         if ($request->filled('empleado_id') && \App\Models\User::where('id', $request->input('empleado_id'))->exists()) {
             $updateData['empleado_id'] = $request->input('empleado_id');
         }

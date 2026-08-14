@@ -186,6 +186,14 @@ class User extends Authenticatable
         return $this->belongsTo(Area::class);
     }
 
+    /**
+     * Relación de muchos a muchos con las áreas que un jefe supervisa.
+     */
+    public function areas()
+    {
+        return $this->belongsToMany(Area::class, 'area_user');
+    }
+
     public function actividades()
     {
         return $this->hasMany(Actividad::class, 'empleado_id');
@@ -247,41 +255,15 @@ class User extends Authenticatable
         if ($this->rol !== 'jefe') {
             return false;
         }
-        if (!$this->departamento) {
-            return false;
-        }
 
-        $depts = array_map('trim', explode('/', $this->departamento));
+        $areaId = is_object($area) ? $area->id : null;
         $areaName = is_object($area) ? $area->nombre : $area;
 
-        $mapping = [
-            'Sistemas' => ['TI', 'Sistemas'],
-            'TI' => ['TI', 'Sistemas'],
-            'Análisis de datos' => ['ADD', 'Análisis de datos', 'Analisis de datos'],
-            'Analisis de datos' => ['ADD', 'Análisis de datos', 'Analisis de datos'],
-            'ADD' => ['ADD', 'Análisis de datos', 'Analisis de datos'],
-            'Marketing' => ['MKT', 'Marketing'],
-            'MKT' => ['MKT', 'Marketing'],
-            'Administración de empresas' => ['ADE', 'Administración de empresas', 'Administracion de empresas'],
-            'Administracion de empresas' => ['ADE', 'Administración de empresas', 'Administracion de empresas'],
-            'ADE' => ['ADE', 'Administración de empresas', 'Administracion de empresas'],
-            'Recursos Humanos' => ['Recursos Humanos'],
-            'Nómina' => ['Nómina', 'Nomina'],
-            'Nomina' => ['Nómina', 'Nomina'],
-            'Operaciones' => ['Operaciones'],
-            'Administración' => ['Administración', 'Administracion', 'Administrativos'],
-            'Administracion' => ['Administración', 'Administracion', 'Administrativos'],
-            'Administrativos' => ['Administración', 'Administracion', 'Administrativos']
-        ];
-
-        $possibleNames = isset($mapping[$areaName]) ? $mapping[$areaName] : [$areaName];
-
-        foreach ($depts as $dept) {
-            if (in_array($dept, $possibleNames)) {
-                return true;
-            }
+        if ($areaId) {
+            return $this->areas->contains($areaId);
         }
-        return false;
+
+        return $this->areas->contains('nombre', $areaName);
     }
 
     /**
@@ -293,35 +275,12 @@ class User extends Authenticatable
             return;
         }
 
-        if (empty($this->departamento)) {
+        $targetAreaIds = $this->areas()->pluck('areas.id')->toArray();
+
+        if (empty($targetAreaIds)) {
             User::where('jefe_id', $this->id)->update(['jefe_id' => null]);
             return;
         }
-
-        $depts = array_map('trim', explode('/', $this->departamento));
-
-        $deptToAreaNames = [
-            'TI' => ['Sistemas', 'TI'],
-            'ADD' => ['Análisis de datos', 'Analisis de datos', 'ADD'],
-            'MKT' => ['Marketing', 'MKT'],
-            'ADE' => ['Administración de empresas', 'Administracion de empresas', 'ADE'],
-            'Recursos Humanos' => ['Recursos Humanos'],
-            'Nómina' => ['Nómina', 'Nomina'],
-            'Nomina' => ['Nómina', 'Nomina'],
-            'Operaciones' => ['Operaciones'],
-            'Administración' => ['Administración', 'Administracion', 'Administrativos']
-        ];
-
-        $targetAreaNames = [];
-        foreach ($depts as $dept) {
-            if (isset($deptToAreaNames[$dept])) {
-                $targetAreaNames = array_merge($targetAreaNames, $deptToAreaNames[$dept]);
-            } else {
-                $targetAreaNames[] = $dept;
-            }
-        }
-
-        $targetAreaIds = Area::whereIn('nombre', $targetAreaNames)->pluck('id')->toArray();
 
         // 1. Desvincular de este jefe a todos los empleados de las áreas que ya no maneja
         User::where('jefe_id', $this->id)
@@ -329,11 +288,9 @@ class User extends Authenticatable
             ->update(['jefe_id' => null]);
 
         // 2. Asignar todos los empleados/practicantes de estas áreas a este jefe
-        if (!empty($targetAreaIds)) {
-            User::whereIn('rol', ['empleado', 'practicante'])
-                ->whereIn('area_id', $targetAreaIds)
-                ->update(['jefe_id' => $this->id]);
-        }
+        User::whereIn('rol', ['empleado', 'practicante'])
+            ->whereIn('area_id', $targetAreaIds)
+            ->update(['jefe_id' => $this->id]);
     }
 
     /**
@@ -342,42 +299,13 @@ class User extends Authenticatable
     public static function obtenerJefeDeArea($areaId)
     {
         if (!$areaId) return null;
-        $area = Area::find($areaId);
-        if (!$area) return null;
 
-        $areaName = $area->nombre;
-
-        $mapping = [
-            'Sistemas' => 'TI',
-            'TI' => 'TI',
-            'Análisis de datos' => 'ADD',
-            'Analisis de datos' => 'ADD',
-            'ADD' => 'ADD',
-            'Marketing' => 'MKT',
-            'MKT' => 'MKT',
-            'Administración de empresas' => 'ADE',
-            'Administracion de empresas' => 'ADE',
-            'ADE' => 'ADE',
-            'Recursos Humanos' => 'Recursos Humanos',
-            'Nómina' => 'Nómina',
-            'Nomina' => 'Nómina',
-            'Operaciones' => 'Operaciones',
-            'Administración' => 'Administración',
-            'Administracion' => 'Administración',
-            'Administrativos' => 'Administración'
-        ];
-
-        $targetDept = isset($mapping[$areaName]) ? $mapping[$areaName] : $areaName;
-
-        $jefes = self::where('rol', 'jefe')->where('activo', true)->get();
-        foreach ($jefes as $jefe) {
-            $depts = array_map('trim', explode('/', $jefe->departamento));
-            if (in_array($targetDept, $depts) || in_array($areaName, $depts)) {
-                return $jefe;
-            }
-        }
-
-        return null;
+        return self::where('rol', 'jefe')
+            ->where('activo', true)
+            ->whereHas('areas', function($q) use ($areaId) {
+                $q->where('areas.id', $areaId);
+            })
+            ->first();
     }
 }
 

@@ -109,9 +109,9 @@ html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,Arial;ove
             @endif
 
             @if(Auth::user()->hasPermission('actividades_ver_areas') || Auth::user()->hasPermission('actividades'))
-            <a href="{{ route('actividades.index') }}"
-               class="rh-nav {{ Request::routeIs('actividades.index') ? 'active' : '' }}" style="margin-bottom:8px;">
-                <i class="bi bi-buildings-fill"></i> Regresar a Áreas
+            <a href="{{ route('actividades.area.workspace', 'todas') }}"
+               class="rh-nav {{ Request::routeIs('actividades.area.workspace') ? 'active' : '' }}" style="margin-bottom:8px;">
+                <i class="bi bi-people-fill"></i> Monitorear Equipo
             </a>
             @endif
 
@@ -141,7 +141,7 @@ document.addEventListener('click', function(e) {
     if (link) {
         let url = link.getAttribute('href');
         // Permitir navegación normal para Regresar a Inicio y Regresar a Áreas
-        if (url === '{{ url('/') }}' || url === '{{ route('actividades.index') }}') {
+        if (url === '{{ url('/') }}' || url === '{{ route('actividades.area.workspace', 'todas') }}') {
             return;
         }
 

@@ -90,6 +90,12 @@ class ActividadesImprevistasController extends Controller
 
         $data = $request->all();
 
+        if ($request->input('tiene_prioridad') === 'si') {
+            $data['prioridad'] = $request->input('prioridad') ?: 'media';
+        } else {
+            $data['prioridad'] = null;
+        }
+
         if (empty($data['horas_invertidas'])) {
             $data['horas_invertidas'] = 0;
         }
@@ -199,7 +205,8 @@ class ActividadesImprevistasController extends Controller
             'dependencia_motivo',
             'observaciones',
             'observaciones_imp',
-            'dirigido_a_id'
+            'dirigido_a_id',
+            'prioridad'
         ];
 
         $inputData = $request->only($allowedKeys);
@@ -212,6 +219,14 @@ class ActividadesImprevistasController extends Controller
         foreach ($inputData as $key => $val) {
             if (!is_null($val) && $val !== '') {
                 $data[$key] = $val;
+            }
+        }
+
+        if ($request->has('tiene_prioridad')) {
+            if ($request->input('tiene_prioridad') === 'si') {
+                $data['prioridad'] = $request->input('prioridad') ?: 'media';
+            } else {
+                $data['prioridad'] = null;
             }
         }
 

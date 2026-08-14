@@ -174,15 +174,19 @@
                     </div>
 
                     <!-- Prioridad -->
-                    <div style="margin-bottom: 16px;">
-                        <label style="font-weight: 800; font-size: 13px; color: #166534; display: block; margin-bottom: 6px;">Prioridad *</label>
-                        <select name="prioridad" id="crear_prioridad" required style="width: 100%; padding: 9px; border: 2px solid #15803d; border-radius: 8px; background: white; font-weight: 700; color: #166534;">
-                            <option value="" disabled selected>-- Selecciona Prioridad * --</option>
-                            <option value="baja">Baja</option>
-                            <option value="media">Media</option>
-                            <option value="alta">Alta</option>
-                            <option value="urgente">Urgente</option>
-                        </select>
+                    <div style="margin-bottom: 16px; background: rgba(255,255,255,0.4); padding: 12px; border-radius: 8px; border: 1.5px dashed #15803d;" id="crear_prioridad_container">
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; color: #166534; cursor: pointer; margin-bottom: 8px; user-select: none;">
+                            <input type="checkbox" name="tiene_prioridad" id="crear_tiene_prioridad" value="si" onchange="toggleTienePrioridadCrear(this.checked)" style="accent-color: #15803d; width: 16px; height: 16px;">
+                            ¿Tiene prioridad la actividad?
+                        </label>
+                        <div id="crear_prioridad_select_wrapper" style="display: none;">
+                            <select name="prioridad" id="crear_prioridad" style="width: 100%; padding: 9px; border: 2px solid #15803d; border-radius: 8px; background: white; font-weight: 700; color: #166534;">
+                                <option value="media" selected>Media</option>
+                                <option value="baja">Baja</option>
+                                <option value="alta">Alta</option>
+                                <option value="urgente">Urgente</option>
+                            </select>
+                        </div>
                     </div>
 
                     <!-- 5. PREGUNTA: ¿Tiene plazo la actividad? -->
@@ -788,14 +792,19 @@
                             <option value="atrasada">Atrasada</option>
                         </select>
                     </div>
-                    <div>
-                        <label style="font-weight: 800; font-size: 13px; color: #334155; display: block; margin-bottom: 6px;">Prioridad</label>
-                        <select name="prioridad" id="edit_prioridad" style="width: 100%; padding: 10px; border: 2px solid #15803d; border-radius: 8px; background: white; font-weight: 700; color: #1e293b;">
-                            <option value="baja">Baja</option>
-                            <option value="media">Media</option>
-                            <option value="alta">Alta</option>
-                            <option value="urgente">Urgente</option>
-                        </select>
+                    <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1.5px dashed #cbd5e1;" id="edit_prioridad_container">
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; color: #334155; cursor: pointer; margin-bottom: 8px; user-select: none;">
+                            <input type="checkbox" name="tiene_prioridad" id="edit_tiene_prioridad" value="si" onchange="toggleTienePrioridadEditar(this.checked)" style="accent-color: #15803d; width: 16px; height: 16px;">
+                            ¿Tiene prioridad?
+                        </label>
+                        <div id="edit_prioridad_select_wrapper" style="display: none;">
+                            <select name="prioridad" id="edit_prioridad" style="width: 100%; padding: 10px; border: 2px solid #15803d; border-radius: 8px; background: white; font-weight: 700; color: #1e293b;">
+                                <option value="media" selected>Media</option>
+                                <option value="baja">Baja</option>
+                                <option value="alta">Alta</option>
+                                <option value="urgente">Urgente</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1224,6 +1233,52 @@
     </div>
 </div>
 
+<!-- ============================================== -->
+<!-- MODAL: DAR SEGUIMIENTO A LA ACTIVIDAD -->
+<!-- ============================================== -->
+<div id="modalDarSeguimiento" class="rh-modal">
+    <div class="rh-modal-content" style="max-width: 500px; background: #ffffff; border: 3px solid #8b5cf6; border-radius: 12px; box-shadow: 0 10px 25px rgba(139,92,246,0.25); padding: 22px;">
+        <span class="rh-modal-close" onclick="cerrarModal('modalDarSeguimiento')">&times;</span>
+        
+        <div style="margin-bottom: 16px;">
+            <h2 style="margin: 0 0 6px 0; color: #6d28d9; font-size: 19px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-calendar2-check-fill" style="color: #8b5cf6;"></i> Programar Seguimiento
+            </h2>
+            <p id="seguimientoTituloText" style="margin: 0; font-size: 13px; color: #475569; font-weight: 700;">Título de la actividad</p>
+        </div>
+
+        <form action="" method="POST" id="formDarSeguimiento" onsubmit="guardarSeguimientoActividad(event)">
+            @csrf
+            <input type="hidden" name="tipo_actividad" id="seguimiento_tipo_actividad" value="asignada">
+
+            <!-- FECHA DEL PRÓXIMO SEGUIMIENTO -->
+            <div style="margin-bottom: 16px;">
+                <label style="font-weight: 800; font-size: 13px; color: #6d28d9; display: block; margin-bottom: 6px;">
+                    ¿Para qué fecha se programará continuar? *
+                </label>
+                <input type="date" name="fecha_seguimiento" id="input_seguimiento_fecha" required value="{{ now()->addDay()->format('Y-m-d') }}" min="{{ now()->format('Y-m-d') }}"
+                       style="width: 100%; padding: 10px; border: 2px solid #8b5cf6; border-radius: 8px; font-family: inherit; font-weight: 600; color: #1e293b;">
+            </div>
+
+            <!-- MOTIVO U OBSERVACIONES -->
+            <div style="margin-bottom: 18px;">
+                <label style="font-weight: 800; font-size: 13px; color: #6d28d9; display: block; margin-bottom: 6px;">
+                    Motivo / Observaciones del Seguimiento *
+                </label>
+                <textarea name="comentario" id="input_seguimiento_comentario" rows="3" required placeholder="Indica el avance realizado y qué falta para continuar..."
+                          style="width: 100%; padding: 10px; border: 2px solid #8b5cf6; border-radius: 8px; font-family: inherit; box-sizing: border-box; background: white; font-weight: 500; color: #1e293b;"></textarea>
+            </div>
+
+            <div style="text-align: right; border-top: 1.5px dashed #cbd5e1; padding-top: 14px;">
+                <button type="button" class="btn-ver" style="background: #64748b; color: white; margin-right: 8px; font-weight: 700; padding: 9px 16px; border-radius: 6px;" onclick="cerrarModal('modalDarSeguimiento')">Cancelar</button>
+                <button type="submit" class="btn-form" id="btnSubmitSeguimiento" style="background: #8b5cf6; color: white; padding: 9px 20px; font-size: 13px; font-weight: 800; border-radius: 6px; box-shadow: 0 4px 6px rgba(139,92,246,0.25);">
+                    <i class="bi bi-calendar2-check-fill me-1"></i> Programar Seguimiento
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- JAVASCRIPT GLOBAL DEL MÓDULO DE ACTIVIDADES -->
 <script>
 window.APP_BASE_URL = "{{ url('/') }}";
@@ -1241,9 +1296,11 @@ document.addEventListener('DOMContentLoaded', function() {
             let titulo = document.getElementById('crear_titulo')?.value.trim();
             let descripcion = document.getElementById('crear_descripcion')?.value.trim();
             let empleado = document.getElementById('crear_empleado_id')?.value;
+            let tienePrioridad = document.getElementById('crear_tiene_prioridad')?.checked;
             let prioridad = document.getElementById('crear_prioridad')?.value;
+            let prioridadValida = !tienePrioridad || (prioridad && prioridad !== '');
 
-            if (!titulo || !descripcion || !empleado || (tipo === 'asignada' && !prioridad)) {
+            if (!titulo || !descripcion || !empleado || (tipo === 'asignada' && !prioridadValida)) {
                 e.preventDefault();
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
@@ -1254,7 +1311,7 @@ document.addEventListener('DOMContentLoaded', function() {
                               (!titulo ? '<li>• Título de la actividad *</li>' : '') +
                               (!descripcion ? '<li>• Descripción de la actividad *</li>' : '') +
                               (!empleado ? '<li>• Empleado asignado *</li>' : '') +
-                              ((tipo === 'asignada' && !prioridad) ? '<li>• Prioridad * (Selecciona una prioridad)</li>' : '') +
+                              ((tipo === 'asignada' && !prioridadValida) ? '<li>• Prioridad * (Selecciona una prioridad)</li>' : '') +
                               '</ul>',
                         confirmButtonColor: '#15803d',
                         confirmButtonText: 'Entendido, completar campos'
@@ -2466,7 +2523,25 @@ function openEditModalFromRow(btn, event) {
         if (document.getElementById('crear_descripcion')) document.getElementById('crear_descripcion').value = dataset.descripcion || '';
         if (document.getElementById('crear_acciones_realizadas')) document.getElementById('crear_acciones_realizadas').value = dataset.acciones || '';
         if (document.getElementById('crear_observaciones')) document.getElementById('crear_observaciones').value = dataset.observaciones || '';
-        if (document.getElementById('crear_prioridad')) document.getElementById('crear_prioridad').value = dataset.prioridad || 'media';
+        let priorityVal = dataset.prioridad;
+        let tienePrioInput = document.getElementById('crear_tiene_prioridad');
+        if (tienePrioInput) {
+            if (priorityVal && priorityVal !== '' && priorityVal !== 'sin_prioridad' && priorityVal !== 'null') {
+                tienePrioInput.checked = true;
+                toggleTienePrioridadCrear(true);
+                if (document.getElementById('crear_prioridad')) {
+                    document.getElementById('crear_prioridad').value = priorityVal;
+                }
+            } else {
+                tienePrioInput.checked = false;
+                toggleTienePrioridadCrear(false);
+                if (document.getElementById('crear_prioridad')) {
+                    document.getElementById('crear_prioridad').value = 'media';
+                }
+            }
+        } else {
+            if (document.getElementById('crear_prioridad')) document.getElementById('crear_prioridad').value = dataset.prioridad || 'media';
+        }
         if (document.getElementById('crear_dirigido_a_id')) document.getElementById('crear_dirigido_a_id').value = dataset.dirigido || '';
         if (document.getElementById('crear_fecha_inicio')) document.getElementById('crear_fecha_inicio').value = dataset.fechainicio || '';
         if (document.getElementById('crear_fecha_fin')) document.getElementById('crear_fecha_fin').value = dataset.fechafin || '';
@@ -2980,4 +3055,110 @@ document.addEventListener('DOMContentLoaded', function() {
         setupAutoNumbering(id);
     });
 });
+
+function toggleTienePrioridadCrear(checked) {
+    let wrapper = document.getElementById('crear_prioridad_select_wrapper');
+    let select = document.getElementById('crear_prioridad');
+    if (wrapper) wrapper.style.display = checked ? 'block' : 'none';
+    if (select) select.required = checked;
+}
+
+function toggleTienePrioridadEditar(checked) {
+    let wrapper = document.getElementById('edit_prioridad_select_wrapper');
+    let select = document.getElementById('edit_prioridad');
+    if (wrapper) wrapper.style.display = checked ? 'block' : 'none';
+    if (select) select.required = checked;
+}
+
+function openSeguimientoModalFromRow(btn, event, preLoadedDataset = null) {
+    if (event) { event.preventDefault(); event.stopPropagation(); }
+    let dataset = preLoadedDataset;
+    if (!dataset && btn) {
+        let row = btn.closest('tr') || btn.closest('.tbl-row-mias') || btn.closest('.tbl-row-gen');
+        dataset = row ? row.dataset : null;
+    }
+    if (!dataset) return;
+
+    let id = dataset.id;
+    let tipo = dataset.tipo || 'asignada';
+    let titulo = dataset.titulo || 'Actividad';
+
+    let baseUrl = window.APP_BASE_URL || '';
+    let form = document.getElementById('formDarSeguimiento');
+    if (form) {
+        form.action = `${baseUrl}/actividades/${id}/dar-seguimiento`;
+    }
+
+    let titleText = document.getElementById('seguimientoTituloText');
+    if (titleText) titleText.innerText = titulo;
+
+    let tipoInput = document.getElementById('seguimiento_tipo_actividad');
+    if (tipoInput) tipoInput.value = tipo;
+
+    let comment = document.getElementById('input_seguimiento_comentario');
+    if (comment) comment.value = '';
+
+    let dateInput = document.getElementById('input_seguimiento_fecha');
+    if (dateInput) {
+        let tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        let tomorrowStr = tomorrow.toISOString().split('T')[0];
+        dateInput.value = tomorrowStr;
+    }
+
+    abrirModal('modalDarSeguimiento');
+}
+
+function openSeguimientoModalFromDetalle() {
+    if (!window.currentDetailDataset) return;
+    cerrarModal('modalVerDetalle');
+    openSeguimientoModalFromRow(null, null, window.currentDetailDataset);
+}
+
+function guardarSeguimientoActividad(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    let form = document.getElementById('formDarSeguimiento');
+    if (!form) return;
+
+    let comment = document.getElementById('input_seguimiento_comentario');
+    if (comment && !comment.value.trim()) {
+        alert('Por favor especifica el motivo del seguimiento.');
+        comment.focus();
+        return;
+    }
+
+    let submitBtn = document.getElementById('btnSubmitSeguimiento');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Guardando...'; }
+
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: new FormData(form)
+    })
+    .then(async r => {
+        let contentType = r.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            let data = await r.json();
+            if (r.ok && data.success) {
+                cerrarTodosLosModales();
+                window.location.reload();
+            } else {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="bi bi-calendar2-check-fill me-1"></i> Programar Seguimiento'; }
+                alert(data.message || 'Ocurrió un error al registrar el seguimiento.');
+            }
+        } else {
+            cerrarTodosLosModales();
+            window.location.reload();
+        }
+    })
+    .catch(err => {
+        console.error("Error al registrar seguimiento:", err);
+        if (submitBtn) { submitBtn.disabled = false; }
+        form.submit();
+    });
+}
 </script>

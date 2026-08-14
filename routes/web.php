@@ -36,6 +36,17 @@ Route::middleware(['auth'])->group(function () {
         return view('inicio');
     })->name('inicio');
 
+    // Ruta dedicada para el Organigrama Jerárquico
+    Route::get('organigrama', function () {
+        $usersForOrganigrama = \App\Models\User::with(['area', 'areas', 'subordinados'])
+            ->where('activo', true)
+            ->where('rol', '!=', 'admin')
+            ->get();
+        return view('organigrama', compact('usersForOrganigrama'));
+    })->name('organigrama');
+
+
+
     // Ruta temporal para limpiar caché de vistas (puedes borrarla después)
     Route::get('/limpiar-cache-vistas', function() {
         \Illuminate\Support\Facades\Artisan::call('view:clear');
@@ -118,11 +129,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('rutinas/{id}/ejecutar', [RutinasController::class, 'ejecutar'])->name('rutinas.ejecutar');
         Route::post('rutinas/{id}/set-ejecuciones', [RutinasController::class, 'setEjecuciones'])->name('rutinas.set_ejecuciones');
 
-        Route::get('actividades/area/select/{id}', [ActividadesController::class, 'selectArea'])->name('actividades.area.select');
+
         Route::put('actividades/{id}/estado', [ActividadesController::class, 'actualizarEstado'])->name('actividades.estado');
         Route::get('actividades/area/{id}', [ActividadesController::class, 'areaWorkspace'])->name('actividades.area.workspace');
-        Route::get('actividades-resumen', [ActividadesController::class, 'resumen'])->name('actividades.resumen');
-        Route::post('actividades/{id}/aprobar', [ActividadesController::class, 'aprobarRapido'])->name('actividades.aprobar');
+         Route::get('actividades-resumen', [ActividadesController::class, 'resumen'])->name('actividades.resumen');
+         Route::post('actividades/{id}/dar-seguimiento', [ActividadesController::class, 'darSeguimiento'])->name('actividades.darSeguimiento');
+         Route::post('actividades/{id}/aprobar', [ActividadesController::class, 'aprobarRapido'])->name('actividades.aprobar');
         Route::post('actividades-imprevistas/{id}/aprobar', [ActividadesImprevistasController::class, 'aprobarRapido'])->name('actividades-imprevistas.aprobar');
         Route::post('actividades/{id}/reabrir', [ActividadesController::class, 'reabrirRapido'])->name('actividades.reabrir');
         Route::post('actividades-imprevistas/{id}/reabrir', [ActividadesImprevistasController::class, 'reabrirRapido'])->name('actividades-imprevistas.reabrir');

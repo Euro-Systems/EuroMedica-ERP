@@ -302,7 +302,9 @@ function cerrarModalPDF() {
     }
 }
 
+let generandoPDF = false;
 function generarPDF(sinObservaciones = false) {
+    if (generandoPDF) return;
     let observaciones = '';
     
     if (sinObservaciones) {
@@ -315,9 +317,27 @@ function generarPDF(sinObservaciones = false) {
         }
     }
 
+    generandoPDF = true;
+    let btnSin = document.querySelector('#modalDescargaPDF button[onclick="generarPDF(true)"]');
+    let btnCon = document.querySelector('#modalDescargaPDF button[onclick="generarPDF(false)"]');
+    if (btnSin) btnSin.disabled = true;
+    if (btnCon) {
+        btnCon.disabled = true;
+        btnCon.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Generando...';
+    }
+
     let finalUrl = urlDescargaPDF + (urlDescargaPDF.includes('?') ? '&' : '?') + 'observaciones_pdf=' + encodeURIComponent(observaciones);
     window.open(finalUrl, '_blank');
     cerrarModalPDF();
+
+    setTimeout(() => {
+        generandoPDF = false;
+        if (btnSin) btnSin.disabled = false;
+        if (btnCon) {
+            btnCon.disabled = false;
+            btnCon.innerHTML = '<i class="bi bi-download me-1"></i> Generar PDF';
+        }
+    }, 3000);
 }
 </script>
 

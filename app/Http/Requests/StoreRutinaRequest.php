@@ -47,9 +47,10 @@ class StoreRutinaRequest extends FormRequest
 
     protected function passedValidation(): void
     {
-        // Defaults para campos eliminados del formulario
+        $prioridad = ($this->input('tiene_prioridad') === 'si') ? ($this->prioridad ?? 'media') : null;
+
         $this->merge([
-            'prioridad' => $this->prioridad ?? 'media',
+            'prioridad' => $prioridad,
             'impacto'   => $this->impacto   ?? 'Ninguno',
             'frecuencia' => $this->frecuencia ?? 'diaria',
             'veces_al_dia' => $this->veces_al_dia ? max(1, intval($this->veces_al_dia)) : 1,

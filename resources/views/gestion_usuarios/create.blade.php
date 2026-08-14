@@ -147,13 +147,13 @@
                             <label class="form-label fw-bold text-dark">Departamentos a cargo (Jefe)</label>
                             <p class="text-muted small">Selecciona los departamentos de los que este usuario será responsable (puedes marcar varios).</p>
                             <div class="row bg-light p-3 rounded border border-light-subtle mb-3">
-                                @foreach(['TI', 'ADD', 'MKT', 'Recursos Humanos', 'ADE', 'Nómina', 'Enfermería', 'Operaciones', 'Administración'] as $dep)
+                                @foreach($areas as $area)
                                     <div class="col-md-4 mb-2">
                                         <div class="form-check">
-                                            <input class="form-check-input dept-checkbox" type="checkbox" name="departamentos_jefe[]" value="{{ $dep }}" id="dept_{{ str_replace(' ', '_', $dep) }}" onchange="filterSubordinadosByDept()"
-                                                {{ is_array(old('departamentos_jefe')) && in_array($dep, old('departamentos_jefe')) ? 'checked' : '' }}>
-                                            <label class="form-check-label fw-semibold" for="dept_{{ str_replace(' ', '_', $dep) }}">
-                                                {{ $dep }}
+                                            <input class="form-check-input dept-checkbox" type="checkbox" name="departamentos_jefe[]" value="{{ $area->id }}" id="dept_{{ $area->id }}" onchange="filterSubordinadosByDept()" data-nombre="{{ $area->nombre }}"
+                                                {{ is_array(old('departamentos_jefe')) && in_array($area->id, old('departamentos_jefe')) ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-semibold" for="dept_{{ $area->id }}">
+                                                {{ $area->nombre }}
                                             </label>
                                         </div>
                                     </div>
@@ -524,7 +524,7 @@
 
         function filterSubordinadosByDept() {
             const checkedDepts = Array.from(document.querySelectorAll('.dept-checkbox:checked'))
-                                    .map(cb => cb.value.trim().toLowerCase());
+                                    .map(cb => (cb.getAttribute('data-nombre') || cb.value).trim().toLowerCase());
 
             const items = document.querySelectorAll('.subordinado-item');
             let visibleCount = 0;

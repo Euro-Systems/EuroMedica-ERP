@@ -26,7 +26,9 @@ class Rutina extends Model
         'dependencia_motivo',
         'observaciones',
         'comentarios_dirigido',
-        'porcentaje_avance'
+        'porcentaje_avance',
+        'en_seguimiento',
+        'fecha_seguimiento'
     ];
 
     public function empleado()

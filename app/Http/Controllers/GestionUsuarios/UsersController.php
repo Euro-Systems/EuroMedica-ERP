@@ -89,6 +89,7 @@ class UsersController extends Controller
             'jefe_id' => 'nullable|exists:users,id',
             'area_id' => 'nullable|exists:areas,id',
             'departamentos_jefe' => 'nullable|array',
+            'departamentos_jefe.*' => 'exists:areas,id',
         ]);
 
         $rol = $request->rol;
@@ -105,7 +106,9 @@ class UsersController extends Controller
 
         // Determinar departamento y jefe según el rol
         if ($rol === 'jefe') {
-            $departamento = implode(' / ', $request->input('departamentos_jefe', []));
+            $areaIds = $request->input('departamentos_jefe', []);
+            $areaNames = Area::whereIn('id', $areaIds)->pluck('nombre')->toArray();
+            $departamento = implode(' / ', $areaNames);
             $area_id = null; // Un jefe no tiene una sola área única
         } else if ($rol === 'admin') {
             $departamento = 'Administración';
@@ -162,6 +165,9 @@ class UsersController extends Controller
         ]);
 
         if ($rol === 'jefe') {
+            // Sincronizar tabla pivote area_user
+            $newUser->areas()->sync($request->input('departamentos_jefe', []));
+
             // Desvincular a los antiguos (en este caso es nuevo jefe, pero por consistencia)
             User::where('jefe_id', $newUser->id)->update(['jefe_id' => null]);
             // Reconectar a los seleccionados manualmente si es que hay
@@ -230,6 +236,7 @@ class UsersController extends Controller
             'jefe_id' => 'nullable|exists:users,id',
             'area_id' => 'nullable|exists:areas,id',
             'departamentos_jefe' => 'nullable|array',
+            'departamentos_jefe.*' => 'exists:areas,id',
         ]);
 
         $rol = $request->rol;
@@ -245,7 +252,9 @@ class UsersController extends Controller
 
         // Determinar departamento y jefe según el rol
         if ($rol === 'jefe') {
-            $departamento = implode(' / ', $request->input('departamentos_jefe', []));
+            $areaIds = $request->input('departamentos_jefe', []);
+            $areaNames = Area::whereIn('id', $areaIds)->pluck('nombre')->toArray();
+            $departamento = implode(' / ', $areaNames);
             $area_id = null;
         } else if ($rol === 'admin') {
             $departamento = 'Administración';
@@ -302,6 +311,9 @@ class UsersController extends Controller
 
         // Actualizar subordinados si es que aplica
         if ($rol === 'jefe') {
+            // Sincronizar tabla pivote area_user
+            $user->areas()->sync($request->input('departamentos_jefe', []));
+
             // Desvincular a los antiguos
             User::where('jefe_id', $user->id)->update(['jefe_id' => null]);
             // Reconectar a los seleccionados

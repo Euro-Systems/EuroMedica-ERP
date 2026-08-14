@@ -54,8 +54,11 @@
     <div style="position: absolute; top: 25px; right: 25px; text-align: right;">
         <div class="fw-semibold text-dark" style="font-size: 0.95rem;">{{ Auth::user()->name }}</div>
         <div class="text-muted" style="font-size: 0.8rem; margin-top: -2px;">{{ Auth::user()->departamento ?? 'Usuario' }}</div>
-        <div style="margin-top: 6px;">
-            <form method="POST" action="{{ route('logout') }}" style="display: inline;">
+        <div style="margin-top: 8px; display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
+            <a href="{{ route('organigrama') }}" class="btn btn-sm btn-outline-primary" style="padding: 2px 10px; font-size: 0.8rem; border-radius: 6px; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center;">
+                <i class="bi bi-diagram-3-fill me-1"></i> Organigrama
+            </a>
+            <form method="POST" action="{{ route('logout') }}" style="display: inline; margin: 0;">
                 @csrf
                 <button type="submit" class="btn btn-sm btn-outline-danger" style="padding: 2px 10px; font-size: 0.8rem; border-radius: 6px;">
                     Cerrar Sesión
@@ -159,7 +162,7 @@
             <div class="card card-menu card-morado h-100">
                 <div class="card-body">
                     <h1>🖥️</h1>
-                    <h4 class="mt-3">Registro medicos</h4>
+                    <h4 class="mt-3">Registro médicos</h4>
                 </div>
             </div>
         </a>
@@ -195,5 +198,3 @@
     @endif
 
 </div>
-
-@endsection

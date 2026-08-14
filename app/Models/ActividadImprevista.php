@@ -31,7 +31,10 @@ class ActividadImprevista extends Model
         'dependencia_motivo',
         'comentarios_dirigido',
         'colaboradores_texto',
-        'historial_avances'
+        'historial_avances',
+        'prioridad',
+        'en_seguimiento',
+        'fecha_seguimiento'
     ];
 
     public function empleado()
