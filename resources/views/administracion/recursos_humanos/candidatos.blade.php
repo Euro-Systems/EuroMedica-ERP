@@ -16,7 +16,7 @@
 <th>Puesto Deseado</th>
 <th>Nivel Educativo</th>
 <th>Fecha Postulación</th>
-<th>Estatus</th>
+${filtroCandidatoTipo === 'Practicante' ? '<th>Horas Requeridas</th>' : '<th>Estatus</th>'}
 <th>Calificación</th>
 <th>Acciones</th>
 </tr>
@@ -28,7 +28,10 @@ ${filtrados.map(c => `
 <td>${c.puesto_deseado}</td>
 <td>${c.nivel_educativo}</td>
 <td>${formatearFecha(c.fecha_postulacion)}</td>
-<td><span style="font-weight:bold;color:${c.estatus_reclutamiento==='Contratado'?'green':c.estatus_reclutamiento==='Rechazado'?'red':'#ca8a04'}">${c.estatus_reclutamiento}</span></td>
+${filtroCandidatoTipo === 'Practicante' 
+    ? `<td>${c.horas_requeridas || '480'}</td>`
+    : `<td><span style="font-weight:bold;color:${c.estatus_reclutamiento==='Contratado'?'green':c.estatus_reclutamiento==='Rechazado'?'red':'#ca8a04'}">${c.estatus_reclutamiento}</span></td>`
+}
 <td>${"⭐".repeat(c.calificacion)}${"☆".repeat(5-c.calificacion)}</td>
 <td style="text-align:center;"><button class="btn-ver" onclick="seleccionarCandidato(${c.id})">Ver</button></td>
 </tr>

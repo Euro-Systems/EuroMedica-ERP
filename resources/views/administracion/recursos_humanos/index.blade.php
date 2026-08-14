@@ -611,9 +611,10 @@ margin-bottom:5px;
   </div>
 </div>
 
-<!-- Librerías externas: Dynamic Web TWAIN para escaneo y jsPDF para generación de documentos -->
+<!-- Librerías externas: Dynamic Web TWAIN para escaneo, jsPDF y html2canvas para generación de documentos -->
 <script src="https://unpkg.com/dwt/dist/dynamsoft.webtwain.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
 
@@ -662,6 +663,8 @@ let filtroCandidatoTipo="Trabajador";
 let tipoCitaFiltro="Agendadas";
 let filtroMesCita = "";
 let filtroFechaCita = "";
+let filtroNombreCita = "";
+let citasSeleccionadas = [];
 
 /**
  * Obtiene el objeto actualmente seleccionado (sea empleado o practicante)
@@ -981,34 +984,7 @@ function actualizarEvaluacionPsicometricaEnf(prueba, campo, valor) {
     citaSel.evaluacion.enf_psicometricas[prueba][campo] = valor;
 }
 
-function imprimirFichaEnfermeriaPDF() {
-    alert('Función de impresión de Ficha Técnica de Enfermería en desarrollo.');
-}
 
-function seleccionarFormularioEvaluacion(tipo) {
-    if (!citaSel) return;
-    if (!citaSel.evaluacion) citaSel.evaluacion = {};
-    citaSel.evaluacion.tipo = tipo;
-
-    // Ocultar todos los bloques
-    let bloques = ['bloque_form_practicante', 'bloque_form_enfermero', 'bloque_form_medico'];
-    bloques.forEach(id => {
-        let el = document.getElementById(id);
-        if (el) el.style.display = 'none';
-    });
-
-    // Mostrar el seleccionado
-    if (tipo === 'Practicante') {
-        let el = document.getElementById('bloque_form_practicante');
-        if (el) el.style.display = 'block';
-    } else if (tipo === 'Enfermero') {
-        let el = document.getElementById('bloque_form_enfermero');
-        if (el) el.style.display = 'block';
-    } else if (tipo === 'Medico') {
-        let el = document.getElementById('bloque_form_medico');
-        if (el) el.style.display = 'block';
-    }
-}
 
 
 // NAVEGACIÓN ENTRE CASILLAS CON ENTER (SIN GUARDAR AUTOMÁTICAMENTE)
@@ -1433,136 +1409,109 @@ let contenido=document.getElementById("contenido");
 
 // VISTA: AGENDAR CITAS
 if(v==="citas"){
+// Reiniciamos selección múltiple al cambiar de pestaña
+// (Opcional, si queremos mantenerla al cambiar, lo quitamos, pero es mejor limpiar)
+// citasSeleccionadas = []; 
+
 let hoy = new Date().toISOString().split('T')[0];
 
-let filtradas = citas.filter(c=>{
+let filtradas = citas.filter(c => {
+    let fechaSegura = c.fecha || "";
+    let coincideMes = (filtroMesCita === "" || fechaSegura.startsWith(filtroMesCita));
+    let coincideFecha = filtroFechaCita === "" || fechaSegura === filtroFechaCita;
+    let coincideNombre = filtroNombreCita === "" || (c.nombre && c.nombre.toLowerCase().includes(filtroNombreCita.toLowerCase()));
+    
+    let pasaFiltroGlobal = coincideMes && coincideFecha && coincideNombre;
 
     if(tipoCitaFiltro==="Historial"){
-
-        // Filtro por mes (compara si la fecha empieza con YYYY-MM)
-        let coincideMes = (filtroMesCita === "" || c.fecha.startsWith(filtroMesCita));
-        
-        // Filtro por fecha exacta (comparación directa YYYY-MM-DD)
-       // ASÍ DEBE QUEDAR PARA EVITAR EL DESFASE DE UN DÍA
-        let coincideFecha = filtroFechaCita === "" || c.fecha === filtroFechaCita;
-
-        // Retornamos si cumple los estados de historial Y los filtros seleccionados
-        return (c.estado === "Realizada" || c.estado === "No se presentó" || c.estado === "Cancelada") 
-               && coincideMes 
-               && coincideFecha;
-
-        // AQUÍ ESTÁ LA MAGIA: Agregamos "No se presentó" y "Cancelada" al historial
-        return (
-            (c.estado==="Realizada" || c.estado==="No se presentó" || c.estado==="Cancelada" || c.fecha < hoy)
-            &&
-            coincideMes
-            &&
-            coincideFecha
-        );
+        return (c.estado === "No se presentó" || c.estado === "Cancelada") && pasaFiltroGlobal;
     }
 
-    if(tipoCitaFiltro==="Realizadas"){
-        return c.estado==="Realizada";
-    }
-
-    // PARA AGENDADAS: Excluimos las que ya se procesaron
-    return c.estado!=="Realizada" && c.estado!=="No se presentó" && c.estado!=="Cancelada";
+    // PARA AGENDADAS (Activas): Incluye Agendada y Realizada
+    return c.estado !== "No se presentó" && c.estado !== "Cancelada" && pasaFiltroGlobal;
 });
+
 html=`
 <div class="tabs">
-
-<div class="tab ${tipoCitaFiltro==='Agendadas'?'active':''}"
-onclick="tipoCitaFiltro='Agendadas'; mostrar('citas')">
-Citas Agendadas
-</div>
-
-<div class="tab ${tipoCitaFiltro==='Realizadas'?'active':''}"
-onclick="tipoCitaFiltro='Realizadas'; mostrar('citas')">
-Citas Realizadas
-</div>
-
-<div class="tab ${tipoCitaFiltro==='Historial'?'active':''}"
-onclick="tipoCitaFiltro='Historial'; mostrar('citas')">
-Historial
-</div>
+    <div class="tab ${tipoCitaFiltro==='Agendadas'?'active':''}" onclick="tipoCitaFiltro='Agendadas'; citasSeleccionadas=[]; mostrar('citas')">Citas Activas</div>
+    <div class="tab ${tipoCitaFiltro==='Historial'?'active':''}" onclick="tipoCitaFiltro='Historial'; citasSeleccionadas=[]; mostrar('citas')">Historial</div>
 </div>
 
 <div class="rh-card">
-<h2 style="display:flex; justify-content:space-between; align-items:center;">
-    ${tipoCitaFiltro}
-    <button class="btn-ver" style="background:#22c55e; margin:0; padding:4px 8px; font-size:12px; font-weight:normal; border-radius:4px;" onclick="nuevaCita()">+ Nueva Cita</button>
-</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
+        <h2 style="margin:0;">${tipoCitaFiltro === 'Agendadas' ? 'Citas Activas' : 'Historial'}</h2>
+        <div style="display:flex; gap:10px; align-items:center;">
+            ${citasSeleccionadas.length > 0 ? `
+            <button class="btn-ver" style="background:#ef4444; margin:0; padding:6px 12px; font-size:13px; font-weight:normal; border-radius:6px;" onclick="eliminarCitasSeleccionadas()" title="Eliminar seleccionados">
+                <i class="bi bi-trash"></i> Eliminar (${citasSeleccionadas.length})
+            </button>
+            ` : ''}
+            <button class="btn-ver" style="background:#22c55e; margin:0; padding:6px 12px; font-size:13px; font-weight:normal; border-radius:6px;" onclick="nuevaCita()">+ Nueva Cita</button>
+        </div>
+    </div>
 
-${tipoCitaFiltro === 'Historial' ? `
-<div style="display:flex;gap:15px;margin:15px 0;flex-wrap:wrap; background:#f4f6f9; padding:15px; border-radius:8px;">
-    <div>
-        <b>Mes</b><br>
-        <input type="month" value="${filtroMesCita}" onchange="filtroMesCita=this.value;mostrar('citas')">
+    <!-- Buscador global compacto -->
+    <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0; flex-wrap:wrap;">
+        <i class="bi bi-search" style="color:#64748b;"></i>
+        <input type="text" value="${filtroNombreCita}" placeholder="Buscar nombre..." oninput="filtroNombreCita=this.value;filtrarConDelay('citas')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; flex-grow:1; min-width:150px; font-size:13px;">
+        <input type="month" value="${filtroMesCita}" title="Filtrar por Mes" onchange="filtroMesCita=this.value;mostrar('citas')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px;">
+        <input type="date" value="${filtroFechaCita}" title="Filtrar por Fecha Exacta" onchange="filtroFechaCita=this.value;mostrar('citas')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px;">
+        ${(filtroNombreCita || filtroMesCita || filtroFechaCita) ? `<button class="btn-ver" style="background:#6b7280; padding:5px 10px; margin:0; font-size:13px; border-radius:4px;" onclick="filtroNombreCita=''; filtroMesCita=''; filtroFechaCita=''; mostrar('citas');" title="Limpiar Filtros"><i class="bi bi-x-circle"></i></button>` : ''}
     </div>
-    <div>
-        <b>Fecha exacta</b><br>
-        <input type="date" value="${filtroFechaCita}" onchange="filtroFechaCita=this.value;mostrar('citas')">
-    </div>
-    <div>
-        <br>
-        <button class="btn-ver" style="background:#6b7280; padding:6px 12px;" 
-        onclick="filtroMesCita=''; filtroFechaCita=''; mostrar('citas');">Limpiar</button>
-    </div>
-</div>
-` : ''}
-<table class="rh-table">
-<thead>
-<tr>
-<th>Nombre</th>
-<th>Puesto</th>
-<th>Tipo</th>
-<th>Fecha Cita</th>
-<th>Hora</th>
-<th>Entrevistador RH</th>
-<th>Jefe Depto.</th>
-<th>Estado</th>
-</tr>
-</thead>
-<tbody>
-${filtradas
-.sort((a,b)=>
-new Date(a.fecha+" "+(a.hora||"00:00"))
--
-new Date(b.fecha+" "+(b.hora||"00:00"))
-)
-.map((ci,idx)=>{
-    // Calcular color de urgencia SOLO para citas agendadas
-    let rowStyle = 'cursor:pointer;';
-    if(tipoCitaFiltro === 'Agendadas') {
-        let hoy = new Date();
-        hoy.setHours(0,0,0,0);
-        let fechaCita = new Date(ci.fecha + 'T' + (ci.hora || '00:00'));
-        let diffMs = fechaCita - hoy;
-        let diffDias = diffMs / (1000 * 60 * 60 * 24);
-        if(diffDias <= 1) {
-            rowStyle = 'cursor:pointer; background:#fef2f2; border-left:4px solid #dc2626;';
-        } else if(diffDias <= 2) {
-            rowStyle = 'cursor:pointer; background:#fefce8; border-left:4px solid #ca8a04;';
-        } else {
-            rowStyle = 'cursor:pointer; background:#f0fdf4; border-left:4px solid #16a34a;';
-        }
-    }
-    return `
-<tr style="${rowStyle}" onclick="seleccionarCita('${ci.id}')">
-<td>${ci.nombre}</td>
-<td>${ci.puesto}</td>
-<td>${ci.tipo}</td>
-<td>${formatearFecha(ci.fecha)}</td>
-<td>${ci.hora}</td>
-<td>${ci.entrevistador_rh}</td>
-<td>${ci.jefe_depto||'N/A'}</td>
-<td><span style="font-weight:bold;color:${ci.estado==='Realizada'?'green':ci.estado==='Cancelada'?'red':'#ca8a04'}">${ci.estado}</span></td>
-</tr>
-`;
-}).join('')}
-</tbody>
-</table>
-${filtradas.length===0 ? '<div style="text-align:center;padding:20px;color:#6b7280;">No hay registros en esta categoría.</div>' : ''}
+
+    <table class="rh-table">
+        <thead>
+            <tr>
+                <th style="width:40px; text-align:center;">
+                    <input type="checkbox" onchange="toggleSeleccionarTodasCitas(this.checked)" ${citasSeleccionadas.length === filtradas.length && filtradas.length > 0 ? 'checked' : ''} style="cursor:pointer;">
+                </th>
+                <th>Nombre</th>
+                <th>Puesto</th>
+                <th>Tipo</th>
+                <th>Celular</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Entrevistador</th>
+                <th>Validador</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${filtradas
+            .sort((a,b)=> (a.nombre || "").localeCompare(b.nombre || ""))
+            .map((ci)=>{
+                let isChecked = citasSeleccionadas.includes(ci.id) ? 'checked' : '';
+                let colorStyle = '';
+                let hoyStr = new Date().toISOString().split('T')[0];
+                if(ci.estado === 'Realizada') colorStyle = 'background-color: rgba(34, 197, 94, 0.15) !important; border-left: 5px solid #22c55e !important;';
+                else if(ci.fecha === hoyStr) colorStyle = 'background-color: rgba(239, 68, 68, 0.15) !important; border-left: 5px solid #ef4444 !important;';
+                else colorStyle = 'background-color: rgba(234, 179, 8, 0.15) !important; border-left: 5px solid #eab308 !important;';
+                
+                return `
+                <tr style="cursor:pointer; ${colorStyle}" onclick="seleccionarCita('${ci.id}')">
+                    <td style="text-align:center; background-color: transparent !important;" onclick="event.stopPropagation()">
+                        <input type="checkbox" ${isChecked} onchange="toggleSeleccionarCita('${ci.id}', this.checked)" style="cursor:pointer;">
+                    </td>
+                    <td style="background-color: transparent !important;">${ci.nombre}</td>
+                    <td style="background-color: transparent !important;">${ci.puesto || '-'}</td>
+                    <td style="background-color: transparent !important;">${ci.tipo || '-'}</td>
+                    <td style="background-color: transparent !important;">${ci.celular || '-'}</td>
+                    <td style="background-color: transparent !important;">${formatearFecha(ci.fecha)}</td>
+                    <td style="background-color: transparent !important;">${ci.hora || '-'}</td>
+                    <td style="background-color: transparent !important;">${ci.entrevistador_rh || '-'}</td>
+                    <td style="background-color: transparent !important;">${ci.jefe_depto || '-'}</td>
+                    <td style="background-color: transparent !important;" onclick="event.stopPropagation()">
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn-ver" style="background:#2563eb; padding:4px 8px; font-size:12px; border-radius:4px;" title="Abrir expediente" onclick="seleccionarCita('${ci.id}')"><i class="bi bi-folder2-open"></i></button>
+                            <button class="btn-ver" style="background:#ef4444; padding:4px 8px; font-size:12px; border-radius:4px;" title="Eliminar cita" onclick="eliminarCitaIndividual('${ci.id}')"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('')}
+        </tbody>
+    </table>
+    ${filtradas.length===0 ? '<div style="text-align:center;padding:20px;color:#6b7280;">No hay registros para mostrar.</div>' : ''}
 </div>`;
 }
 
@@ -2211,8 +2160,39 @@ function guardarNuevoPracticanteDirecto(){
     mostrar('ficha_practicante');
 }
 
-function guardarCambiosFicha(){
+async function guardarCambiosFicha(){
     if(citaSel){ 
+        // Generar PDF Automáticamente si estamos en Entrevista y hay un formulario visible
+        if(citaSel.modo_actual === 'entrevista' && citaSel.evaluacion && citaSel.evaluacion.tipo) {
+            // Mostrar un indicador temporal
+            let oldText = "";
+            let saveBtn = document.querySelector('button[title="Guardar Cambios"]');
+            if(saveBtn) {
+                oldText = saveBtn.innerHTML;
+                saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Generando PDF...';
+                saveBtn.disabled = true;
+            }
+            
+            try {
+                let pdfBase64 = await generarPDFOcultoFicha(citaSel.evaluacion.tipo);
+                if(pdfBase64) {
+                    let docName = `${citaSel.nombre} Ficha tecnica.pdf`;
+                    if(!citaSel.documentos) citaSel.documentos = [];
+                    
+                    let idx = citaSel.documentos.findIndex(d => d.nombre === docName);
+                    if(idx >= 0) citaSel.documentos[idx].url = pdfBase64;
+                    else citaSel.documentos.push({url: pdfBase64, tipo: 'pdf', nombre: docName});
+                }
+            } catch(e) {
+                console.error("Error generando PDF auto:", e);
+            }
+            
+            if(saveBtn) {
+                saveBtn.innerHTML = oldText;
+                saveBtn.disabled = false;
+            }
+        }
+
         let existe = citas.find(c=>c.id==citaSel.id);
         if(!existe) citas.unshift(citaSel); // Sólo empuja si es nueva
     }
@@ -2220,10 +2200,49 @@ function guardarCambiosFicha(){
     guardarBD();
     // Banner verde temporal
     let banner = document.createElement('div');
-    banner.innerHTML = '✅ Cambios guardados';
+    banner.innerHTML = '✔ Cambios guardados y Expediente actualizado';
     banner.style.cssText = 'position:fixed;top:16px;right:16px;background:#22c55e;color:white;padding:12px 20px;border-radius:8px;font-weight:bold;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.2);';
     document.body.appendChild(banner);
-    setTimeout(()=>banner.remove(), 2000);
+    setTimeout(()=>{
+        if(banner.parentNode) banner.parentNode.removeChild(banner);
+    }, 3000);
+    
+    // Cambiar a pestaña Expediente para mostrar el PDF generado
+    if(citaSel) {
+        citaSel.modo_actual = 'expediente';
+        mostrar('ficha_cita');
+    }
+}
+
+async function generarPDFOcultoFicha(tipo) {
+    return new Promise((resolve, reject) => {
+        let elId = tipo === 'Practicante' ? 'bloque_form_practicante' : (tipo === 'Enfermero' ? 'bloque_form_enfermero' : 'bloque_form_medico');
+        let el = document.getElementById(elId);
+        if(!el) return resolve(null);
+        
+        // Desocultar temporalmente si está oculto para que html2canvas lo dibuje
+        let wasHidden = el.style.display === 'none';
+        if(wasHidden) el.style.display = 'block';
+
+        html2canvas(el, { scale: 1, useCORS: true, logging: false }).then(canvas => {
+            if(wasHidden) el.style.display = 'none';
+            
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            // Usamos JPEG para reducir radicalmente el tamaño del string base64 que bloquea la BD
+            const imgData = canvas.toDataURL('image/jpeg', 0.8);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+            
+            resolve(pdf.output('datauristring'));
+        }).catch(err => {
+            if(wasHidden) el.style.display = 'none';
+            resolve(null);
+        });
+    });
 }
 
 function eliminarRegistro(tipo){
@@ -2283,6 +2302,7 @@ function nuevaCita(){
         documentos: []
     };
     citaSel = nuevaCita;
+    citaSel.modo_actual = 'entrevista';
     empSel=null; practSel=null; candSel=null;
     mostrar("ficha_cita");
 }
@@ -2291,7 +2311,11 @@ function seleccionarCita(id){
     citaSel = citas.find(c=>c.id==id);
     empSel=null; practSel=null; candSel=null;
     if (citaSel) {
-        citaSel.modo_actual = 'editar';
+        if (citaSel.estado === 'Realizada') {
+            citaSel.modo_actual = 'expediente';
+        } else {
+            citaSel.modo_actual = 'entrevista';
+        }
     }
     mostrar("ficha_cita");
 }
@@ -2300,37 +2324,13 @@ function cambiarModoVistaCita(modo) {
     if (!citaSel) return;
     citaSel.modo_actual = modo;
     guardarEstadoNavegacionRH('ficha_cita');
-    
-    let vistaEdit = document.getElementById('vista_modo_editar_cita');
-    let vistaEnt = document.getElementById('vista_modo_entrevista_cita') || document.getElementById('vista_modo_empezar_cita');
-    let btnEdit = document.getElementById('btn_modo_editar');
-    let btnEnt = document.getElementById('btn_modo_entrevista') || document.getElementById('btn_modo_empezar');
-    
-    if (vistaEdit && vistaEnt) {
-        if (modo === 'entrevista' || modo === 'empezar') {
-            vistaEdit.style.display = 'none';
-            vistaEnt.style.display = 'block';
-            if (btnEdit) {
-                btnEdit.style.background = 'transparent';
-                btnEdit.style.color = '#ffffff';
-            }
-            if (btnEnt) {
-                btnEnt.style.background = '#16a34a';
-                btnEnt.style.color = '#ffffff';
-            }
-        } else {
-            vistaEdit.style.display = 'block';
-            vistaEnt.style.display = 'none';
-            if (btnEdit) {
-                btnEdit.style.background = '#ffffff';
-                btnEdit.style.color = '#1e3a8a';
-            }
-            if (btnEnt) {
-                btnEnt.style.background = 'transparent';
-                btnEnt.style.color = '#ffffff';
-            }
-        }
-    }
+    mostrar('ficha_cita');
+}
+
+let docNameUploadTarget = "";
+function solicitarArchivoCita(docName) {
+    docNameUploadTarget = docName;
+    document.getElementById('fileUploadCita').click();
 }
 
 function subirArchivoCita(input){
@@ -2343,15 +2343,102 @@ function subirArchivoCita(input){
                 alert("Este archivo es demasiado grande para guardarse localmente.");
                 return;
             }
-            citaSel.documentos = [{
+            if(!citaSel.documentos) citaSel.documentos = [];
+            
+            let name = docNameUploadTarget || file.name;
+            let idx = citaSel.documentos.findIndex(d => d.nombre === name);
+            if(idx >= 0) citaSel.documentos[idx].url = e.target.result;
+            else citaSel.documentos.push({
                 url: e.target.result,
                 tipo: isImage ? 'imagen' : 'pdf',
-                nombre: file.name
-            }];
+                nombre: name
+            });
+            
             guardarBD();
             mostrar("ficha_cita");
+            verDocumento(e.target.result, isImage ? 'imagen' : 'pdf', name);
+            
+            docNameUploadTarget = "";
+            input.value = "";
         };
         reader.readAsDataURL(file);
+    }
+}
+
+let vistaPreviaActual = null;
+function verDocumento(url, tipo, nombre) {
+    vistaPreviaActual = {url, tipo, nombre};
+    
+    let container = document.getElementById('preview_container');
+    let empty = document.getElementById('preview_empty');
+    let title = document.getElementById('preview_title');
+    let actions = document.getElementById('preview_actions');
+    
+    if(!container) return;
+    
+    empty.style.display = 'none';
+    title.innerHTML = `<i class="bi bi-file-earmark-check me-2"></i>${nombre}`;
+    actions.style.display = 'flex';
+    
+    // Remover visualizador anterior si existe
+    let oldViewer = document.getElementById('doc_viewer_elem');
+    if(oldViewer) oldViewer.remove();
+    
+    if(tipo === 'imagen') {
+        let img = document.createElement('img');
+        img.id = 'doc_viewer_elem';
+        img.src = url;
+        img.style.cssText = 'max-width:100%; max-height:100%; object-fit:contain; border-radius:8px;';
+        container.appendChild(img);
+    } else {
+        let iframe = document.createElement('iframe');
+        iframe.id = 'doc_viewer_elem';
+        iframe.src = url;
+        iframe.style.cssText = 'width:100%; height:100%; border:none; border-radius:8px;';
+        container.appendChild(iframe);
+    }
+}
+
+function descargarVistaPrevia() {
+    if(!vistaPreviaActual) return;
+    descargarURL(vistaPreviaActual.url, vistaPreviaActual.nombre);
+}
+
+function imprimirVistaPrevia() {
+    if(!vistaPreviaActual) return;
+    let win = window.open('', '_blank');
+    if(vistaPreviaActual.tipo === 'imagen') {
+        win.document.write(`
+            <html>
+            <head>
+                <title>Imprimir Documento</title>
+                <style>
+                    @page { margin: 0; }
+                    body { margin: 0; padding: 0; text-align: center; background: white; }
+                    img { max-width: 100%; max-height: 99vh; object-fit: contain; display: block; margin: 0 auto; }
+                </style>
+            </head>
+            <body>
+                <img src="${vistaPreviaActual.url}" onload="setTimeout(() => { window.print(); window.close(); }, 300)">
+            </body>
+            </html>
+        `);
+        win.document.close();
+    } else {
+        win.document.write(`
+            <html>
+            <head>
+                <style>body{margin:0;overflow:hidden;}</style>
+            </head>
+            <body>
+                <iframe src="${vistaPreviaActual.url}" style="width:100%; height:100vh; border:none;"></iframe>
+            </body>
+            <script>
+                setTimeout(() => { window.print(); window.close(); }, 800);
+            <\/script>
+            </html>
+        `);
+        win.document.close();
     }
 }
 
@@ -2724,6 +2811,62 @@ function guardarContrato() {
 
 
 // NO debe haber nada más después de esto.
+// Funciones para selección múltiple y eliminación en Citas
+function toggleSeleccionarCita(id, checked) {
+    if(checked) {
+        if(!citasSeleccionadas.includes(id)) citasSeleccionadas.push(id);
+    } else {
+        citasSeleccionadas = citasSeleccionadas.filter(cid => cid !== id);
+    }
+    mostrar('citas');
+}
+
+function toggleSeleccionarTodasCitas(checked) {
+    if(checked) {
+        // Obtener IDs de las citas filtradas actualmente visibles
+        let hoy = new Date().toISOString().split('T')[0];
+        let filtradas = citas.filter(c => {
+            let coincideMes = (filtroMesCita === "" || c.fecha.startsWith(filtroMesCita));
+            let coincideFecha = filtroFechaCita === "" || c.fecha === filtroFechaCita;
+            let coincideNombre = filtroNombreCita === "" || (c.nombre && c.nombre.toLowerCase().includes(filtroNombreCita.toLowerCase()));
+            let pasa = coincideMes && coincideFecha && coincideNombre;
+            if(tipoCitaFiltro==="Historial") return (c.estado === "No se presentó" || c.estado === "Cancelada") && pasa;
+            return c.estado !== "No se presentó" && c.estado !== "Cancelada" && pasa;
+        });
+        citasSeleccionadas = filtradas.map(c => c.id);
+    } else {
+        citasSeleccionadas = [];
+    }
+    mostrar('citas');
+}
+
+function eliminarCitasSeleccionadas() {
+    if(citasSeleccionadas.length === 0) return;
+    if(!confirm(`¿Estás seguro de eliminar ${citasSeleccionadas.length} cita(s)?`)) return;
+    
+    // Filtrar fuera las citas seleccionadas
+    citasSeleccionadas.forEach(id => {
+        let index = citas.findIndex(c => c.id == id);
+        if(index > -1) citas.splice(index, 1);
+    });
+    
+    citasSeleccionadas = [];
+    guardarBD();
+    mostrar('citas');
+}
+
+function eliminarCitaIndividual(id) {
+    if(!confirm(`¿Estás seguro de eliminar esta cita?`)) return;
+    
+    let index = citas.findIndex(c => c.id == id);
+    if(index > -1) {
+        citas.splice(index, 1);
+        citasSeleccionadas = citasSeleccionadas.filter(cid => cid !== id);
+        guardarBD();
+        mostrar('citas');
+    }
+}
+
 // --- CIERRE DE SCRIPT ---
 </script>
 

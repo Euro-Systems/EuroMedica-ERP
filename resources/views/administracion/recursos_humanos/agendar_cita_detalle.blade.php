@@ -3,7 +3,7 @@
 <div class="tab active" onclick="mostrar('ficha_cita')">Detalle de Cita</div>
 </div>
 
-<!-- MODO DE INTERACCIÓN: EDITAR CITA VS ENTREVISTA -->
+<!-- MODO DE INTERACCIÓN: ENTREVISTA VS EXPEDIENTE -->
 <div class="rh-card" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; padding:16px 20px; border-radius:12px; margin-bottom:15px; border:none;">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
         <div>
@@ -14,98 +14,54 @@
         </div>
         
         <!-- BOTONES DE SELECCIÓN DE MODO -->
-        <div style="display:flex; gap:8px; background:rgba(255,255,255,0.15); padding:5px; border-radius:10px; border:1px solid rgba(255,255,255,0.2);">
-            <button type="button" id="btn_modo_editar" class="btn-ver" style="background:${ (!ci.modo_actual || ci.modo_actual==='editar') ? '#ffffff' : 'transparent' }; color:${ (!ci.modo_actual || ci.modo_actual==='editar') ? '#1e3a8a' : '#ffffff' }; font-weight:bold; box-shadow:none; padding:7px 14px;" onclick="cambiarModoVistaCita('editar')">
-                <i class="bi bi-pencil-square me-1"></i> Editar Cita
-            </button>
-            <button type="button" id="btn_modo_entrevista" class="btn-ver" style="background:${ (ci.modo_actual==='entrevista' || ci.modo_actual==='empezar') ? '#16a34a' : 'transparent' }; color:#ffffff; font-weight:bold; box-shadow:none; padding:7px 14px;" onclick="cambiarModoVistaCita('entrevista')">
+        <div style="display:${ !citas.find(c=>c.id==ci.id) ? 'none' : 'flex' }; gap:8px; background:rgba(255,255,255,0.15); padding:5px; border-radius:10px; border:1px solid rgba(255,255,255,0.2);">
+            <button type="button" id="btn_modo_entrevista" class="btn-ver" style="background:${ (!ci.modo_actual || ci.modo_actual==='entrevista') ? '#ffffff' : 'transparent' }; color:${ (!ci.modo_actual || ci.modo_actual==='entrevista') ? '#1e3a8a' : '#ffffff' }; font-weight:bold; box-shadow:none; padding:7px 14px;" onclick="cambiarModoVistaCita('entrevista')">
                 <i class="bi bi-journal-check me-1"></i> Entrevista
             </button>
+            <button type="button" id="btn_modo_expediente" class="btn-ver" style="background:${ (ci.modo_actual==='expediente') ? '#16a34a' : 'transparent' }; color:#ffffff; font-weight:bold; box-shadow:none; padding:7px 14px;" onclick="cambiarModoVistaCita('expediente')">
+                <i class="bi bi-folder2-open me-1"></i> Expediente
+            </button>
         </div>
     </div>
 </div>
 
 <!-- ========================================================= -->
-<!-- VISTA 1: EDITAR CITA (Formulario que se rellenó antes) -->
+<!-- VISTA 1: ENTREVISTA (Datos y Formulario de Evaluación) -->
 <!-- ========================================================= -->
-<div id="vista_modo_editar_cita" style="display: ${ (!ci.modo_actual || ci.modo_actual==='editar') ? 'block' : 'none' };">
-    <div class="ficha-wrap">
-        <div class="col">
-            <div class="rh-card">
-                <h3><i class="bi bi-person-badge me-2"></i>Datos de la Cita</h3>
-                <div class="empleado-grid">
-                    <div><b>Nombre del aspirante</b><input value="${ci.nombre}" onchange="citaSel.nombre=this.value"></div>
-                    <div><b>Puesto deseado</b><input value="${ci.puesto}" onchange="citaSel.puesto=this.value"></div>
-                    <div><b>Sector</b><select onchange="citaSel.tipo=this.value">
-                        <option value="Trabajador" ${ci.tipo==='Trabajador'?'selected':''}>Trabajador</option>
-                        <option value="Practicante" ${ci.tipo==='Practicante'?'selected':''}>Practicante</option>
-                    </select></div>
-                    <div><b>Fecha de cita</b><input type="date" value="${ci.fecha}" onchange="citaSel.fecha=this.value"></div>
-                    <div><b>Hora</b><input type="time" value="${ci.hora}" onchange="citaSel.hora=this.value"></div>
-                    <div><b>Entrevistador RH</b><input value="${ci.entrevistador_rh}" onchange="citaSel.entrevistador_rh=this.value"></div>
-                    <div><b>Jefe Depto.</b><input value="${ci.jefe_depto}" onchange="citaSel.jefe_depto=this.value"></div>
-                    <div><b>Celular</b><input value="${ci.celular}" onchange="citaSel.celular=this.value"></div>
-                    <div><b>Correo</b><input value="${ci.correo}" onchange="citaSel.correo=this.value"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col">
-            <div class="rh-card">
-                <h3><i class="bi bi-sticky me-2"></i>Notas previas</h3>
-                <textarea style="width:100%;height:80px;" onchange="citaSel.notas=this.value" placeholder="Observaciones preliminares...">${ci.notas||''}</textarea>
-            </div>
-            <div class="rh-card">
-                <h3><i class="bi bi-file-earmark-arrow-up me-2"></i>CV Preliminar / Documentación</h3>
-                <button class="btn-ver" onclick="document.getElementById('fileUploadCita').click()" style="background:#2563eb;">
-                    <i class="bi bi-upload me-1"></i> Subir Archivo
-                </button>
-                <input type="file" id="fileUploadCita" style="display:none" onchange="subirArchivoCita(this)">
-                <hr style="margin:12px 0; border:0; border-top:1px solid #e2e8f0;">
-                ${ci.documentos && ci.documentos.length > 0 ? `
-                <div style="display:flex; align-items:center; justify-content:space-between; background:#f8fafc; padding:10px 14px; border:1px solid #e2e8f0; border-radius:8px;">
-                    <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
-                        <i class="bi bi-file-earmark-pdf-fill" style="font-size:22px; color:#ef4444;"></i>
-                        <span style="font-weight:600; font-size:13px; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${ci.documentos[0].nombre||'CV_Preliminar'}">
-                            ${ci.documentos[0].nombre || 'CV_Preliminar.pdf'}
-                        </span>
-                    </div>
-                    <div style="display:flex; gap:6px; flex-shrink:0;">
-                        <button class="btn-ver" style="background:#2563eb; padding:5px 10px; font-size:12px;" onclick="descargarURL('${ci.documentos[0].url}')"><i class="bi bi-download"></i> Descargar</button>
-                        <button class="btn-ver" style="background:#ef4444; padding:5px 10px; font-size:12px;" onclick="eliminarCVCita()"><i class="bi bi-trash"></i></button>
-                    </div>
-                </div>
-                ` : '<p style="color:#6b7280;text-align:center;margin:8px 0;font-size:13px;"><i class="bi bi-info-circle me-1"></i> Sin CV cargado</p>'}
-            </div>
+<div id="vista_modo_entrevista_cita" style="display: ${ (!ci.modo_actual || ci.modo_actual==='entrevista') ? 'block' : 'none' };">
+    <!-- DATOS BÁSICOS PRECARGADOS -->
+    <div class="rh-card" style="margin-bottom: 15px; border-left:4px solid #1e3a8a;">
+        <h3 style="margin:0 0 10px; font-size:15px; color:#1e3a8a;"><i class="bi bi-person-badge me-2"></i>Datos de la Cita</h3>
+        <div class="empleado-grid" style="grid-template-columns: repeat(4, 1fr);">
+            <div><b style="font-size:12px;color:#64748b;">Nombre del aspirante</b><br><input value="${ci.nombre}" onchange="citaSel.nombre=this.value"></div>
+            <div><b style="font-size:12px;color:#64748b;">Puesto deseado</b><br><input value="${ci.puesto}" onchange="citaSel.puesto=this.value"></div>
+            <div><b style="font-size:12px;color:#64748b;">Sector</b><br><select onchange="citaSel.tipo=this.value">
+                <option value="Trabajador" ${ci.tipo==='Trabajador'?'selected':''}>Trabajador</option>
+                <option value="Practicante" ${ci.tipo==='Practicante'?'selected':''}>Practicante</option>
+            </select></div>
+            <div><b style="font-size:12px;color:#64748b;">Entrevistador RH</b><br><input value="${ci.entrevistador_rh}" onchange="citaSel.entrevistador_rh=this.value"></div>
+            <div><b style="font-size:12px;color:#64748b;">Fecha de cita</b><br><input type="date" value="${ci.fecha}" onchange="citaSel.fecha=this.value"></div>
+            <div><b style="font-size:12px;color:#64748b;">Hora</b><br><input type="time" value="${ci.hora}" onchange="citaSel.hora=this.value"></div>
+            <div><b style="font-size:12px;color:#64748b;">Validador</b><br><input value="${ci.jefe_depto}" onchange="citaSel.jefe_depto=this.value"></div>
+            <div><b style="font-size:12px;color:#64748b;">Celular</b><br><input value="${ci.celular}" oninput="this.value=this.value.replace(/[^0-9+ ]/g,'')" onchange="citaSel.celular=this.value"></div>
         </div>
     </div>
-</div>
-
-<!-- ========================================================= -->
-<!-- VISTA 2: ENTREVISTA (Formulario de Evaluación) -->
-<!-- ========================================================= -->
-<div id="vista_modo_entrevista_cita" style="display: ${ (ci.modo_actual==='entrevista' || ci.modo_actual==='empezar') ? 'block' : 'none' };">
-    <div class="rh-card" style="border-left:4px solid #2563eb;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
-            <div>
-                <h3 style="margin:0; font-size:16px; color:#1e3a8a; font-weight:bold; border:none; padding:0;">
-                    <i class="bi bi-journal-text me-2"></i>Elaboración de Cita / Evaluaciones
-                </h3>
-                <small style="color:#64748b;">Selecciona el formulario correspondiente para rellenarlo durante la entrevista</small>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-                <b style="font-size:13px; color:#334155;">Formulario:</b>
-                <select id="select_form_eval_cita" style="padding:7px 12px; border-radius:8px; border:1px solid #cbd5e1; font-weight:bold; font-size:13px; background:#fff;" onchange="seleccionarFormularioEvaluacion(this.value)">
-                    <option value="">-- Seleccionar Formulario --</option>
-                    <option value="Practicante" ${(ci.evaluacion && ci.evaluacion.tipo==='Practicante') || ci.tipo==='Practicante' ? 'selected' : ''}>📋 Practicante (Ficha Técnica)</option>
-                    <option value="Enfermero" ${ci.evaluacion && ci.evaluacion.tipo==='Enfermero' ? 'selected' : ''}>🧑‍⚕️ Enfermería (Ficha Técnica)</option>
-                    <option value="Medico" ${ci.evaluacion && ci.evaluacion.tipo==='Medico' ? 'selected' : ''}>👨‍⚕️ Médico (Ficha Técnica)</option>
-                </select>
-            </div>
-        </div>
+    
+    <div class="rh-card" style="border-left:4px solid #2563eb; display:${ !citas.find(c=>c.id==ci.id) ? 'none' : 'block' }; text-align:center; padding:30px;">
+        <h3 style="margin:0 0 10px; font-size:20px; color:#1e3a8a; font-weight:bold; border:none; padding:0;">
+            <i class="bi bi-journal-text me-2"></i>Selecciona el Formulario de Entrevista
+        </h3>
+        <p style="color:#64748b; font-size:14px; margin-bottom:20px;">Por favor elige el formulario que corresponde al perfil del candidato para comenzar la evaluación.</p>
+        <select id="select_form_eval_cita" style="padding:12px 20px; border-radius:12px; border:2px solid #3b82f6; font-weight:bold; font-size:16px; background:#f0f9ff; color:#1e3a8a; cursor:pointer; width:100%; max-width:400px; text-align:center;" onchange="seleccionarFormularioEvaluacion(this.value)">
+            <option value="">-- Seleccionar Formulario --</option>
+            <option value="Practicante" ${ci.evaluacion && ci.evaluacion.tipo==='Practicante' ? 'selected' : ''}>👨‍🎓 Practicante (Ficha Técnica)</option>
+            <option value="Enfermero" ${ci.evaluacion && ci.evaluacion.tipo==='Enfermero' ? 'selected' : ''}>🩺 Enfermería (Ficha Técnica)</option>
+            <option value="Medico" ${ci.evaluacion && ci.evaluacion.tipo==='Medico' ? 'selected' : ''}>⚕️ Médico (Ficha Técnica)</option>
+        </select>
+    </div>
 
         <!-- BLOQUE FORMULARIO PRACTICANTE -->
-        <div id="bloque_form_practicante" style="display: ${ (ci.evaluacion && ci.evaluacion.tipo==='Practicante') || ci.tipo==='Practicante' ? 'block' : 'none' }; background:#f8fafc; padding:20px; border-radius:10px; border:1px solid #cbd5e1;">
+        <div id="bloque_form_practicante" style="display: ${ (ci.evaluacion && ci.evaluacion.tipo==='Practicante') ? 'block' : 'none' }; background:#f8fafc; padding:20px; border-radius:10px; border:1px solid #cbd5e1;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:2px solid #1e3a8a; padding-bottom:10px;">
                 <div>
                     <h2 style="margin:0; font-size:18px; color:#1e3a8a; font-weight:bold; text-transform:uppercase;">FICHA TÉCNICA DE EVALUACIÓN</h2>
@@ -123,7 +79,6 @@
                 <h4 style="margin:0 0 10px; color:#1e3a8a; font-size:14px; font-weight:bold;">I. DATOS DE CONTROL Y ENTREVISTA</h4>
                 <div class="empleado-grid" style="grid-template-columns: repeat(3, 1fr); gap:10px;">
                     <div><b>Candidato para:</b><input type="text" id="ev_candidato_para" value="${ci.evaluacion?.candidato_para || ci.puesto || ''}" onchange="actualizarEvaluacionCampo('candidato_para', this.value)"></div>
-                    <div><b>Entrevista #:</b><input type="text" id="ev_entrevista_num" value="${ci.evaluacion?.entrevista_num || '1'}" onchange="actualizarEvaluacionCampo('entrevista_num', this.value)"></div>
                     <div><b>Por:</b><input type="text" id="ev_entrevista_por" value="${ci.evaluacion?.entrevista_por || ci.entrevistador_rh || ''}" onchange="actualizarEvaluacionCampo('entrevista_por', this.value)"></div>
                     <div><b>Fecha:</b><input type="date" id="ev_fecha" value="${ci.evaluacion?.fecha || ci.fecha || ''}" onchange="actualizarEvaluacionCampo('fecha', this.value)"></div>
                     <div><b>Disponibilidad:</b><input type="text" id="ev_disponibilidad" value="${ci.evaluacion?.disponibilidad || ''}" placeholder="Ej: Inmediata / Medios tiempos" onchange="actualizarEvaluacionCampo('disponibilidad', this.value)"></div>
@@ -135,7 +90,7 @@
             <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
                 <h4 style="margin:0 0 10px; color:#1e3a8a; font-size:14px; font-weight:bold;">II. DATOS PERSONALES Y FAMILIARES</h4>
                 <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:12px;">
-                    <div><b>Edad:</b><input type="text" id="ev_edad" value="${ci.evaluacion?.edad || ''}" onchange="actualizarEvaluacionCampo('edad', this.value)"></div>
+                    <div><b>Edad:</b><input type="text" id="ev_edad" value="${ci.evaluacion?.edad || ''}" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onchange="actualizarEvaluacionCampo('edad', this.value)"></div>
                     <div><b>A qué se dedica papá:</b><input type="text" id="ev_papa_dedica" value="${ci.evaluacion?.papa_dedica || ''}" onchange="actualizarEvaluacionCampo('papa_dedica', this.value)"></div>
                     <div><b>Vive en:</b><input type="text" id="ev_vive_en" value="${ci.evaluacion?.vive_en || ''}" placeholder="Colonia / Zona" onchange="actualizarEvaluacionCampo('vive_en', this.value)"></div>
                     <div><b>A qué se dedica mamá:</b><input type="text" id="ev_mama_dedica" value="${ci.evaluacion?.mama_dedica || ''}" onchange="actualizarEvaluacionCampo('mama_dedica', this.value)"></div>
@@ -282,16 +237,14 @@
                         </tr>
                     </thead>
                     <tbody>
-                        ${ ['DFH', 'PBL', 'Familia', 'Árbol', 'Casa'].map(prueba => {
-                            let pKey = prueba.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        ${ ['Cleaver', 'Zavic', 'Moss', 'Terman', 'Lüscher', 'Beta', 'Machover', '16PF', 'Dominó', 'HTP'].map(prueba => {
+                            let pKey = 'ev_' + prueba.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                             let pData = ci.evaluacion?.psicometricas?.[pKey] || {};
-                            return `
-                                <tr>
-                                    <td style="font-weight:bold; padding:10px; vertical-align:middle;">${prueba}</td>
-                                    <td style="padding:8px;"><input type="text" value="${pData.tiempo || ''}" placeholder="Ej: 15 min" onchange="actualizarEvaluacionPsicometrica('${pKey}', 'tiempo', this.value)"></td>
-                                    <td style="padding:8px;"><input type="text" style="width:100%; box-sizing:border-box;" value="${pData.obs || ''}" placeholder="Escribe observaciones amplias sobre la prueba ${prueba}..." onchange="actualizarEvaluacionPsicometrica('${pKey}', 'obs', this.value)"></td>
-                                </tr>
-                            `;
+                            return '<tr>'+
+                                '<td style="font-weight:bold; padding:10px; vertical-align:middle;">'+prueba+'</td>'+
+                                '<td style="padding:8px;"><input type="text" value="'+(pData.tiempo || '')+'" placeholder="Ej: 15 min" onchange="actualizarEvaluacionPsicometrica(\''+pKey+'\', \'tiempo\', this.value)"></td>'+
+                                '<td style="padding:8px;"><input type="text" style="width:100%; box-sizing:border-box;" value="'+(pData.obs || '')+'" placeholder="Observaciones de '+prueba+'..." onchange="actualizarEvaluacionPsicometrica(\''+pKey+'\', \'obs\', this.value)"></td>'+
+                            '</tr>';
                         }).join('') }
                     </tbody>
                 </table>
@@ -321,10 +274,9 @@
         <h4 style="margin:0 0 10px; color:#0f766e; font-size:14px; font-weight:bold;">I. DATOS DE CONTROL Y ENTREVISTA</h4>
         <div class="empleado-grid" style="grid-template-columns: repeat(4, 1fr); gap:10px;">
             <div><b>Candidato para:</b><input type="text" id="enf_candidato_para" value="${ci.evaluacion?.enf_candidato_para || ci.puesto || ''}" onchange="actualizarEvaluacionCampo('enf_candidato_para', this.value)"></div>
-            <div><b>Entrevista #:</b><input type="text" id="enf_entrevista_num" value="${ci.evaluacion?.enf_entrevista_num || '1'}" onchange="actualizarEvaluacionCampo('enf_entrevista_num', this.value)"></div>
             <div><b>Por:</b><input type="text" id="enf_por" value="${ci.evaluacion?.enf_por || ci.entrevistador_rh || ''}" onchange="actualizarEvaluacionCampo('enf_por', this.value)"></div>
             <div><b>Fecha:</b><input type="date" id="enf_fecha" value="${ci.evaluacion?.enf_fecha || ci.fecha || ''}" onchange="actualizarEvaluacionCampo('enf_fecha', this.value)"></div>
-            <div><b>Sueldo propuesto:</b><input type="text" id="enf_sueldo_propuesto" value="${ci.evaluacion?.enf_sueldo_propuesto || ''}" placeholder="$" onchange="actualizarEvaluacionCampo('enf_sueldo_propuesto', this.value)"></div>
+            <div><b>Sueldo propuesto:</b><input type="text" id="enf_sueldo_propuesto" value="${ci.evaluacion?.enf_sueldo_propuesto || ''}" placeholder="$" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" onchange="actualizarEvaluacionCampo('enf_sueldo_propuesto', this.value)"></div>
             <div><b>Días:</b><input type="text" id="enf_dias" value="${ci.evaluacion?.enf_dias || ''}" placeholder="Lun-Vie" onchange="actualizarEvaluacionCampo('enf_dias', this.value)"></div>
             <div><b>Horario:</b><input type="text" id="enf_horario" value="${ci.evaluacion?.enf_horario || ''}" placeholder="Ej: 8:00-14:00" onchange="actualizarEvaluacionCampo('enf_horario', this.value)"></div>
             <div><b>Disponibilidad:</b><input type="text" id="enf_disponibilidad" value="${ci.evaluacion?.enf_disponibilidad || ''}" placeholder="Inmediata" onchange="actualizarEvaluacionCampo('enf_disponibilidad', this.value)"></div>
@@ -335,7 +287,7 @@
     <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
         <h4 style="margin:0 0 10px; color:#0f766e; font-size:14px; font-weight:bold;">II. DATOS PERSONALES Y FAMILIARES</h4>
         <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:12px;">
-            <div><b>Edad:</b><input type="text" id="enf_edad" value="${ci.evaluacion?.enf_edad || ''}" onchange="actualizarEvaluacionCampo('enf_edad', this.value)"></div>
+            <div><b>Edad:</b><input type="text" id="enf_edad" value="${ci.evaluacion?.enf_edad || ''}" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onchange="actualizarEvaluacionCampo('enf_edad', this.value)"></div>
             <div><b>A qué se dedica papá:</b><input type="text" id="enf_papa_dedica" value="${ci.evaluacion?.enf_papa_dedica || ''}" onchange="actualizarEvaluacionCampo('enf_papa_dedica', this.value)"></div>
             <div><b>Vive en:</b><input type="text" id="enf_vive_en" value="${ci.evaluacion?.enf_vive_en || ''}" placeholder="Colonia / Zona" onchange="actualizarEvaluacionCampo('enf_vive_en', this.value)"></div>
             <div><b>A qué se dedica mamá:</b><input type="text" id="enf_mama_dedica" value="${ci.evaluacion?.enf_mama_dedica || ''}" onchange="actualizarEvaluacionCampo('enf_mama_dedica', this.value)"></div>
@@ -395,7 +347,7 @@
             </div>
 
             <!-- SUELDO Y MOTIVO -->
-            <div><b>Sueldo último trabajo:</b><input type="text" id="enf_sueldo_ultimo" value="${ci.evaluacion?.enf_sueldo_ultimo || ''}" placeholder="$" onchange="actualizarEvaluacionCampo('enf_sueldo_ultimo', this.value)"></div>
+            <div><b>Sueldo último trabajo:</b><input type="text" id="enf_sueldo_ultimo" value="${ci.evaluacion?.enf_sueldo_ultimo || ''}" placeholder="$" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" onchange="actualizarEvaluacionCampo('enf_sueldo_ultimo', this.value)"></div>
             <div><b>Motivo de salida:</b><input type="text" id="enf_motivo_salida" value="${ci.evaluacion?.enf_motivo_salida || ''}" onchange="actualizarEvaluacionCampo('enf_motivo_salida', this.value)"></div>
         </div>
     </div>
@@ -476,15 +428,13 @@
             </thead>
             <tbody>
                 ${ ['DFH', 'PBL', 'Familia', 'Árbol', 'Casa'].map(prueba => {
-                    let pKey = 'enf_' + prueba.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    let pKey = 'enf_' + prueba.toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
                     let pData = ci.evaluacion?.enf_psicometricas?.[pKey] || {};
-                    return `
-                    <tr>
-                        <td style="font-weight:bold; padding:10px; vertical-align:middle;">${prueba}</td>
-                        <td style="padding:8px;"><input type="text" value="${pData.tiempo || ''}" placeholder="Ej: 15 min" onchange="actualizarEvaluacionPsicometricaEnf('${pKey}', 'tiempo', this.value)"></td>
-                        <td style="padding:8px;"><input type="text" style="width:100%; box-sizing:border-box;" value="${pData.obs || ''}" placeholder="Observaciones de ${prueba}..." onchange="actualizarEvaluacionPsicometricaEnf('${pKey}', 'obs', this.value)"></td>
-                    </tr>
-                    `;
+                    return '<tr>'+
+                        '<td style="font-weight:bold; padding:10px; vertical-align:middle;">'+prueba+'</td>'+
+                        '<td style="padding:8px;"><input type="text" value="'+(pData.tiempo || '')+'" placeholder="Ej: 15 min" onchange="actualizarEvaluacionPsicometricaEnf(\\\''+pKey+'\\\', \\\'tiempo\\\', this.value)"></td>'+
+                        '<td style="padding:8px;"><input type="text" style="width:100%; box-sizing:border-box;" value="'+(pData.obs || '')+'" placeholder="Observaciones de '+prueba+'..." onchange="actualizarEvaluacionPsicometricaEnf(\\\''+pKey+'\\\', \\\'obs\\\', this.value)"></td>'+
+                    '</tr>';
                 }).join('') }
             </tbody>
         </table>
@@ -512,10 +462,9 @@
         <h4 style="margin:0 0 10px; color:#4338ca; font-size:14px; font-weight:bold;">I. DATOS DE CONTROL Y ENTREVISTA</h4>
         <div class="empleado-grid" style="grid-template-columns: repeat(4, 1fr); gap:10px;">
             <div><b>Candidato para:</b><input type="text" id="med_candidato_para" value="${ci.evaluacion?.med_candidato_para || ci.puesto || ''}" onchange="actualizarEvaluacionCampo('med_candidato_para', this.value)"></div>
-            <div><b>Entrevista #:</b><input type="text" id="med_entrevista_num" value="${ci.evaluacion?.med_entrevista_num || '1'}" onchange="actualizarEvaluacionCampo('med_entrevista_num', this.value)"></div>
             <div><b>Por:</b><input type="text" id="med_por" value="${ci.evaluacion?.med_por || ci.entrevistador_rh || ''}" onchange="actualizarEvaluacionCampo('med_por', this.value)"></div>
             <div><b>Fecha:</b><input type="date" id="med_fecha" value="${ci.evaluacion?.med_fecha || ci.fecha || ''}" onchange="actualizarEvaluacionCampo('med_fecha', this.value)"></div>
-            <div><b>Sueldo propuesto:</b><input type="text" id="med_sueldo_propuesto" value="${ci.evaluacion?.med_sueldo_propuesto || ''}" placeholder="$" onchange="actualizarEvaluacionCampo('med_sueldo_propuesto', this.value)"></div>
+            <div><b>Sueldo propuesto:</b><input type="text" id="med_sueldo_propuesto" value="${ci.evaluacion?.med_sueldo_propuesto || ''}" placeholder="$" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" onchange="actualizarEvaluacionCampo('med_sueldo_propuesto', this.value)"></div>
             <div><b>Días:</b><input type="text" id="med_dias" value="${ci.evaluacion?.med_dias || ''}" placeholder="Ej: Lun-Vie" onchange="actualizarEvaluacionCampo('med_dias', this.value)"></div>
             <div><b>Horario:</b><input type="text" id="med_horario" value="${ci.evaluacion?.med_horario || ''}" placeholder="Ej: 8:00-14:00" onchange="actualizarEvaluacionCampo('med_horario', this.value)"></div>
             <div><b>Disponibilidad:</b><input type="text" id="med_disponibilidad" value="${ci.evaluacion?.med_disponibilidad || ''}" placeholder="Ej: Inmediata" onchange="actualizarEvaluacionCampo('med_disponibilidad', this.value)"></div>
@@ -526,7 +475,7 @@
     <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
         <h4 style="margin:0 0 10px; color:#4338ca; font-size:14px; font-weight:bold;">II. DATOS PERSONALES Y FAMILIARES</h4>
         <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:12px;">
-            <div><b>Edad:</b><input type="text" id="med_edad" value="${ci.evaluacion?.med_edad || ''}" onchange="actualizarEvaluacionCampo('med_edad', this.value)"></div>
+            <div><b>Edad:</b><input type="text" id="med_edad" value="${ci.evaluacion?.med_edad || ''}" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onchange="actualizarEvaluacionCampo('med_edad', this.value)"></div>
             <div><b>A qué se dedica papá:</b><input type="text" id="med_papa_dedica" value="${ci.evaluacion?.med_papa_dedica || ''}" onchange="actualizarEvaluacionCampo('med_papa_dedica', this.value)"></div>
             <div><b>Vive en:</b><input type="text" id="med_vive_en" value="${ci.evaluacion?.med_vive_en || ''}" placeholder="Colonia / Zona" onchange="actualizarEvaluacionCampo('med_vive_en', this.value)"></div>
             <div><b>A qué se dedica mamá:</b><input type="text" id="med_mama_dedica" value="${ci.evaluacion?.med_mama_dedica || ''}" onchange="actualizarEvaluacionCampo('med_mama_dedica', this.value)"></div>
@@ -588,8 +537,8 @@
             </div>
 
             <!-- SUELDOS Y MOTIVO -->
-            <div><b>Sueldo esperado:</b><input type="text" id="med_sueldo_esperado" value="${ci.evaluacion?.med_sueldo_esperado || ''}" placeholder="$" onchange="actualizarEvaluacionCampo('med_sueldo_esperado', this.value)"></div>
-            <div><b>Sueldo último trabajo:</b><input type="text" id="med_sueldo_ultimo" value="${ci.evaluacion?.med_sueldo_ultimo || ''}" placeholder="$" onchange="actualizarEvaluacionCampo('med_sueldo_ultimo', this.value)"></div>
+            <div><b>Sueldo esperado:</b><input type="text" id="med_sueldo_esperado" value="${ci.evaluacion?.med_sueldo_esperado || ''}" placeholder="$" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" onchange="actualizarEvaluacionCampo('med_sueldo_esperado', this.value)"></div>
+            <div><b>Sueldo último trabajo:</b><input type="text" id="med_sueldo_ultimo" value="${ci.evaluacion?.med_sueldo_ultimo || ''}" placeholder="$" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" onchange="actualizarEvaluacionCampo('med_sueldo_ultimo', this.value)"></div>
             <div style="grid-column: span 2;"><b>Motivo de salida:</b><input type="text" id="med_motivo_salida" value="${ci.evaluacion?.med_motivo_salida || ''}" onchange="actualizarEvaluacionCampo('med_motivo_salida', this.value)"></div>
         </div>
     </div>
@@ -670,15 +619,13 @@
             </thead>
             <tbody>
                 ${ ['DFH', 'PBL', 'Familia', 'Árbol', 'Casa'].map(prueba => {
-                    let pKey = 'med_' + prueba.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    let pKey = 'med_' + prueba.toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
                     let pData = ci.evaluacion?.med_psicometricas?.[pKey] || {};
-                    return `
-                    <tr>
-                        <td style="font-weight:bold; padding:10px; vertical-align:middle;">${prueba}</td>
-                        <td style="padding:8px;"><input type="text" value="${pData.tiempo || ''}" placeholder="Ej: 15 min" onchange="actualizarEvaluacionPsicometricaMed('${pKey}', 'tiempo', this.value)"></td>
-                        <td style="padding:8px;"><input type="text" style="width:100%; box-sizing:border-box;" value="${pData.obs || ''}" placeholder="Observaciones de ${prueba}..." onchange="actualizarEvaluacionPsicometricaMed('${pKey}', 'obs', this.value)"></td>
-                    </tr>
-                    `;
+                    return '<tr>'+
+                        '<td style="font-weight:bold; padding:10px; vertical-align:middle;">'+prueba+'</td>'+
+                        '<td style="padding:8px;"><input type="text" value="'+(pData.tiempo || '')+'" placeholder="Ej: 15 min" onchange="actualizarEvaluacionPsicometricaMed(\\\''+pKey+'\\\', \\\'tiempo\\\', this.value)"></td>'+
+                        '<td style="padding:8px;"><input type="text" style="width:100%; box-sizing:border-box;" value="'+(pData.obs || '')+'" placeholder="Observaciones de '+prueba+'..." onchange="actualizarEvaluacionPsicometricaMed(\\\''+pKey+'\\\', \\\'obs\\\', this.value)"></td>'+
+                    '</tr>';
                 }).join('') }
             </tbody>
         </table>
@@ -690,25 +637,96 @@
 </div>
 </div>
 
+<!-- ========================================================= -->
+<!-- VISTA 2: EXPEDIENTE (Documentos y Notas) -->
+<!-- ========================================================= -->
+<div id="vista_modo_expediente_cita" style="display: ${ (ci.modo_actual==='expediente') ? 'block' : 'none' };">
+    <div style="display:flex; flex-wrap:wrap; gap:14px; align-items:stretch;">
+        <div class="col" style="flex: 1; min-width:300px; max-width:400px;">
+            <div class="rh-card" style="height:100%; border-left:4px solid #16a34a;">
+                <h3 style="margin:0 0 15px; color:#16a34a;"><i class="bi bi-folder2-open me-2"></i>Expediente</h3>
+                
+                <input type="file" id="fileUploadCita" style="display:none" onchange="subirArchivoCita(this)">
+                
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    ${ [
+                        'Ficha tecnica.pdf', 
+                        'CV / Solicitud de Empleo', 
+                        'Identificación Oficial (INE)', 
+                        'Acta de Nacimiento', 
+                        'CURP', 
+                        'Constancia de Situación Fiscal (RFC)', 
+                        'Comprobante de Domicilio', 
+                        'Número de Seguridad Social (NSS)'
+                      ].map(req => {
+                        let docName = req === 'Ficha tecnica.pdf' ? `${ci.nombre || 'Candidato'} Ficha tecnica.pdf` : req;
+                        let doc = (ci.documentos || []).find(d => d.nombre === docName);
+                        
+                        if(doc) {
+                            return '<div style="display:flex; align-items:center; justify-content:space-between; background:#f0fdf4; padding:10px 14px; border:1px solid #bbf7d0; border-radius:8px; cursor:pointer; transition:0.2s;" onclick="verDocumento(\''+doc.url+'\', \''+doc.tipo+'\', \''+doc.nombre+'\')" onmouseover="this.style.borderColor=\'#22c55e\'" onmouseout="this.style.borderColor=\'#bbf7d0\'">'+
+                                '<div style="display:flex; align-items:center; gap:8px; overflow:hidden;">'+
+                                    '<i class="bi bi-check-circle-fill" style="font-size:18px; color:#22c55e;"></i>'+
+                                    '<span style="font-weight:600; font-size:13px; color:#166534; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="'+docName+'">'+docName+'</span>'+
+                                '</div>'+
+                                '<i class="bi bi-eye" style="color:#22c55e;"></i>'+
+                            '</div>';
+                        } else {
+                            let clickAction = req === 'Ficha tecnica.pdf' ? 'alert(\'La ficha técnica se genera automáticamente al guardar la evaluación.\')' : 'solicitarArchivoCita(\''+docName+'\')';
+                            return '<div style="display:flex; align-items:center; justify-content:space-between; background:#f8fafc; padding:10px 14px; border:1px dashed #cbd5e1; border-radius:8px; cursor:pointer; transition:0.2s;" onclick="'+clickAction+'" onmouseover="this.style.borderColor=\'#94a3b8\'" onmouseout="this.style.borderColor=\'#cbd5e1\'">'+
+                                '<div style="display:flex; align-items:center; gap:8px; overflow:hidden;">'+
+                                    '<i class="bi bi-circle" style="font-size:18px; color:#94a3b8;"></i>'+
+                                    '<span style="font-weight:500; font-size:13px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="'+docName+'">'+docName+'</span>'+
+                                '</div>'+
+                                '<i class="bi bi-upload" style="color:#94a3b8; font-size:12px;"></i>'+
+                            '</div>';
+                        }
+                    }).join('') }
+                </div>
+            </div>
+        </div>
+        
+        <!-- VISUALIZADOR DE DOCUMENTO -->
+        <div class="col" style="flex: 2; min-width:400px; display:flex; flex-direction:column;">
+            <div class="rh-card" style="height:100%; display:flex; flex-direction:column; padding:0; overflow:hidden; border:1px solid #cbd5e1;">
+                <div style="background:#f1f5f9; padding:12px 16px; border-bottom:1px solid #cbd5e1; display:flex; justify-content:space-between; align-items:center;">
+                    <h3 id="preview_title" style="margin:0; font-size:14px; color:#334155;"><i class="bi bi-file-earmark-text me-2"></i>Visor de Documento</h3>
+                    <div id="preview_actions" style="display:none; gap:8px;">
+                        <button class="btn-ver" style="background:#2563eb; padding:5px 12px; font-size:12px; font-weight:bold;" onclick="descargarVistaPrevia()"><i class="bi bi-download me-1"></i> Descargar</button>
+                        <button class="btn-ver" style="background:#475569; padding:5px 12px; font-size:12px; font-weight:bold;" onclick="imprimirVistaPrevia()"><i class="bi bi-printer me-1"></i> Imprimir</button>
+                    </div>
+                </div>
+                
+                <div id="preview_container" style="flex-grow:1; min-height:500px; background:#e2e8f0; display:flex; align-items:center; justify-content:center; position:relative;">
+                    <div id="preview_empty" style="text-align:center; color:#94a3b8;">
+                        <i class="bi bi-file-earmark-pdf" style="font-size:48px;"></i>
+                        <p style="margin-top:10px; font-weight:500;">Selecciona un documento para visualizarlo</p>
+                    </div>
+                    <!-- El iframe/img se inyecta por JS aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- BARRA DE ACCIONES CON ESTILO MEJORADO -->
-<div class="rh-card sticky-acciones" style="margin-top:14px;">
+<div class="rh-card sticky-acciones" style="display: ${ (ci.modo_actual==='expediente') ? 'none' : 'block' }; margin-top:14px;">
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn-ver" style="background:#2563eb;" onclick="guardarCambiosFicha()">
-                <i class="bi bi-floppy-fill"></i> Guardar Cambios
+            <button class="btn-ver" style="background:#2563eb;" onclick="guardarCambiosFicha()" title="Guardar Cambios">
+                <i class="bi bi-floppy-fill me-1"></i> Guardar
             </button>
-            <button class="btn-ver" style="background:#d97706;" onclick="citaSel.estado='Realizada';guardarCambiosFicha();mostrar('citas')">
-                <i class="bi bi-check-circle-fill"></i> Marcar como Realizada
+            ${ !citas.find(c=>c.id==ci.id) ? '' : `
+            <button class="btn-ver" style="background:#16a34a;" onclick="marcarRealizadaYConvertir()" title="Marcar como Realizada">
+                <i class="bi bi-check-circle-fill me-1"></i> Realizada
             </button>
-            <button class="btn-ver" style="background:#475569;" onclick="noSePresentoCita()">
-                <i class="bi bi-person-x-fill"></i> No se presentó
+            <button class="btn-ver" style="background:#475569;" onclick="noSePresentoCita()" title="No se presentó">
+                <i class="bi bi-person-x-fill me-1"></i> No se presentó
             </button>
-            <button class="btn-ver" style="background:#dc2626;" onclick="eliminarRegistro('cita')">
-                <i class="bi bi-trash-fill"></i> Eliminar Registro
+            `}
+            <button class="btn-ver" style="background:#ef4444;" onclick="eliminarRegistro('cita')" title="Eliminar Registro">
+                <i class="bi bi-trash-fill"></i>
             </button>
         </div>
-        <button class="btn-ver" onclick="pasarFichaCitaACandidato()" style="background:#16a34a; font-size:14px; padding:10px 20px;">
-            <i class="bi bi-person-check-fill me-1"></i> Aprobar y Convertir a Candidato
-        </button>
+        <!-- Botón de convertir a candidato removido temporalmente por solicitud de la fase actual -->
     </div>
 </div>

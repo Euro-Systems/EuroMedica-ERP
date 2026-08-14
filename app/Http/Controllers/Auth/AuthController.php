@@ -30,11 +30,14 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $loginValue = $request->input('email'); // Sigue viniendo del input con name="email"
+        $loginValue = trim($request->input('email'));
         
+        $fieldType = filter_var($loginValue, FILTER_VALIDATE_EMAIL) ? 'email' : 'name';
+
         $credentials = [
-            'name' => $loginValue,
-            'password' => $request->input('password'),
+            $fieldType => $loginValue,
+            'password' => trim($request->input('password')),
+            'activo' => 1
         ];
 
         if (Auth::attempt($credentials)) {
