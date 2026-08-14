@@ -12,7 +12,7 @@
     background: linear-gradient(135deg, #ffffff 0%, #f3f6fb 100%);
     border-bottom: 1px solid #e5e7eb;
     box-shadow: 0 6px 18px rgba(0,0,0,0.05);
-    padding: 20px 0;
+    padding: 40px 0 20px; /* Incrementado para evitar corte superior */
     position: relative;
     margin: -40px -12px 30px;
 }
@@ -25,13 +25,13 @@
 }
 .org-header .logo {
     position: absolute;
-    top: 10px; left: 25px;
+    top: 30px; left: 25px; /* Ajustado para alinearse con el padding nuevo */
     width: 105px;
     opacity: 0.95;
 }
 .org-header .header-text {
     margin-left: 140px;
-    padding-top: 10px;
+    padding-top: 5px;
 }
 .org-header .titulo {
     font-size: 2.2rem;
@@ -243,7 +243,7 @@
         <h1 class="titulo">Organigrama de la Empresa</h1>
         <div class="subtitulo">Distribución y Jerarquía Organizacional</div>
     </div>
-    <div style="position: absolute; top: 20px; right: 25px; display: flex; gap: 10px;">
+    <div style="position: absolute; top: 32px; right: 25px; display: flex; gap: 10px;">
         <button onclick="downloadOrganigrama()" class="btn btn-sm btn-primary" style="padding: 6px 14px; font-size: 0.85rem; border-radius: 8px; font-weight: 500; display: inline-flex; align-items: center; border: none; background-color: #0d6efd; color: white;">
             <i class="bi bi-download me-1"></i> Descargar Organigrama
         </button>

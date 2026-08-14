@@ -9,7 +9,7 @@
     background: linear-gradient(135deg, #ffffff 0%, #f3f6fb 100%);
     border-bottom: 1px solid #e5e7eb;
     box-shadow: 0 6px 18px rgba(0,0,0,0.05);
-    padding: 20px 0 30px;
+    padding: 40px 0 30px; /* Incrementado para evitar corte superior */
     position: relative;
     margin: -40px -12px 30px;
 }
@@ -22,13 +22,13 @@
 }
 .site-header .logo {
     position: absolute;
-    top: 10px; left: 25px;
+    top: 30px; left: 25px; /* Ajustado para alinearse con el padding nuevo */
     width: 105px;
     opacity: 0.95;
 }
 .site-header .header-text {
     margin-left: 140px;
-    padding-top: 10px;
+    padding-top: 5px;
 }
 .site-header .titulo {
     font-size: 2.4rem;
@@ -51,7 +51,7 @@
         <div class="subtitulo">Clínica Euromédica</div>
     </div>
     @auth
-    <div style="position: absolute; top: 25px; right: 25px; text-align: right;">
+    <div style="position: absolute; top: 40px; right: 25px; text-align: right;">
         <div class="fw-semibold text-dark" style="font-size: 0.95rem;">{{ Auth::user()->name }}</div>
         <div class="text-muted" style="font-size: 0.8rem; margin-top: -2px;">{{ Auth::user()->departamento ?? 'Usuario' }}</div>
         <div style="margin-top: 8px; display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
