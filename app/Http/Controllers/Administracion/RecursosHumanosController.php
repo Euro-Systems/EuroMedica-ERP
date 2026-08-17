@@ -9,6 +9,7 @@ use App\Models\RhCandidato;
 use App\Models\RhCita;
 use App\Models\RhVacacion;
 use App\Models\RhVacacionAnual;
+use App\Models\RhPracticantePermiso;
 
 class RecursosHumanosController extends Controller
 {
@@ -20,10 +21,11 @@ class RecursosHumanosController extends Controller
         $citas = RhCita::all();
         $vacaciones = RhVacacion::all();
         $vacacionesAnuales = RhVacacionAnual::all();
+        $practicantesPermisos = RhPracticantePermiso::all();
         // Fallback for Contratos if Model exists
         $contratos = class_exists(\App\Models\RhContrato::class) ? \App\Models\RhContrato::all() : collect([]);
 
-        return view('administracion.recursos_humanos.index', compact('empleados', 'practicantes', 'candidatos', 'citas', 'vacaciones', 'vacacionesAnuales', 'contratos'));
+        return view('administracion.recursos_humanos.index', compact('empleados', 'practicantes', 'candidatos', 'citas', 'vacaciones', 'vacacionesAnuales', 'contratos', 'practicantesPermisos'));
     }
 
     public function sync(Request $request)
@@ -34,15 +36,16 @@ class RecursosHumanosController extends Controller
             $empIds = $empleados->pluck('id')->filter();
             RhEmpleado::whereNotIn('id', $empIds)->delete();
             $colsEmp = \Illuminate\Support\Facades\Schema::getColumnListing('rh_empleados');
+            $savedEmpleados = [];
             foreach ($empleados as $item) {
                 $item = array_intersect_key($item, array_flip($colsEmp));
-                // Laravel casts to array natively
                 unset($item['created_at'], $item['updated_at']);
                 if (!empty($item['id'])) {
-                    RhEmpleado::updateOrCreate(['id' => $item['id']], $item);
+                    $rec = RhEmpleado::updateOrCreate(['id' => $item['id']], $item);
                 } else {
-                    RhEmpleado::create($item);
+                    $rec = RhEmpleado::create($item);
                 }
+                $savedEmpleados[] = $rec;
             }
 
             // 2. PRACTICANTES
@@ -50,15 +53,16 @@ class RecursosHumanosController extends Controller
             $pracIds = $practicantes->pluck('id')->filter();
             RhPracticante::whereNotIn('id', $pracIds)->delete();
             $colsPrac = \Illuminate\Support\Facades\Schema::getColumnListing('rh_practicantes');
+            $savedPracticantes = [];
             foreach ($practicantes as $item) {
                 $item = array_intersect_key($item, array_flip($colsPrac));
-                // Laravel casts to array natively
                 unset($item['created_at'], $item['updated_at']);
                 if (!empty($item['id'])) {
-                    RhPracticante::updateOrCreate(['id' => $item['id']], $item);
+                    $rec = RhPracticante::updateOrCreate(['id' => $item['id']], $item);
                 } else {
-                    RhPracticante::create($item);
+                    $rec = RhPracticante::create($item);
                 }
+                $savedPracticantes[] = $rec;
             }
 
             // 3. CANDIDATOS
@@ -66,15 +70,16 @@ class RecursosHumanosController extends Controller
             $candIds = $candidatos->pluck('id')->filter();
             RhCandidato::whereNotIn('id', $candIds)->delete();
             $colsCand = \Illuminate\Support\Facades\Schema::getColumnListing('rh_candidatos');
+            $savedCandidatos = [];
             foreach ($candidatos as $item) {
                 $item = array_intersect_key($item, array_flip($colsCand));
-                // Laravel casts to array natively
                 unset($item['created_at'], $item['updated_at']);
                 if (!empty($item['id'])) {
-                    RhCandidato::updateOrCreate(['id' => $item['id']], $item);
+                    $rec = RhCandidato::updateOrCreate(['id' => $item['id']], $item);
                 } else {
-                    RhCandidato::create($item);
+                    $rec = RhCandidato::create($item);
                 }
+                $savedCandidatos[] = $rec;
             }
 
             // 4. CITAS
@@ -82,19 +87,21 @@ class RecursosHumanosController extends Controller
             $citaIds = $citas->pluck('id')->filter();
             RhCita::whereNotIn('id', $citaIds)->delete();
             $colsCita = \Illuminate\Support\Facades\Schema::getColumnListing('rh_citas');
+            $savedCitas = [];
             foreach ($citas as $item) {
                 $item = array_intersect_key($item, array_flip($colsCita));
-                // Laravel casts to array natively
                 unset($item['created_at'], $item['updated_at']);
                 if (!empty($item['id'])) {
-                    RhCita::updateOrCreate(['id' => $item['id']], $item);
+                    $rec = RhCita::updateOrCreate(['id' => $item['id']], $item);
                 } else {
-                    RhCita::create($item);
+                    $rec = RhCita::create($item);
                 }
+                $savedCitas[] = $rec;
             }
 
-            // 5. VACACIONES (empleados) // Note: this model might be rh_vacaciones
+            // 5. VACACIONES
             $vacaciones = collect($request->input('vacaciones', []));
+            $savedVacaciones = [];
             if(class_exists(\App\Models\RhVacacion::class)){
                 $vacIds = $vacaciones->pluck('id')->filter();
                 RhVacacion::whereNotIn('id', $vacIds)->delete();
@@ -103,15 +110,17 @@ class RecursosHumanosController extends Controller
                     $item = array_intersect_key($item, array_flip($colsVac));
                     unset($item['created_at'], $item['updated_at']);
                     if (!empty($item['id'])) {
-                        RhVacacion::updateOrCreate(['id' => $item['id']], $item);
+                        $rec = RhVacacion::updateOrCreate(['id' => $item['id']], $item);
                     } else {
-                        RhVacacion::create($item);
+                        $rec = RhVacacion::create($item);
                     }
+                    $savedVacaciones[] = $rec;
                 }
             }
 
             // 6. VACACIONES ANUALES
             $vacacionesAnuales = collect($request->input('vacacionesAnuales', []));
+            $savedVacacionesAnuales = [];
             if(class_exists(\App\Models\RhVacacionAnual::class)){
                 $vaIds = $vacacionesAnuales->pluck('id')->filter();
                 RhVacacionAnual::whereNotIn('id', $vaIds)->delete();
@@ -120,15 +129,17 @@ class RecursosHumanosController extends Controller
                     $item = array_intersect_key($item, array_flip($colsVa));
                     unset($item['created_at'], $item['updated_at']);
                     if (!empty($item['id'])) {
-                        RhVacacionAnual::updateOrCreate(['id' => $item['id']], $item);
+                        $rec = RhVacacionAnual::updateOrCreate(['id' => $item['id']], $item);
                     } else {
-                        RhVacacionAnual::create($item);
+                        $rec = RhVacacionAnual::create($item);
                     }
+                    $savedVacacionesAnuales[] = $rec;
                 }
             }
 
-            // 7. CONTRATOS (Si el modelo existe)
+            // 7. CONTRATOS
             $contratos = collect($request->input('contratos', []));
+            $savedContratos = [];
             if(class_exists(\App\Models\RhContrato::class)){
                 $contrIds = $contratos->pluck('id')->filter();
                 \App\Models\RhContrato::whereNotIn('id', $contrIds)->delete();
@@ -137,14 +148,44 @@ class RecursosHumanosController extends Controller
                     $item = array_intersect_key($item, array_flip($colsContratos));
                     unset($item['created_at'], $item['updated_at']);
                     if (!empty($item['id'])) {
-                        \App\Models\RhContrato::updateOrCreate(['id' => $item['id']], $item);
+                        $rec = \App\Models\RhContrato::updateOrCreate(['id' => $item['id']], $item);
                     } else {
-                        \App\Models\RhContrato::create($item);
+                        $rec = \App\Models\RhContrato::create($item);
                     }
+                    $savedContratos[] = $rec;
                 }
             }
 
-            return response()->json(['success' => true]);
+            // 8. PERMISOS PRACTICANTES
+            $practicantesPermisos = collect($request->input('practicantesPermisos', []));
+            $savedPracticantesPermisos = [];
+            if(class_exists(\App\Models\RhPracticantePermiso::class)){
+                $vpIds = $practicantesPermisos->pluck('id')->filter();
+                RhPracticantePermiso::whereNotIn('id', $vpIds)->delete();
+                $colsVp = \Illuminate\Support\Facades\Schema::getColumnListing('rh_practicante_permisos');
+                foreach ($practicantesPermisos as $item) {
+                    $item = array_intersect_key($item, array_flip($colsVp));
+                    unset($item['created_at'], $item['updated_at']);
+                    if (!empty($item['id'])) {
+                        $rec = RhPracticantePermiso::updateOrCreate(['id' => $item['id']], $item);
+                    } else {
+                        $rec = RhPracticantePermiso::create($item);
+                    }
+                    $savedPracticantesPermisos[] = $rec;
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'empleados' => $savedEmpleados,
+                'practicantes' => $savedPracticantes,
+                'candidatos' => $savedCandidatos,
+                'citas' => $savedCitas,
+                'vacaciones' => $savedVacaciones,
+                'vacacionesAnuales' => $savedVacacionesAnuales,
+                'contratos' => $savedContratos,
+                'practicantesPermisos' => $savedPracticantesPermisos
+            ]);
         } catch (\Exception $e) {
             \Log::error('Error in DB Sync: ' . $e->getMessage());
             return response()->json([

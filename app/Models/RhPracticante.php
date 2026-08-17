@@ -17,4 +17,9 @@ class RhPracticante extends Model
         'documentos' => 'array',
         'observaciones' => 'array',
     ];
+
+    public function permisos()
+    {
+        return $this->hasMany(RhPracticantePermiso::class, 'practicante_id');
+    }
 }

@@ -1,5 +1,80 @@
+<style>
+.input-custom {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    background-color: #f8fafc;
+    color: #334155;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    outline: none;
+}
+.input-custom:focus {
+    border-color: #10b981;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+.input-label {
+    font-size: 0.76rem;
+    color: #475569;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    display: inline-block;
+}
+
+.input-filled {
+    background-color: #f1f5f9 !important; /* shaded/darkened background when filled */
+    border-color: #cbd5e1 !important;
+    color: #1e293b !important;
+}
+
+/* Formateo automático de inputs en formularios de entrevista */
+#vista_modo_entrevista_cita input[type="text"],
+#vista_modo_entrevista_cita input[type="date"],
+#vista_modo_entrevista_cita input[type="time"],
+#vista_modo_entrevista_cita select,
+#vista_modo_entrevista_cita textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    background-color: #ffffff;
+    color: #334155;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    outline: none;
+    box-sizing: border-box;
+}
+#vista_modo_entrevista_cita input[type="text"]:focus,
+#vista_modo_entrevista_cita input[type="date"]:focus,
+#vista_modo_entrevista_cita input[type="time"]:focus,
+#vista_modo_entrevista_cita select:focus,
+#vista_modo_entrevista_cita textarea:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+#vista_modo_entrevista_cita b {
+    font-size: 0.76rem;
+    color: #475569;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 8px;
+    margin-bottom: 6px;
+    display: inline-block;
+}
+</style>
+
 <div class="tabs">
-<div class="tab" onclick="mostrar('citas')"><i class="bi bi-arrow-left me-1"></i> Volver a Citas</div>
+<div class="tab" onclick="tipoCitaFiltro = (ci.estado === 'Realizada' || ci.estado === 'No se presentó' || ci.estado === 'Cancelada') ? 'Historial' : 'Agendadas'; mostrar('citas');">
+    <i class="bi bi-arrow-left me-1"></i> 
+    ${ (ci.estado === 'Realizada' || ci.estado === 'No se presentó' || ci.estado === 'Cancelada') ? 'Volver a Historial' : 'Volver a Citas Activas' }
+</div>
 <div class="tab active" onclick="mostrar('ficha_cita')">Detalle de Cita</div>
 </div>
 
@@ -13,71 +88,120 @@
             <small style="color:#dbeafe; font-size:13px;">${ci.puesto || ''} | ${formatearFecha(ci.fecha)} - ${ci.hora || ''}</small>
         </div>
         
-        <!-- BOTONES DE SELECCIÓN DE MODO -->
-        <div style="display:${ !citas.find(c=>c.id==ci.id) ? 'none' : 'flex' }; gap:8px; background:rgba(255,255,255,0.15); padding:5px; border-radius:10px; border:1px solid rgba(255,255,255,0.2);">
-            <button type="button" id="btn_modo_entrevista" class="btn-ver" style="background:${ (!ci.modo_actual || ci.modo_actual==='entrevista') ? '#ffffff' : 'transparent' }; color:${ (!ci.modo_actual || ci.modo_actual==='entrevista') ? '#1e3a8a' : '#ffffff' }; font-weight:bold; box-shadow:none; padding:7px 14px;" onclick="cambiarModoVistaCita('entrevista')">
-                <i class="bi bi-journal-check me-1"></i> Entrevista
+        <!-- ACCIONES DE FICHA EN ENCABEZADO (Solo para citas activas) -->
+        <div style="display: ${ (ci.estado === 'Realizada' || ci.estado === 'No se presentó' || ci.estado === 'Cancelada' || subTabCita === 'expediente') ? 'none' : 'flex' }; gap:8px; flex-wrap:wrap; align-items:center;">
+            <button type="button" class="btn text-white" style="display: ${ (ci.evaluacion && ci.evaluacion.tipo) ? 'inline-flex' : 'none' }; background:#16a34a; border:none; padding:8px 16px; border-radius:8px; font-weight:700; font-size:13px; align-items:center; gap:4px;" onclick="pasarFichaCitaACandidato()">
+                <i class="bi bi-person-plus-fill"></i> Convertir a Candidato
             </button>
-            <button type="button" id="btn_modo_expediente" class="btn-ver" style="background:${ (ci.modo_actual==='expediente') ? '#16a34a' : 'transparent' }; color:#ffffff; font-weight:bold; box-shadow:none; padding:7px 14px;" onclick="cambiarModoVistaCita('expediente')">
-                <i class="bi bi-folder2-open me-1"></i> Expediente
-            </button>
+            <button type="button" class="btn text-white" style="background:#2563eb; border:none; padding:8px 16px; border-radius:8px; font-weight:600; font-size:13px; display:inline-flex; align-items:center; gap:4px;" onclick="guardarCambiosFicha()"><i class="bi bi-floppy-fill"></i> Guardar Cambios</button>
+            <button type="button" class="btn text-white" style="background:#dc2626; border:none; padding:8px 16px; border-radius:8px; font-weight:600; font-size:13px; display:inline-flex; align-items:center; gap:4px;" onclick="eliminarRegistro('cita')"><i class="bi bi-trash-fill"></i> Eliminar Registro</button>
         </div>
     </div>
 </div>
 
+<!-- SUB-TABS NAVIGATION -->
+<div class="tabs-sub" style="display:flex; gap:8px; margin-bottom:15px; background:#f8fafc; padding:6px; border-radius:12px; border:1px solid #e2e8f0;">
+    <button type="button" class="tab-sub ${subTabCita === 'entrevista' ? 'active' : ''}" onclick="cambiarSubTabCita('entrevista')" style="flex:1; justify-content:center;">
+        <i class="bi bi-chat-left-text-fill me-1"></i> Entrevista
+    </button>
+    <button type="button" class="tab-sub ${subTabCita === 'expediente' ? 'active' : ''}" onclick="cambiarSubTabCita('expediente')" style="flex:1; justify-content:center;">
+        <i class="bi bi-folder-fill me-1"></i> Expediente
+    </button>
+</div>
+
+<!-- Flex container wrapper for unified scroll in history and layout swaps -->
+<div style="display: flex; flex-direction: column; gap: 20px;">
+
 <!-- ========================================================= -->
-<!-- VISTA 1: ENTREVISTA (Datos y Formulario de Evaluación) -->
+<!-- VISTA 1A: DATOS DE LA CITA -->
 <!-- ========================================================= -->
-<div id="vista_modo_entrevista_cita" style="display: ${ (!ci.modo_actual || ci.modo_actual==='entrevista') ? 'block' : 'none' };">
+<div id="vista_cita_informacion" style="display: ${ subTabCita === 'entrevista' ? 'block' : 'none' }; order: ${ (ci.estado === 'Realizada' || ci.estado === 'No se presentó' || ci.estado === 'Cancelada') ? '2' : '1' };">
     <!-- DATOS BÁSICOS PRECARGADOS -->
-    <div class="rh-card" style="margin-bottom: 15px; border-left:4px solid #1e3a8a;">
-        <h3 style="margin:0 0 10px; font-size:15px; color:#1e3a8a;"><i class="bi bi-person-badge me-2"></i>Datos de la Cita</h3>
-        <div class="empleado-grid" style="grid-template-columns: repeat(4, 1fr);">
-            <div><b style="font-size:12px;color:#64748b;">Nombre del aspirante</b><br><input value="${ci.nombre}" onchange="citaSel.nombre=this.value"></div>
-            <div><b style="font-size:12px;color:#64748b;">Puesto deseado</b><br><input value="${ci.puesto}" onchange="citaSel.puesto=this.value"></div>
-            <div><b style="font-size:12px;color:#64748b;">Sector</b><br><select onchange="citaSel.tipo=this.value">
-                <option value="Trabajador" ${ci.tipo==='Trabajador'?'selected':''}>Trabajador</option>
-                <option value="Practicante" ${ci.tipo==='Practicante'?'selected':''}>Practicante</option>
-            </select></div>
-            <div><b style="font-size:12px;color:#64748b;">Entrevistador RH</b><br><input value="${ci.entrevistador_rh}" onchange="citaSel.entrevistador_rh=this.value"></div>
-            <div><b style="font-size:12px;color:#64748b;">Fecha de cita</b><br><input type="date" value="${ci.fecha}" onchange="citaSel.fecha=this.value"></div>
-            <div><b style="font-size:12px;color:#64748b;">Hora</b><br><input type="time" value="${ci.hora}" onchange="citaSel.hora=this.value"></div>
-            <div><b style="font-size:12px;color:#64748b;">Validador</b><br><input value="${ci.jefe_depto}" onchange="citaSel.jefe_depto=this.value"></div>
-            <div><b style="font-size:12px;color:#64748b;">Celular</b><br><input value="${ci.celular}" oninput="this.value=this.value.replace(/[^0-9+ ]/g,'')" onchange="citaSel.celular=this.value"></div>
+    <div class="rh-card" style="margin-bottom: 15px; border-left:4px solid #1e3a8a; padding: 20px 24px;">
+        <h3 style="margin:0 0 20px; font-size:15px; color:#1e3a8a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-weight: 700;"><i class="bi bi-person-badge me-2"></i>Datos de la Cita</h3>
+        
+        <!-- Contenedor del aviso de validación bonito -->
+        <div id="validation_alert_cita" style="display:none; background-color:#fef2f2; border:1.5px solid #fee2e2; border-left:4px solid #ef4444; padding:12px 16px; border-radius:10px; margin-bottom:20px; color:#991b1b; font-size:0.85rem; font-weight:600; align-items:center; gap:8px;">
+            <i class="bi bi-exclamation-triangle-fill" style="color:#ef4444; font-size:16px;"></i>
+            <span>Por favor, completa los campos obligatorios marcados en rojo para poder guardar la cita.</span>
+        </div>
+
+        <div class="empleado-grid grid-responsive-4" style="gap: 15px 20px;">
+            <div>
+                <label class="input-label">Nombre del aspirante</label>
+                <input class="input-custom val-nombre" value="${ci.nombre}" onchange="citaSel.nombre=this.value">
+            </div>
+            <div>
+                <label class="input-label">Puesto deseado</label>
+                <input class="input-custom val-puesto" value="${ci.puesto}" onchange="citaSel.puesto=this.value">
+            </div>
+
+            <div>
+                <label class="input-label">Sector</label>
+                <select class="input-custom val-tipo" onchange="citaSel.tipo=this.value">
+                    <option value="">-- Seleccionar Sector --</option>
+                    <option value="Trabajador" ${ci.tipo==='Trabajador'?'selected':''}>Trabajador</option>
+                    <option value="Practicante" ${ci.tipo==='Practicante'?'selected':''}>Practicante</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="input-label">Entrevistador RH</label>
+                <input class="input-custom val-entrevistador" value="${ci.entrevistador_rh}" onchange="citaSel.entrevistador_rh=this.value">
+            </div>
+            <div>
+                <label class="input-label">Fecha de cita</label>
+                <input type="date" class="input-custom val-fecha" value="${ci.fecha}" onchange="citaSel.fecha=this.value">
+            </div>
+            <div>
+                <label class="input-label">Hora</label>
+                <input type="time" class="input-custom val-hora" value="${ci.hora}" onchange="citaSel.hora=this.value">
+            </div>
+            <div>
+                <label class="input-label">Validador</label>
+                <input class="input-custom" value="${ci.jefe_depto}" onchange="citaSel.jefe_depto=this.value">
+            </div>
+            <div>
+                <label class="input-label">Celular</label>
+                <input class="input-custom" value="${ci.celular}" oninput="this.value=this.value.replace(/[^0-9+ ]/g,'')" onchange="citaSel.celular=this.value">
+            </div>
         </div>
     </div>
-    
+</div>
+
+<div id="vista_cita_entrevista" style="display: ${ subTabCita === 'entrevista' ? 'block' : 'none' }; order: ${ (ci.estado === 'Realizada' || ci.estado === 'No se presentó' || ci.estado === 'Cancelada') ? '3' : '2' };">
     <div class="rh-card" style="border-left:4px solid #2563eb; display:${ !citas.find(c=>c.id==ci.id) ? 'none' : 'block' }; text-align:center; padding:30px;">
         <h3 style="margin:0 0 10px; font-size:20px; color:#1e3a8a; font-weight:bold; border:none; padding:0;">
             <i class="bi bi-journal-text me-2"></i>Selecciona el Formulario de Entrevista
         </h3>
         <p style="color:#64748b; font-size:14px; margin-bottom:20px;">Por favor elige el formulario que corresponde al perfil del candidato para comenzar la evaluación.</p>
-        <select id="select_form_eval_cita" style="padding:12px 20px; border-radius:12px; border:2px solid #3b82f6; font-weight:bold; font-size:16px; background:#f0f9ff; color:#1e3a8a; cursor:pointer; width:100%; max-width:400px; text-align:center;" onchange="seleccionarFormularioEvaluacion(this.value)">
+        <select id="select_form_eval_cita" style="padding:12px 20px; border-radius:12px; border:2px solid #3b82f6; font-weight:bold; font-size:16px; background:#f0f9ff; color:#1e3a8a; cursor:pointer; width:100%; max-width:400px; text-align:center;" onchange="seleccionarFormularioEvaluacion(this.value)" ${ (ci.evaluacion && ci.evaluacion.tipo) || ci.estado === 'Realizada' ? 'disabled' : '' }>
             <option value="">-- Seleccionar Formulario --</option>
             <option value="Practicante" ${ci.evaluacion && ci.evaluacion.tipo==='Practicante' ? 'selected' : ''}>👨‍🎓 Practicante (Ficha Técnica)</option>
             <option value="Enfermero" ${ci.evaluacion && ci.evaluacion.tipo==='Enfermero' ? 'selected' : ''}>🩺 Enfermería (Ficha Técnica)</option>
             <option value="Medico" ${ci.evaluacion && ci.evaluacion.tipo==='Medico' ? 'selected' : ''}>⚕️ Médico (Ficha Técnica)</option>
         </select>
+        
+        <!-- Botón No se presentó: Solo si no se ha seleccionado formulario -->
+        <div id="no_presento_container" style="display: ${ (ci.evaluacion && ci.evaluacion.tipo) ? 'none' : 'block' }; margin-top:20px;">
+            <button type="button" class="btn text-white" style="background-color: #475569; border: none; border-radius: 10px; font-weight: 600; padding: 10px 24px; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(71, 85, 105, 0.15); transition: all 0.2s;" onmouseover="this.style.backgroundColor='#334155'" onmouseout="this.style.backgroundColor='#475569'" onclick="noSePresentoCita()" title="No se presentó">
+                <i class="bi bi-person-x-fill"></i> No se presentó
+            </button>
+        </div>
     </div>
 
         <!-- BLOQUE FORMULARIO PRACTICANTE -->
         <div id="bloque_form_practicante" style="display: ${ (ci.evaluacion && ci.evaluacion.tipo==='Practicante') ? 'block' : 'none' }; background:#f8fafc; padding:20px; border-radius:10px; border:1px solid #cbd5e1;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:2px solid #1e3a8a; padding-bottom:10px;">
-                <div>
-                    <h2 style="margin:0; font-size:18px; color:#1e3a8a; font-weight:bold; text-transform:uppercase;">FICHA TÉCNICA DE EVALUACIÓN</h2>
-                    <span style="font-size:14px; font-style:italic; color:#475569;">Área de Practicantes</span>
-                </div>
-                <div>
-                    <button class="btn-ver" onclick="imprimirFichaPracticantePDF()" style="background:#0284c7; font-weight:bold;">
-                        <i class="bi bi-printer me-1"></i> Imprimir / Descargar PDF
-                    </button>
-                </div>
+            <fieldset style="border:none; padding:0; margin:0;" ${ ci.estado === 'Realizada' ? 'disabled' : '' }>
+            <div style="margin-bottom:15px; border-bottom:2px solid #1e3a8a; padding-bottom:10px;">
+                <h2 style="margin:0; font-size:18px; color:#1e3a8a; font-weight:bold; text-transform:uppercase;">FICHA TÉCNICA DE EVALUACIÓN</h2>
+                <span style="font-size:14px; font-style:italic; color:#475569;">Área de Practicantes</span>
             </div>
 
             <!-- I. DATOS DE CONTROL Y ENTREVISTA -->
             <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
                 <h4 style="margin:0 0 10px; color:#1e3a8a; font-size:14px; font-weight:bold;">I. DATOS DE CONTROL Y ENTREVISTA</h4>
-                <div class="empleado-grid" style="grid-template-columns: repeat(3, 1fr); gap:10px;">
+                <div class="empleado-grid grid-responsive-3" style="gap:10px;">
                     <div><b>Candidato para:</b><input type="text" id="ev_candidato_para" value="${ci.evaluacion?.candidato_para || ci.puesto || ''}" onchange="actualizarEvaluacionCampo('candidato_para', this.value)"></div>
                     <div><b>Por:</b><input type="text" id="ev_entrevista_por" value="${ci.evaluacion?.entrevista_por || ci.entrevistador_rh || ''}" onchange="actualizarEvaluacionCampo('entrevista_por', this.value)"></div>
                     <div><b>Fecha:</b><input type="date" id="ev_fecha" value="${ci.evaluacion?.fecha || ci.fecha || ''}" onchange="actualizarEvaluacionCampo('fecha', this.value)"></div>
@@ -89,7 +213,7 @@
             <!-- II. DATOS PERSONALES Y FAMILIARES -->
             <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
                 <h4 style="margin:0 0 10px; color:#1e3a8a; font-size:14px; font-weight:bold;">II. DATOS PERSONALES Y FAMILIARES</h4>
-                <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:12px;">
+                <div class="empleado-grid grid-responsive-2" style="gap:12px;">
                     <div><b>Edad:</b><input type="text" id="ev_edad" value="${ci.evaluacion?.edad || ''}" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onchange="actualizarEvaluacionCampo('edad', this.value)"></div>
                     <div><b>A qué se dedica papá:</b><input type="text" id="ev_papa_dedica" value="${ci.evaluacion?.papa_dedica || ''}" onchange="actualizarEvaluacionCampo('papa_dedica', this.value)"></div>
                     <div><b>Vive en:</b><input type="text" id="ev_vive_en" value="${ci.evaluacion?.vive_en || ''}" placeholder="Colonia / Zona" onchange="actualizarEvaluacionCampo('vive_en', this.value)"></div>
@@ -159,7 +283,7 @@
             <!-- III. PERFIL PROFESIONAL Y ESPECÍFICO -->
             <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
                 <h4 style="margin:0 0 10px; color:#1e3a8a; font-size:14px; font-weight:bold;">III. PERFIL PROFESIONAL Y ESPECÍFICO</h4>
-                <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:10px;">
+                <div class="empleado-grid grid-responsive-2" style="gap:10px;">
                     <div><b>Universidad:</b><input type="text" id="ev_universidad" value="${ci.evaluacion?.universidad || ''}" onchange="actualizarEvaluacionCampo('universidad', this.value)"></div>
                     <div><b>Carrera:</b><input type="text" id="ev_carrera" value="${ci.evaluacion?.carrera || ''}" onchange="actualizarEvaluacionCampo('carrera', this.value)"></div>
                     <div><b>Horas requeridas:</b><input type="text" id="ev_horas_requeridas" value="${ci.evaluacion?.horas_requeridas || ''}" onchange="actualizarEvaluacionCampo('horas_requeridas', this.value)"></div>
@@ -196,7 +320,7 @@
                 <hr style="margin:15px 0; border:0; border-top:1px solid #e2e8f0;">
 
                 <!-- Servicio Social & Prácticas -->
-                <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:15px;">
+                <div class="empleado-grid grid-responsive-2" style="gap:15px;">
                     <div>
                         <h5 style="margin:0 0 6px; color:#1e3a8a; font-weight:bold;">Servicio Social:</h5>
                         <b>Lugar:</b><input type="text" id="ev_ss_lugar" value="${ci.evaluacion?.ss_lugar || ''}" onchange="actualizarEvaluacionCampo('ss_lugar', this.value)">
@@ -228,7 +352,8 @@
             <!-- V. RESULTADOS DE PRUEBAS PSICOMÉTRICAS CON OBSERVACIONES ANCHAS -->
             <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1;">
                 <h4 style="margin:0 0 10px; color:#1e3a8a; font-size:14px; font-weight:bold;">V. RESULTADOS DE PRUEBAS PSICOMÉTRICAS</h4>
-                <table class="rh-table" style="width:100%;">
+                <div style="overflow-x: auto; width: 100%;">
+                <table class="rh-table" style="width:100%; min-width:600px;">
                     <thead>
                         <tr>
                             <th style="padding:10px; width:110px;">Prueba</th>
@@ -248,7 +373,22 @@
                         }).join('') }
                     </tbody>
                 </table>
+                </div>
             </div>
+
+            <!-- Botón Guardar y Completar - Bloque Practicante -->
+            <div style="margin-top:20px; border-top:1.5px solid #cbd5e1; padding-top:15px; display: ${ ci.estado === 'Realizada' ? 'none' : 'flex' }; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div style="font-size:12px; color:#64748b; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="bi bi-info-circle"></i>
+                    Al guardar, la entrevista se marcará como <b>Realizada</b> y el formulario quedará bloqueado.
+                </div>
+                <button type="button" id="btn_guardar_completar_prac" class="btn text-white" style="background: linear-gradient(135deg,#16a34a,#15803d); border: none; border-radius: 12px; font-weight: 700; padding: 13px 30px; font-size: 1rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 16px rgba(22,163,74,0.3); transition: all 0.2s; letter-spacing:0.2px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(22,163,74,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(22,163,74,0.3)'" onclick="guardarYMarcarRealizada()">
+                    <i class="bi bi-floppy-fill"></i>
+                    <i class="bi bi-check-circle-fill"></i>
+                    Guardar y Completar
+                </button>
+            </div>
+            </fieldset>
         </div>
     </div>
 </div>
@@ -257,22 +397,16 @@
 <!-- VISTA 2B: FORMULARIO ENFERMERÍA -->
 <!-- ========================================================= -->
 <div id="bloque_form_enfermero" style="display: ${ ci.evaluacion && ci.evaluacion.tipo==='Enfermero' ? 'block' : 'none' }; background:#f8fafc; padding:20px; border-radius:10px; border:1px solid #cbd5e1; margin-top:15px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:2px solid #0f766e; padding-bottom:10px;">
-        <div>
-            <h2 style="margin:0; font-size:18px; color:#0f766e; font-weight:bold; text-transform:uppercase;">FICHA TÉCNICA</h2>
-            <span style="font-size:14px; font-style:italic; color:#475569;">Área de la Salud — ENFERMERÍA</span>
-        </div>
-        <div>
-            <button class="btn-ver" onclick="imprimirFichaEnfermeriaPDF()" style="background:#0f766e; font-weight:bold;">
-                <i class="bi bi-printer me-1"></i> Imprimir / Descargar PDF
-            </button>
-        </div>
+    <fieldset style="border:none; padding:0; margin:0;" ${ ci.estado === 'Realizada' ? 'disabled' : '' }>
+    <div style="margin-bottom:15px; border-bottom:2px solid #0f766e; padding-bottom:10px;">
+        <h2 style="margin:0; font-size:18px; color:#0f766e; font-weight:bold; text-transform:uppercase;">FICHA TÉCNICA</h2>
+        <span style="font-size:14px; font-style:italic; color:#475569;">Área de la Salud — ENFERMERÍA</span>
     </div>
 
     <!-- I. DATOS DE CONTROL Y ENTREVISTA -->
     <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
         <h4 style="margin:0 0 10px; color:#0f766e; font-size:14px; font-weight:bold;">I. DATOS DE CONTROL Y ENTREVISTA</h4>
-        <div class="empleado-grid" style="grid-template-columns: repeat(4, 1fr); gap:10px;">
+        <div class="empleado-grid grid-responsive-4" style="gap:10px;">
             <div><b>Candidato para:</b><input type="text" id="enf_candidato_para" value="${ci.evaluacion?.enf_candidato_para || ci.puesto || ''}" onchange="actualizarEvaluacionCampo('enf_candidato_para', this.value)"></div>
             <div><b>Por:</b><input type="text" id="enf_por" value="${ci.evaluacion?.enf_por || ci.entrevistador_rh || ''}" onchange="actualizarEvaluacionCampo('enf_por', this.value)"></div>
             <div><b>Fecha:</b><input type="date" id="enf_fecha" value="${ci.evaluacion?.enf_fecha || ci.fecha || ''}" onchange="actualizarEvaluacionCampo('enf_fecha', this.value)"></div>
@@ -286,7 +420,7 @@
     <!-- II. DATOS PERSONALES Y FAMILIARES -->
     <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
         <h4 style="margin:0 0 10px; color:#0f766e; font-size:14px; font-weight:bold;">II. DATOS PERSONALES Y FAMILIARES</h4>
-        <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:12px;">
+        <div class="empleado-grid grid-responsive-2" style="gap:12px;">
             <div><b>Edad:</b><input type="text" id="enf_edad" value="${ci.evaluacion?.enf_edad || ''}" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onchange="actualizarEvaluacionCampo('enf_edad', this.value)"></div>
             <div><b>A qué se dedica papá:</b><input type="text" id="enf_papa_dedica" value="${ci.evaluacion?.enf_papa_dedica || ''}" onchange="actualizarEvaluacionCampo('enf_papa_dedica', this.value)"></div>
             <div><b>Vive en:</b><input type="text" id="enf_vive_en" value="${ci.evaluacion?.enf_vive_en || ''}" placeholder="Colonia / Zona" onchange="actualizarEvaluacionCampo('enf_vive_en', this.value)"></div>
@@ -355,7 +489,7 @@
     <!-- III. PERFIL PROFESIONAL Y ESPECÍFICO -->
     <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
         <h4 style="margin:0 0 10px; color:#0f766e; font-size:14px; font-weight:bold;">III. PERFIL PROFESIONAL Y ESPECÍFICO</h4>
-        <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:12px;">
+        <div class="empleado-grid grid-responsive-2" style="gap:12px;">
 
             <!-- Título -->
             <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
@@ -418,6 +552,7 @@
     <!-- V. RESULTADOS DE PRUEBAS PSICOMÉTRICAS -->
     <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1;">
         <h4 style="margin:0 0 10px; color:#0f766e; font-size:14px; font-weight:bold;">V. RESULTADOS DE PRUEBAS PSICOMÉTRICAS</h4>
+        <div style="overflow-x: auto; width: 100%;">
         <table class="rh-table" style="width:100%;">
             <thead>
                 <tr>
@@ -432,35 +567,44 @@
                     let pData = ci.evaluacion?.enf_psicometricas?.[pKey] || {};
                     return '<tr>'+
                         '<td style="font-weight:bold; padding:10px; vertical-align:middle;">'+prueba+'</td>'+
-                        '<td style="padding:8px;"><input type="text" value="'+(pData.tiempo || '')+'" placeholder="Ej: 15 min" onchange="actualizarEvaluacionPsicometricaEnf(\\\''+pKey+'\\\', \\\'tiempo\\\', this.value)"></td>'+
-                        '<td style="padding:8px;"><input type="text" style="width:100%; box-sizing:border-box;" value="'+(pData.obs || '')+'" placeholder="Observaciones de '+prueba+'..." onchange="actualizarEvaluacionPsicometricaEnf(\\\''+pKey+'\\\', \\\'obs\\\', this.value)"></td>'+
+                        '<td style="padding:8px;"><input type="text" value="'+(pData.tiempo || '')+'" placeholder="Ej: 15 min" onchange="actualizarEvaluacionPsicometricaEnf(\''+pKey+'\', \'tiempo\', this.value)"></td>'+
+                        '<td style="padding:8px;"><input type="text" style="width:100%; box-sizing:border-box;" value="'+(pData.obs || '')+'" placeholder="Observaciones de '+prueba+'..." onchange="actualizarEvaluacionPsicometricaEnf(\''+pKey+'\', \'obs\', this.value)"></td>'+
                     '</tr>';
                 }).join('') }
             </tbody>
         </table>
+        </div>
     </div>
+
+    <!-- Botón Guardar y Completar - Bloque Enfermería -->
+    <div style="margin-top:20px; border-top:1.5px solid #cbd5e1; padding-top:15px; display: ${ ci.estado === 'Realizada' ? 'none' : 'flex' }; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div style="font-size:12px; color:#64748b; display:inline-flex; align-items:center; gap:6px;">
+            <i class="bi bi-info-circle"></i>
+            Al guardar, la entrevista se marcará como <b>Realizada</b> y el formulario quedará bloqueado.
+        </div>
+        <button type="button" id="btn_guardar_completar_enf" class="btn text-white" style="background: linear-gradient(135deg,#16a34a,#15803d); border: none; border-radius: 12px; font-weight: 700; padding: 13px 30px; font-size: 1rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 16px rgba(22,163,74,0.3); transition: all 0.2s; letter-spacing:0.2px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(22,163,74,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(22,163,74,0.3)'" onclick="guardarYMarcarRealizada()">
+            <i class="bi bi-floppy-fill"></i>
+            <i class="bi bi-check-circle-fill"></i>
+            Guardar y Completar
+        </button>
+    </div>
+    </fieldset>
 </div>
    
 <!-- ========================================================= -->
 <!-- VISTA 2C: FORMULARIO MÉDICO -->
 <!-- ========================================================= -->
 <div id="bloque_form_medico" style="display: ${ ci.evaluacion && ci.evaluacion.tipo==='Medico' ? 'block' : 'none' }; background:#f8fafc; padding:20px; border-radius:10px; border:1px solid #cbd5e1; margin-top:15px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:2px solid #4338ca; padding-bottom:10px;">
-        <div>
-            <h2 style="margin:0; font-size:18px; color:#4338ca; font-weight:bold; text-transform:uppercase;">FICHA TÉCNICA</h2>
-            <span style="font-size:14px; font-style:italic; color:#475569;">Área de la Salud — MÉDICO</span>
-        </div>
-        <div>
-            <button class="btn-ver" onclick="alert('Impresión de Médico en desarrollo')" style="background:#4338ca; font-weight:bold;">
-                <i class="bi bi-printer me-1"></i> Imprimir / Descargar PDF
-            </button>
-        </div>
+    <fieldset style="border:none; padding:0; margin:0;" ${ ci.estado === 'Realizada' ? 'disabled' : '' }>
+    <div style="margin-bottom:15px; border-bottom:2px solid #4338ca; padding-bottom:10px;">
+        <h2 style="margin:0; font-size:18px; color:#4338ca; font-weight:bold; text-transform:uppercase;">FICHA TÉCNICA</h2>
+        <span style="font-size:14px; font-style:italic; color:#475569;">Área de la Salud — MÉDICO</span>
     </div>
 
     <!-- I. DATOS DE CONTROL Y ENTREVISTA -->
     <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
         <h4 style="margin:0 0 10px; color:#4338ca; font-size:14px; font-weight:bold;">I. DATOS DE CONTROL Y ENTREVISTA</h4>
-        <div class="empleado-grid" style="grid-template-columns: repeat(4, 1fr); gap:10px;">
+        <div class="empleado-grid grid-responsive-4" style="gap:10px;">
             <div><b>Candidato para:</b><input type="text" id="med_candidato_para" value="${ci.evaluacion?.med_candidato_para || ci.puesto || ''}" onchange="actualizarEvaluacionCampo('med_candidato_para', this.value)"></div>
             <div><b>Por:</b><input type="text" id="med_por" value="${ci.evaluacion?.med_por || ci.entrevistador_rh || ''}" onchange="actualizarEvaluacionCampo('med_por', this.value)"></div>
             <div><b>Fecha:</b><input type="date" id="med_fecha" value="${ci.evaluacion?.med_fecha || ci.fecha || ''}" onchange="actualizarEvaluacionCampo('med_fecha', this.value)"></div>
@@ -474,7 +618,7 @@
     <!-- II. DATOS PERSONALES Y FAMILIARES -->
     <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
         <h4 style="margin:0 0 10px; color:#4338ca; font-size:14px; font-weight:bold;">II. DATOS PERSONALES Y FAMILIARES</h4>
-        <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:12px;">
+        <div class="empleado-grid grid-responsive-2" style="gap:12px;">
             <div><b>Edad:</b><input type="text" id="med_edad" value="${ci.evaluacion?.med_edad || ''}" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onchange="actualizarEvaluacionCampo('med_edad', this.value)"></div>
             <div><b>A qué se dedica papá:</b><input type="text" id="med_papa_dedica" value="${ci.evaluacion?.med_papa_dedica || ''}" onchange="actualizarEvaluacionCampo('med_papa_dedica', this.value)"></div>
             <div><b>Vive en:</b><input type="text" id="med_vive_en" value="${ci.evaluacion?.med_vive_en || ''}" placeholder="Colonia / Zona" onchange="actualizarEvaluacionCampo('med_vive_en', this.value)"></div>
@@ -546,7 +690,7 @@
     <!-- III. PERFIL PROFESIONAL Y ESPECÍFICO -->
     <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:15px;">
         <h4 style="margin:0 0 10px; color:#4338ca; font-size:14px; font-weight:bold;">III. PERFIL PROFESIONAL Y ESPECÍFICO</h4>
-        <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:12px;">
+        <div class="empleado-grid grid-responsive-2" style="gap:12px;">
 
             <!-- Título y Cédula -->
             <div style="background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
@@ -576,7 +720,7 @@
             <!-- Internado y Servicio Social -->
             <div style="grid-column: span 2; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
                 <h5 style="margin:0 0 8px; color:#4338ca; font-weight:bold;">Internado:</h5>
-                <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:10px;">
+                <div class="empleado-grid grid-responsive-2" style="gap:10px;">
                     <div><b>Lugar:</b><input type="text" value="${ci.evaluacion?.med_internado_lugar || ''}" onchange="actualizarEvaluacionCampo('med_internado_lugar', this.value)"></div>
                     <div style="display:flex; gap:10px;">
                         <div style="flex:1;"><b>De:</b><input type="date" value="${ci.evaluacion?.med_internado_de || ''}" onchange="actualizarEvaluacionCampo('med_internado_de', this.value)"></div>
@@ -588,7 +732,7 @@
 
             <div style="grid-column: span 2; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
                 <h5 style="margin:0 0 8px; color:#4338ca; font-weight:bold;">Servicio Social:</h5>
-                <div class="empleado-grid" style="grid-template-columns: 1fr 1fr; gap:10px;">
+                <div class="empleado-grid grid-responsive-2" style="gap:10px;">
                     <div><b>Lugar:</b><input type="text" value="${ci.evaluacion?.med_ss_lugar || ''}" onchange="actualizarEvaluacionCampo('med_ss_lugar', this.value)"></div>
                     <div style="display:flex; gap:10px;">
                         <div style="flex:1;"><b>De:</b><input type="date" value="${ci.evaluacion?.med_ss_de || ''}" onchange="actualizarEvaluacionCampo('med_ss_de', this.value)"></div>
@@ -609,7 +753,8 @@
     <!-- V. RESULTADOS DE PRUEBAS PSICOMÉTRICAS -->
     <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #cbd5e1;">
         <h4 style="margin:0 0 10px; color:#4338ca; font-size:14px; font-weight:bold;">V. RESULTADOS DE PRUEBAS PSICOMÉTRICAS</h4>
-        <table class="rh-table" style="width:100%;">
+        <div style="overflow-x: auto; width: 100%;">
+        <table class="rh-table" style="width:100%; min-width:600px;">
             <thead>
                 <tr>
                     <th style="padding:10px; width:110px;">Prueba</th>
@@ -629,7 +774,22 @@
                 }).join('') }
             </tbody>
         </table>
+        </div>
     </div>
+
+    <!-- Botón Guardar y Completar - Bloque Médico -->
+    <div style="margin-top:20px; border-top:1.5px solid #cbd5e1; padding-top:15px; display: ${ ci.estado === 'Realizada' ? 'none' : 'flex' }; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div style="font-size:12px; color:#64748b; display:inline-flex; align-items:center; gap:6px;">
+            <i class="bi bi-info-circle"></i>
+            Al guardar, la entrevista se marcará como <b>Realizada</b> y el formulario quedará bloqueado.
+        </div>
+        <button type="button" id="btn_guardar_completar_med" class="btn text-white" style="background: linear-gradient(135deg,#16a34a,#15803d); border: none; border-radius: 12px; font-weight: 700; padding: 13px 30px; font-size: 1rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 16px rgba(22,163,74,0.3); transition: all 0.2s; letter-spacing:0.2px;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(22,163,74,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(22,163,74,0.3)'" onclick="guardarYMarcarRealizada()">
+            <i class="bi bi-floppy-fill"></i>
+            <i class="bi bi-check-circle-fill"></i>
+            Guardar y Completar
+        </button>
+    </div>
+    </fieldset>
 </div>
 
 
@@ -640,47 +800,63 @@
 <!-- ========================================================= -->
 <!-- VISTA 2: EXPEDIENTE (Documentos y Notas) -->
 <!-- ========================================================= -->
-<div id="vista_modo_expediente_cita" style="display: ${ (ci.modo_actual==='expediente') ? 'block' : 'none' };">
+<div id="vista_modo_expediente_cita" style="display: ${ subTabCita === 'expediente' ? 'block' : 'none' }; order: ${ (ci.estado === 'Realizada' || ci.estado === 'No se presentó' || ci.estado === 'Cancelada') ? '1' : '3' };">
     <div style="display:flex; flex-wrap:wrap; gap:14px; align-items:stretch;">
-        <div class="col" style="flex: 1; min-width:300px; max-width:400px;">
-            <div class="rh-card" style="height:100%; border-left:4px solid #16a34a;">
-                <h3 style="margin:0 0 15px; color:#16a34a;"><i class="bi bi-folder2-open me-2"></i>Expediente</h3>
+        <div class="col" style="flex: 1.2; min-width:320px;">
+            <div class="rh-card" style="height:100%; border-left:4px solid #16a34a; padding: 20px 24px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:2px solid #16a34a; padding-bottom:10px;">
+                    <h3 style="margin:0; color:#16a34a; font-weight: 700; border:none; padding:0;"><i class="bi bi-folder2-open me-2"></i>Expediente</h3>
+                    <button type="button" class="btn text-white" style="background-color: #16a34a; border: none; border-radius: 8px; font-weight: 600; padding: 5px 12px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s; margin: 0;" onmouseover="this.style.backgroundColor='#15803d'" onmouseout="this.style.backgroundColor='#16a34a'" onclick="abrirModalSubirDocCita()">
+                        <i class="bi bi-plus-lg"></i> Agregar
+                    </button>
+                </div>
                 
                 <input type="file" id="fileUploadCita" style="display:none" onchange="subirArchivoCita(this)">
                 
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    ${ [
-                        'Ficha tecnica.pdf', 
-                        'CV / Solicitud de Empleo', 
-                        'Identificación Oficial (INE)', 
-                        'Acta de Nacimiento', 
-                        'CURP', 
-                        'Constancia de Situación Fiscal (RFC)', 
-                        'Comprobante de Domicilio', 
-                        'Número de Seguridad Social (NSS)'
-                      ].map(req => {
-                        let docName = req === 'Ficha tecnica.pdf' ? `${ci.nombre || 'Candidato'} Ficha tecnica.pdf` : req;
-                        let doc = (ci.documentos || []).find(d => d.nombre === docName);
+                <div style="display:flex; flex-direction:column; gap:20px;">
+                    ${ (() => {
+                        let docs = ci.documentos || [];
+                        let docsOrdenados = [...docs].sort((a, b) => {
+                            let isFichaA = a.nombre && a.nombre.toLowerCase().includes("ficha tecnica.pdf");
+                            let isFichaB = b.nombre && b.nombre.toLowerCase().includes("ficha tecnica.pdf");
+                            if(isFichaA && !isFichaB) return -1;
+                            if(!isFichaA && isFichaB) return 1;
+                            return 0;
+                        });
                         
-                        if(doc) {
-                            return '<div style="display:flex; align-items:center; justify-content:space-between; background:#f0fdf4; padding:10px 14px; border:1px solid #bbf7d0; border-radius:8px; cursor:pointer; transition:0.2s;" onclick="verDocumento(\''+doc.url+'\', \''+doc.tipo+'\', \''+doc.nombre+'\')" onmouseover="this.style.borderColor=\'#22c55e\'" onmouseout="this.style.borderColor=\'#bbf7d0\'">'+
-                                '<div style="display:flex; align-items:center; gap:8px; overflow:hidden;">'+
-                                    '<i class="bi bi-check-circle-fill" style="font-size:18px; color:#22c55e;"></i>'+
-                                    '<span style="font-weight:600; font-size:13px; color:#166534; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="'+docName+'">'+docName+'</span>'+
-                                '</div>'+
-                                '<i class="bi bi-eye" style="color:#22c55e;"></i>'+
-                            '</div>';
-                        } else {
-                            let clickAction = req === 'Ficha tecnica.pdf' ? 'alert(\'La ficha técnica se genera automáticamente al guardar la evaluación.\')' : 'solicitarArchivoCita(\''+docName+'\')';
-                            return '<div style="display:flex; align-items:center; justify-content:space-between; background:#f8fafc; padding:10px 14px; border:1px dashed #cbd5e1; border-radius:8px; cursor:pointer; transition:0.2s;" onclick="'+clickAction+'" onmouseover="this.style.borderColor=\'#94a3b8\'" onmouseout="this.style.borderColor=\'#cbd5e1\'">'+
-                                '<div style="display:flex; align-items:center; gap:8px; overflow:hidden;">'+
-                                    '<i class="bi bi-circle" style="font-size:18px; color:#94a3b8;"></i>'+
-                                    '<span style="font-weight:500; font-size:13px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="'+docName+'">'+docName+'</span>'+
-                                '</div>'+
-                                '<i class="bi bi-upload" style="color:#94a3b8; font-size:12px;"></i>'+
-                            '</div>';
+                        if(docsOrdenados.length === 0) {
+                            return '<div style="text-align:center; padding:20px; color:#64748b; font-size:13px; font-style:italic;">No hay documentos agregados en este expediente.</div>';
                         }
-                    }).join('') }
+                        
+                        return docsOrdenados.map((doc) => {
+                            let origIndex = docs.findIndex(d => d.nombre === doc.nombre && d.url === doc.url);
+                            let isFicha = doc.nombre && doc.nombre.toLowerCase().includes("ficha tecnica.pdf");
+                            let fileExt = doc.nombre ? doc.nombre.split('.').pop().toUpperCase() : 'PDF';
+                            let badgeColor = fileExt === 'PDF' ? '#ef4444' : '#3b82f6';
+                            let icon = fileExt === 'PDF' ? 'bi-file-pdf-fill' : 'bi-file-image-fill';
+                            return '<div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:10px; box-shadow:0 1px 3px rgba(0,0,0,0.02); transition: all 0.2s;" onmouseover="this.style.borderColor=\'#16a34a\'; this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.05)\'" onmouseout="this.style.borderColor=\'#e2e8f0\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.02)\'">'+
+                                '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">'+
+                                    '<span style="background:'+badgeColor+'20; color:'+badgeColor+'; font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; text-transform:uppercase;">'+fileExt+'</span>'+
+                                    '<span style="font-size:11px; font-weight:700; color:#16a34a; display:inline-flex; align-items:center; gap:3px;"><i class="bi bi-cloud-check-fill"></i> Cargado</span>'+
+                                '</div>'+
+                                '<div style="font-weight:700; color:#1e293b; font-size:13px; word-break:break-all; display:flex; align-items:center; gap:6px;">'+
+                                    '<i class="bi '+icon+'" style="color:'+badgeColor+'; font-size:18px; flex-shrink:0;"></i> '+doc.nombre+
+                                '</div>'+
+                                '<div style="display:flex; gap:6px; margin-top:6px; border-top:1px solid #f1f5f9; padding-top:10px;">'+
+                                    '<button type="button" class="btn-ver" style="background:#1e3a8a; color:#ffffff; padding:6px 10px; font-size:11px; font-weight:600; flex:1; margin:0; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:4px;" onclick="verDocumento(\''+doc.url+'\', \''+doc.tipo+'\', \''+doc.nombre+'\')">'+
+                                        '<i class="bi bi-eye"></i> Ver'+
+                                    '</button>'+
+                                    '<button type="button" class="btn-ver" style="background:#475569; color:#ffffff; padding:6px 10px; font-size:11px; font-weight:600; flex:1; margin:0; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:4px;" onclick="abrirModalSubirDocCita('+origIndex+')">'+
+                                        '<i class="bi bi-pencil-square"></i> Actualizar'+
+                                    '</button>'+
+                                    (!isFicha ? 
+                                    '<button type="button" class="btn-ver" style="background:#ef4444; color:#ffffff; padding:6px 10px; font-size:11px; font-weight:600; flex:1; margin:0; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:4px;" onclick="eliminarDocumentoCita('+origIndex+')">'+
+                                        '<i class="bi bi-trash"></i> Eliminar'+
+                                    '</button>' : '')+
+                                '</div>'+
+                            '</div>';
+                        }).join('');
+                    })() }
                 </div>
             </div>
         </div>
@@ -692,14 +868,21 @@
                     <h3 id="preview_title" style="margin:0; font-size:14px; color:#334155;"><i class="bi bi-file-earmark-text me-2"></i>Visor de Documento</h3>
                     <div id="preview_actions" style="display:none; gap:8px;">
                         <button class="btn-ver" style="background:#2563eb; padding:5px 12px; font-size:12px; font-weight:bold;" onclick="descargarVistaPrevia()"><i class="bi bi-download me-1"></i> Descargar</button>
+                        <button class="btn-ver" style="background:#0284c7; padding:5px 12px; font-size:12px; font-weight:bold;" onclick="verCompletoVistaPrevia()"><i class="bi bi-fullscreen me-1"></i> Ver Completo</button>
                         <button class="btn-ver" style="background:#475569; padding:5px 12px; font-size:12px; font-weight:bold;" onclick="imprimirVistaPrevia()"><i class="bi bi-printer me-1"></i> Imprimir</button>
                     </div>
                 </div>
                 
                 <div id="preview_container" style="flex-grow:1; min-height:500px; background:#e2e8f0; display:flex; align-items:center; justify-content:center; position:relative;">
-                    <div id="preview_empty" style="text-align:center; color:#94a3b8;">
-                        <i class="bi bi-file-earmark-pdf" style="font-size:48px;"></i>
-                        <p style="margin-top:10px; font-weight:500;">Selecciona un documento para visualizarlo</p>
+                    <div id="preview_empty" style="text-align:center; color:#475569;">
+                        <i class="bi bi-file-earmark-pdf" style="font-size:48px; color: #475569;"></i>
+                        <p style="margin-top:10px; font-weight:600; color:#475569;">Expediente de Citas</p>
+                        
+                        <div style="margin-top: 15px;">
+                            <button type="button" class="btn text-white" style="background-color: #16a34a; border: none; border-radius: 8px; font-weight: 600; padding: 10px 20px; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2); transition: all 0.2s;" onmouseover="this.style.backgroundColor='#15803d'" onmouseout="this.style.backgroundColor='#16a34a'" onclick="abrirModalSubirDocCita()">
+                                <i class="bi bi-plus-lg"></i> Agregar Documento
+                            </button>
+                        </div>
                     </div>
                     <!-- El iframe/img se inyecta por JS aquí -->
                 </div>
@@ -707,26 +890,8 @@
         </div>
     </div>
 </div>
-
-<!-- BARRA DE ACCIONES CON ESTILO MEJORADO -->
-<div class="rh-card sticky-acciones" style="display: ${ (ci.modo_actual==='expediente') ? 'none' : 'block' }; margin-top:14px;">
-    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn-ver" style="background:#2563eb;" onclick="guardarCambiosFicha()" title="Guardar Cambios">
-                <i class="bi bi-floppy-fill me-1"></i> Guardar
-            </button>
-            ${ !citas.find(c=>c.id==ci.id) ? '' : `
-            <button class="btn-ver" style="background:#16a34a;" onclick="marcarRealizadaYConvertir()" title="Marcar como Realizada">
-                <i class="bi bi-check-circle-fill me-1"></i> Realizada
-            </button>
-            <button class="btn-ver" style="background:#475569;" onclick="noSePresentoCita()" title="No se presentó">
-                <i class="bi bi-person-x-fill me-1"></i> No se presentó
-            </button>
-            `}
-            <button class="btn-ver" style="background:#ef4444;" onclick="eliminarRegistro('cita')" title="Eliminar Registro">
-                <i class="bi bi-trash-fill"></i>
-            </button>
-        </div>
-        <!-- Botón de convertir a candidato removido temporalmente por solicitud de la fase actual -->
-    </div>
 </div>
+
+
+
+

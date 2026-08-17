@@ -96,7 +96,7 @@ html,body{
     flex:1;
     overflow-y:auto;
     min-height:0;
-    padding-bottom:120px;
+    padding-bottom:20px;
 }
 
 /* Estilos de tarjetas para separar secciones visualmente */
@@ -128,12 +128,9 @@ html,body{
     border-bottom: 2px solid #e2e8f0;
 }
 
-/* Layout de la ficha técnica usando Grid (2 columnas) */
+/* Layout de la ficha técnica usando display block full-width */
 .ficha-wrap{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:14px;
-    align-items:start;
+    width: 100%;
 }
 
 .col{
@@ -343,28 +340,130 @@ margin-bottom:5px;
     color: #fff;
 }
 
+/* Estilos para el rediseño del módulo de RH */
+.tab-sub {
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.tab-sub:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #1e3a8a;
+}
+.tab-sub.active {
+    background: #cbd5e1 !important;
+    color: #1e293b !important;
+    border: 1px solid #94a3b8 !important;
+    font-weight: bold !important;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1) !important;
+}
+.input-filled {
+    background-color: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #1e293b !important;
+}
+
+/* Responsive Grid system */
+.grid-responsive-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+.grid-responsive-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+.grid-responsive-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+.grid-responsive-1-1 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 1024px) {
+    .grid-responsive-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .grid-responsive-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+
+    .grid-responsive-4 {
+        grid-template-columns: 1fr;
+    }
+    .grid-responsive-3 {
+        grid-template-columns: 1fr;
+    }
+    .grid-responsive-2 {
+        grid-template-columns: 1fr;
+    }
+    .grid-responsive-1-1 {
+        grid-template-columns: 1fr;
+    }
+    
+    .rh-container {
+        flex-direction: column !important;
+        height: auto !important;
+        width: 100% !important;
+        overflow-y: auto !important;
+    }
+    .rh-menu {
+        width: 100% !important;
+        height: auto !important;
+        padding-bottom: 20px !important;
+    }
+    .rh-content {
+        padding: 10px !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+    
+    .sticky-acciones {
+        position: static !important;
+        box-shadow: none !important;
+        border-top: none !important;
+        margin-top: 15px !important;
+        padding: 10px 0 !important;
+        width: 100% !important;
+    }
+}
 </style>
 
 <div class="rh-container">
-
-<!-- Menú de navegación lateral -->
 <aside class="rh-menu">
     <h2>Recursos Humanos</h2>
     @if(Auth::user()->hasPermission('rh_agendar_citas') || Auth::user()->hasPermission('rh_ver_citas_realizadas') || Auth::user()->hasPermission('administracion_rh'))
-        <div class="rh-nav" onclick="mostrar('citas')">Agendar Cita</div>
+        <div class="rh-nav" data-nav="citas" onclick="mostrar('citas')">Agendar Cita</div>
     @endif
     @if(Auth::user()->hasPermission('rh_ver_editar_candidatos') || Auth::user()->hasPermission('rh_aprobar_candidato') || Auth::user()->hasPermission('administracion_rh'))
-        <div class="rh-nav" onclick="mostrar('candidatos')">Candidatos</div>
+        <div class="rh-nav" data-nav="candidatos" onclick="mostrar('candidatos')">Candidatos</div>
     @endif
     @if(Auth::user()->hasPermission('rh_ver_editar_empleados') || Auth::user()->hasPermission('administracion_rh'))
-        <div class="rh-nav" onclick="mostrar('practicantes')">Practicantes</div>
-        <div class="rh-nav" onclick="mostrar('empleados')">Empleados</div>
+        <div class="rh-nav" data-nav="practicantes" onclick="mostrar('practicantes')">Practicantes</div>
+        <div class="rh-nav" data-nav="empleados" onclick="mostrar('empleados')">Empleados</div>
     @endif
     @if(Auth::user()->hasPermission('rh_gestion_vacaciones') || Auth::user()->hasPermission('administracion_rh'))
-        <div class="rh-nav" onclick="mostrar('vacaciones')">Vacaciones</div>
+        <div class="rh-nav" data-nav="vacaciones" onclick="mostrar('vacaciones')">Vacaciones</div>
     @endif
     @if(Auth::user()->hasPermission('rh_gestion_contratos') || Auth::user()->hasPermission('administracion_rh'))
-        <div class="rh-nav" onclick="mostrar('contratos')">Contratos</div>
+        <div class="rh-nav" data-nav="contratos" onclick="mostrar('contratos')">Contratos</div>
     @endif
 
     <a href="{{ url('administracion') }}" class="btn-regresar">
@@ -373,9 +472,15 @@ margin-bottom:5px;
 </aside>
 
 <main class="rh-content">
-<!-- Espacio donde se renderiza la vista seleccionada -->
-<div id="contenido"></div>
-
+    <!-- Breadcrumb dinámico para indicar el apartado activo -->
+    <div class="rh-breadcrumb" style="margin-bottom: 12px; font-size: 13px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px; background:#fff; padding:10px 16px; border-radius:8px; border:1px solid #e2e8f0; box-shadow:0 1px 2px rgba(0,0,0,0.02); width:fit-content;">
+        <span style="color: #64748b;"><i class="bi bi-house-door-fill"></i> Recursos Humanos</span>
+        <i class="bi bi-chevron-right" style="font-size: 10px; color:#94a3b8;"></i>
+        <span id="breadcrumb-modulo" style="color: #1e3a8a; display:inline-flex; align-items:center; gap:4px;">Agendar Cita</span>
+    </div>
+    
+    <!-- Espacio donde se renderiza la vista seleccionada -->
+    <div id="contenido"></div>
 </main>
 </div>
 
@@ -394,15 +499,40 @@ margin-bottom:5px;
           <option value="">-- Seleccionar empleado --</option>
         </select>
       </div>
-      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Fecha Inicio</b><input type="date" id="v_inicio" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"></div>
-      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Fecha Fin</b><input type="date" id="v_fin" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"></div>
+      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Fecha Inicio</b><input type="date" id="v_inicio" onchange="calcularDiasVacacionesAuto()" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"></div>
+      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Fecha Fin</b><input type="date" id="v_fin" onchange="calcularDiasVacacionesAuto()" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"></div>
       <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Días a descontar</b><input type="number" id="v_dias" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"></div>
       <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Tipo</b><select id="v_tipo" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"><option>Vacaciones</option><option>Permiso</option></select></div>
       <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Persona que cubre</b><input type="text" id="v_cobertura" placeholder="Nombre completo" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"></div>
     </div>
     <div style="display:flex;justify-content:flex-end;margin-top:20px;gap:10px;">
       <button class="btn-ver" style="background:#6b7280;" onclick="document.getElementById('modalVacaciones').style.display='none'">Cancelar</button>
-      <button class="btn-ver" style="background:#22c55e;" onclick="guardarNuevaVacacion()">Guardar Solicitud</button>
+      <button class="btn-ver" style="background:#3b82f6;" onclick="guardarNuevaVacacion(true)">Guardar y Aprobar</button>
+      <button class="btn-ver" style="background:#22c55e;" onclick="guardarNuevaVacacion(false)">Guardar Solicitud</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Permisos Practicante -->
+<div id="modalPermisosPracticante" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:#fff;padding:25px;border-radius:12px;width:420px;max-width:90%;">
+    <h3 style="margin:0 0 15px; color:#1e3a8a;"><i class="bi bi-calendar-plus me-2"></i>Registrar Permiso Practicante</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Practicante</b>
+        <select id="vp_pract_id" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;font-size:13px;">
+          <option value="">-- Seleccionar practicante --</option>
+        </select>
+      </div>
+      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Fecha Inicio</b><input type="date" id="vp_inicio" onchange="calcularDiasPermisosPracticanteAuto()" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"></div>
+      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Fecha Fin</b><input type="date" id="vp_fin" onchange="calcularDiasPermisosPracticanteAuto()" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"></div>
+      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Días de inasistencia</b><input type="number" id="vp_dias" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"></div>
+      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Tipo</b><select id="vp_tipo" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"><option>Permiso</option><option>Falta</option><option>Ausencia</option><option>Incapacidad</option></select></div>
+      <div><b style="font-size:12px;color:#475569;text-transform:uppercase;">Motivo / Observación</b><input type="text" id="vp_cobertura" placeholder="Indica el motivo..." style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;margin-top:4px;"></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:20px;gap:10px;">
+      <button class="btn-ver" style="background:#6b7280;" onclick="document.getElementById('modalPermisosPracticante').style.display='none'">Cancelar</button>
+      <button class="btn-ver" style="background:#3b82f6;" onclick="guardarNuevoPermisoPracticante(true)">Guardar y Aprobar</button>
+      <button class="btn-ver" style="background:#22c55e;" onclick="guardarNuevoPermisoPracticante(false)">Guardar Solicitud</button>
     </div>
   </div>
 </div>
@@ -666,6 +796,29 @@ let filtroFechaCita = "";
 let filtroNombreCita = "";
 let citasSeleccionadas = [];
 
+// Sub-pestañas para el rediseño de fichas
+let subTabCandidato = 'informacion';
+let subTabEmpleado = 'informacion';
+let subTabPracticante = 'informacion';
+let subTabCita = 'entrevista';
+
+function cambiarSubTabCandidato(tab) {
+    subTabCandidato = tab;
+    mostrar('ficha_candidato');
+}
+function cambiarSubTabEmpleado(tab) {
+    subTabEmpleado = tab;
+    mostrar('ficha');
+}
+function cambiarSubTabPracticante(tab) {
+    subTabPracticante = tab;
+    mostrar('ficha_practicante');
+}
+function cambiarSubTabCita(tab) {
+    subTabCita = tab;
+    mostrar('ficha_cita');
+}
+
 /**
  * Obtiene el objeto actualmente seleccionado (sea empleado o practicante)
  */
@@ -689,8 +842,17 @@ function getSeleccionado(){
 let filtroNombre="";
 let filtroEmpresa="";
 let filtroEstado="";
+let filtroVacacionesNivel="";
 let filtroNombreVacaciones="";
+let filtroEstadoVacaciones="";
+let filtroTipoVacaciones="";
+let filtroMesVacaciones="";
 let filtroNombreCandidato="";
+let filtroPuestoCandidato="";
+let filtroEstatusCandidato="";
+let filtroCalificacionCandidato="";
+let filtroTextoPracticante="";
+let filtroPracticanteHoras="";
 let timeoutFiltro;
 
 /**
@@ -716,6 +878,7 @@ let candidatos = @json($candidatos);
 let citas = @json($citas);
 
 let contratos = @json($contratos ?? []);
+let practicantesPermisos = @json($practicantesPermisos ?? []);
 
 // SANITIZACIÓN DEFENSIVA PARA BASES DE DATOS DOBLEMENTE CODIFICADAS
 function sanitizeJSON(obj, props) {
@@ -749,14 +912,172 @@ function syncToServer() {
             empleados: empleados,
             vacaciones: vacaciones,
             vacacionesAnuales: vacacionesAnuales,
-            contratos: contratos
+            contratos: contratos,
+            practicantesPermisos: practicantesPermisos
         })
     })
-    .catch(console.error);
+    .then(async response => {
+        if (!response.ok) {
+            let errData = await response.json().catch(() => ({}));
+            let errMsg = errData.error || 'Error desconocido';
+            console.error('Error al sincronizar con el servidor:', errMsg);
+            alert('⚠️ Error al guardar en la base de datos: ' + errMsg + '\nPor favor, recarga la página.');
+        } else {
+            let resData = await response.json().catch(() => ({}));
+            if (resData.success) {
+                if (resData.empleados) empleados = resData.empleados;
+                if (resData.practicantes) practicantes = resData.practicantes;
+                if (resData.candidatos) candidatos = resData.candidatos;
+                if (resData.citas) citas = resData.citas;
+                if (resData.vacaciones) vacaciones = resData.vacaciones;
+                if (resData.vacacionesAnuales) vacacionesAnuales = resData.vacacionesAnuales;
+                if (resData.contratos) contratos = resData.contratos;
+                if (resData.practicantesPermisos) practicantesPermisos = resData.practicantesPermisos;
+
+                // Re-sanitizar para evitar JSON en crudo en las propiedades de tipo objeto
+                empleados.forEach(e => sanitizeJSON(e, ['documentos', 'observaciones']));
+                practicantes.forEach(p => sanitizeJSON(p, ['documentos', 'observaciones']));
+                candidatos.forEach(c => sanitizeJSON(c, ['documentos', 'observaciones', 'evaluacion_details']));
+                citas.forEach(ci => sanitizeJSON(ci, ['documentos', 'evaluacion']));
+
+                console.log('Sincronización exitosa y IDs sincronizados.');
+            }
+        }
+    })
+    .catch(err => {
+        console.error('Error de red en la sincronización:', err);
+        alert('⚠️ Error de conexión. No se pudieron guardar los cambios en la base de datos.');
+    });
 }
 
 function guardarBD() {
     syncToServer();
+}
+
+function actualizarEvaluacionCampo(campo, valor) {
+    if (!citaSel) return;
+    if (!citaSel.evaluacion) citaSel.evaluacion = {};
+    citaSel.evaluacion[campo] = valor;
+    
+    // Sincronizar en el array principal
+    let idx = citas.findIndex(c => c.id == citaSel.id);
+    if(idx !== -1){
+        citas[idx].evaluacion = citaSel.evaluacion;
+    }
+    
+    guardarBD(); // Auto-guardado
+}
+
+function actualizarEvaluacionCheck(campo, check) {
+    if (!citaSel) return;
+    if (!citaSel.evaluacion) citaSel.evaluacion = {};
+    citaSel.evaluacion[campo] = check;
+    
+    // Sincronizar en el array principal
+    let idx = citas.findIndex(c => c.id == citaSel.id);
+    if(idx !== -1){
+        citas[idx].evaluacion = citaSel.evaluacion;
+    }
+    
+    guardarBD(); // Auto-guardado
+}
+
+async function guardarYMarcarRealizada() {
+    if (!citaSel) return;
+    if (!citaSel.evaluacion || !citaSel.evaluacion.tipo) {
+        alert("Debes seleccionar y llenar un formulario de evaluación antes de completar la entrevista.");
+        return;
+    }
+
+    // Deshabilitar el botón mientras procesa
+    let btnIds = ['btn_guardar_completar_prac', 'btn_guardar_completar_enf', 'btn_guardar_completar_med'];
+    btnIds.forEach(id => {
+        let btn = document.getElementById(id);
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando...';
+        }
+    });
+
+    try {
+        // 1. Generar PDF de la ficha técnica automáticamente
+        let pdfBase64 = await generarPDFOcultoFicha(citaSel.evaluacion.tipo);
+        if (pdfBase64) {
+            let docName = `${citaSel.nombre} Ficha tecnica.pdf`;
+            if (!citaSel.documentos) citaSel.documentos = [];
+
+            // Actualizar si ya existe, o agregar nuevo
+            let idx = citaSel.documentos.findIndex(d => d.nombre === docName);
+            if (idx >= 0) {
+                citaSel.documentos[idx].url = pdfBase64;
+            } else {
+                citaSel.documentos.push({ url: pdfBase64, tipo: 'pdf', nombre: docName });
+            }
+        }
+
+        // 2. Marcar la entrevista como Realizada
+        citaSel.estado = "Realizada";
+
+        // 3. Sincronizar en el array principal de citas
+        let idx = citas.findIndex(c => c.id == citaSel.id);
+        if (idx !== -1) {
+            citas[idx].estado = "Realizada";
+            citas[idx].evaluacion = citaSel.evaluacion;
+            citas[idx].documentos = citaSel.documentos;
+        } else {
+            // Si la cita es nueva, empujarla al array
+            citas.unshift(citaSel);
+        }
+
+        // 4. Guardar en la base de datos
+        guardarBD();
+
+        // 5. Banner de éxito premium
+        let banner = document.createElement('div');
+        banner.innerHTML = `
+            <div style="display:flex; align-items:center; gap:12px;">
+                <i class="bi bi-check-circle-fill" style="font-size:22px; color:#bbf7d0;"></i>
+                <div>
+                    <div style="font-weight:700; font-size:14px;">¡Entrevista completada!</div>
+                    <div style="font-size:12px; color:#bbf7d0; margin-top:2px;">
+                        Datos guardados · PDF generado · Entrevista marcada como Realizada
+                    </div>
+                </div>
+            </div>
+        `;
+        banner.style.cssText = 'position:fixed;top:16px;right:16px;background:linear-gradient(135deg,#16a34a,#15803d);color:white;padding:14px 22px;border-radius:12px;font-weight:bold;z-index:9999;box-shadow:0 8px 24px rgba(22,163,74,0.35);max-width:360px;animation:slideInRight 0.3s ease;';
+        
+        // Agregar estilo de animación si no existe
+        if (!document.getElementById('banner-anim-style')) {
+            let style = document.createElement('style');
+            style.id = 'banner-anim-style';
+            style.textContent = '@keyframes slideInRight{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}';
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(banner);
+        setTimeout(() => {
+            banner.style.animation = 'slideInRight 0.3s ease reverse';
+            setTimeout(() => { if (banner.parentNode) banner.parentNode.removeChild(banner); }, 300);
+        }, 3500);
+
+        // 6. Ir a la pestaña Expediente donde se verá el PDF
+        subTabCita = 'expediente';
+        citaSel.modo_actual = 'expediente';
+        mostrar('ficha_cita');
+
+    } catch (e) {
+        console.error("Error en Guardar y Completar:", e);
+        alert("⚠️ Ocurrió un error al completar la entrevista. Intenta de nuevo.");
+        // Re-habilitar botones en caso de error
+        btnIds.forEach(id => {
+            let btn = document.getElementById(id);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-floppy-fill"></i><i class="bi bi-check-circle-fill"></i> Guardar y Completar';
+            }
+        });
+    }
 }
 
 
@@ -768,6 +1089,21 @@ function seleccionarFormularioEvaluacion(tipo) {
     if (!citaSel) return;
     if (!citaSel.evaluacion) citaSel.evaluacion = {};
     citaSel.evaluacion.tipo = tipo;
+
+    // Sincronizar en el array principal e iniciar guardado inmediato
+    let idx = citas.findIndex(c => c.id == citaSel.id);
+    if(idx !== -1){
+        citas[idx].evaluacion = citaSel.evaluacion;
+    }
+    guardarBD();
+
+    // Bloquear inmediatamente el select en el DOM
+    let selectEl = document.getElementById("select_form_eval_cita");
+    if (selectEl) selectEl.disabled = true;
+
+    // Ocultar botón No se presentó
+    let noPresentoEl = document.getElementById("no_presento_container");
+    if (noPresentoEl) noPresentoEl.style.display = 'none';
 
     // Ocultar todos los bloques
     let bloques = ['bloque_form_practicante', 'bloque_form_enfermero', 'bloque_form_medico'];
@@ -821,6 +1157,7 @@ function actualizarHijoItem(index, campo, valor) {
     if (!citaSel.evaluacion.hijos_lista) citaSel.evaluacion.hijos_lista = [];
     if (!citaSel.evaluacion.hijos_lista[index]) citaSel.evaluacion.hijos_lista[index] = { nombre: '', edad: '' };
     citaSel.evaluacion.hijos_lista[index][campo] = valor;
+    guardarBD();
 }
 
 function toggleSeguroOp(val) {
@@ -843,6 +1180,7 @@ function actualizarEvaluacionPsicometrica(prueba, campo, valor) {
     if (!citaSel.evaluacion.psicometricas) citaSel.evaluacion.psicometricas = {};
     if (!citaSel.evaluacion.psicometricas[prueba]) citaSel.evaluacion.psicometricas[prueba] = {};
     citaSel.evaluacion.psicometricas[prueba][campo] = valor;
+    guardarBD();
 }
 
 // ================================================================
@@ -909,6 +1247,7 @@ function actualizarHijoItemMed(index, campo, valor) {
     if (!citaSel.evaluacion.med_hijos_lista) citaSel.evaluacion.med_hijos_lista = [];
     if (!citaSel.evaluacion.med_hijos_lista[index]) citaSel.evaluacion.med_hijos_lista[index] = { nombre: '', edad: '' };
     citaSel.evaluacion.med_hijos_lista[index][campo] = valor;
+    guardarBD();
 }
 
 function actualizarEvaluacionPsicometricaMed(prueba, campo, valor) {
@@ -917,6 +1256,7 @@ function actualizarEvaluacionPsicometricaMed(prueba, campo, valor) {
     if (!citaSel.evaluacion.med_psicometricas) citaSel.evaluacion.med_psicometricas = {};
     if (!citaSel.evaluacion.med_psicometricas[prueba]) citaSel.evaluacion.med_psicometricas[prueba] = {};
     citaSel.evaluacion.med_psicometricas[prueba][campo] = valor;
+    guardarBD();
 }
 
 function toggleEnfTranspMueven(check) {
@@ -974,6 +1314,7 @@ function actualizarHijoItemEnf(index, campo, valor) {
     if (!citaSel.evaluacion.enf_hijos_lista) citaSel.evaluacion.enf_hijos_lista = [];
     if (!citaSel.evaluacion.enf_hijos_lista[index]) citaSel.evaluacion.enf_hijos_lista[index] = { nombre: '', edad: '' };
     citaSel.evaluacion.enf_hijos_lista[index][campo] = valor;
+    guardarBD();
 }
 
 function actualizarEvaluacionPsicometricaEnf(prueba, campo, valor) {
@@ -982,6 +1323,7 @@ function actualizarEvaluacionPsicometricaEnf(prueba, campo, valor) {
     if (!citaSel.evaluacion.enf_psicometricas) citaSel.evaluacion.enf_psicometricas = {};
     if (!citaSel.evaluacion.enf_psicometricas[prueba]) citaSel.evaluacion.enf_psicometricas[prueba] = {};
     citaSel.evaluacion.enf_psicometricas[prueba][campo] = valor;
+    guardarBD();
 }
 
 
@@ -1190,17 +1532,34 @@ function imprimirFichaPracticantePDF() {
  * Funciones para cambiar el estado de solicitudes de vacaciones
  */
 function aprobarVacacion(index){
-if(confirm("¿Aprobar solicitud?")){
-vacaciones[index].estado="Aprobadas";
-mostrar("ficha");
-}
+    if(confirm("¿Aprobar solicitud?")){
+        let req = vacaciones[index];
+        if(!req) return;
+        let emp = empleados.find(e => e.id == req.empleado_id);
+        if(emp) {
+            let completedYears = calcularAniosServicio(emp.fecha);
+            let totalAcumulado = completedYears * 12;
+            let totalUsados = vacaciones.filter(v => v.empleado_id === emp.id && v.estado === 'Aprobadas' && v.tipo === 'Vacaciones').reduce((sum, v) => sum + v.dias, 0);
+            let disponibles = totalAcumulado - totalUsados;
+            
+            if (req.tipo === 'Vacaciones' && req.dias > disponibles) {
+                if (!confirm(`⚠️ Atención: La solicitud requiere ${req.dias} días, pero el empleado solo tiene ${disponibles} días disponibles.\n\n¿Deseas aprobar esta solicitud de todos modos por acuerdo previo?`)) {
+                    return;
+                }
+            }
+        }
+        vacaciones[index].estado="Aprobadas";
+        guardarBD();
+        mostrar("vacaciones");
+    }
 }
 
 function rechazarVacacion(index){
-if(confirm("¿Rechazar solicitud?")){
-vacaciones[index].estado="Rechazadas";
-mostrar("ficha");
-}
+    if(confirm("¿Rechazar solicitud?")){
+        vacaciones[index].estado="Rechazadas";
+        guardarBD();
+        mostrar("vacaciones");
+    }
 }
 
 /**
@@ -1375,33 +1734,47 @@ function mostrar(v){
 try {
 guardarEstadoNavegacionRH(v);
 
-// Manejo de clases activas en navegación
-document.querySelectorAll(".rh-nav").forEach(n=>{
-n.classList.remove("active");
+// Manejo de clases activas en navegación por data-nav
+let navMap = {
+    'citas': 'citas', 'ficha_cita': 'citas',
+    'candidatos': 'candidatos', 'ficha_candidato': 'candidatos',
+    'practicantes': 'practicantes', 'ficha_practicante': 'practicantes',
+    'empleados': 'empleados', 'ficha': 'empleados',
+    'vacaciones': 'vacaciones',
+    'contratos': 'contratos'
+};
+
+let activeNav = navMap[v];
+document.querySelectorAll(".rh-nav").forEach(n => {
+    if(n.getAttribute('data-nav') === activeNav) {
+        n.classList.add("active");
+    } else {
+        n.classList.remove("active");
+    }
 });
 
-if(v==="citas" || v==="ficha_cita"){
-document.querySelectorAll(".rh-nav")[0]?.classList.add("active");
-}
-if(v==="candidatos" || v==="ficha_candidato"){
-document.querySelectorAll(".rh-nav")[1]?.classList.add("active");
-}
-if(v==="practicantes" || v==="ficha_practicante"){
-document.querySelectorAll(".rh-nav")[2]?.classList.add("active");
-setTimeout(() => {
+// Actualizar breadcrumb dinámicamente
+let breadcrumbLabel = "Módulo";
+if (v === "citas") breadcrumbLabel = '<i class="bi bi-calendar-event me-1"></i> Citas Activas';
+else if (v === "ficha_cita") breadcrumbLabel = `<i class="bi bi-calendar-event me-1"></i> Cita: <span style="font-weight:normal; margin-left:4px;">${citaSel ? citaSel.nombre : ''}</span> <i class="bi bi-chevron-right mx-1" style="font-size: 10px; color:#94a3b8;"></i> <span style="color:#2563eb;">${(typeof subTabCita !== 'undefined' ? subTabCita : 'informacion').toUpperCase()}</span>`;
+else if (v === "candidatos") breadcrumbLabel = '<i class="bi bi-person-bounding-box me-1"></i> Candidatos';
+else if (v === "ficha_candidato") breadcrumbLabel = `<i class="bi bi-person-bounding-box me-1"></i> Candidato: <span style="font-weight:normal; margin-left:4px;">${candSel ? candSel.nombre : ''}</span> <i class="bi bi-chevron-right mx-1" style="font-size: 10px; color:#94a3b8;"></i> <span style="color:#2563eb;">${(typeof subTabCandidato !== 'undefined' ? subTabCandidato : 'informacion').toUpperCase()}</span>`;
+else if (v === "practicantes") breadcrumbLabel = '<i class="bi bi-mortarboard-fill me-1"></i> Practicantes';
+else if (v === "ficha_practicante") breadcrumbLabel = `<i class="bi bi-mortarboard-fill me-1"></i> Practicante: <span style="font-weight:normal; margin-left:4px;">${practSel ? practSel.nombre : ''}</span> <i class="bi bi-chevron-right mx-1" style="font-size: 10px; color:#94a3b8;"></i> <span style="color:#2563eb;">${(typeof subTabPracticante !== 'undefined' ? subTabPracticante : 'informacion').toUpperCase()}</span>`;
+else if (v === "empleados") breadcrumbLabel = '<i class="bi bi-person-badge-fill me-1"></i> Empleados';
+else if (v === "ficha") breadcrumbLabel = `<i class="bi bi-person-badge-fill me-1"></i> Empleado: <span style="font-weight:normal; margin-left:4px;">${empSel ? empSel.nombre : ''}</span> <i class="bi bi-chevron-right mx-1" style="font-size: 10px; color:#94a3b8;"></i> <span style="color:#2563eb;">${(typeof subTabEmpleado !== 'undefined' ? subTabEmpleado : 'informacion').toUpperCase()}</span>`;
+else if (v === "vacaciones") breadcrumbLabel = '<i class="bi bi-calendar3 me-1"></i> Vacaciones';
+else if (v === "contratos") breadcrumbLabel = '<i class="bi bi-file-earmark-text-fill me-1"></i> Contratos';
+
+let bcEl = document.getElementById("breadcrumb-modulo");
+if (bcEl) bcEl.innerHTML = breadcrumbLabel;
+
+if (v === "practicantes" || v === "ficha_practicante") {
+    setTimeout(() => {
         if (typeof renderizarDocumentos === 'function') {
             renderizarDocumentos();
         }
     }, 50);
-}
-if(v==="empleados" || v==="ficha"){
-document.querySelectorAll(".rh-nav")[3]?.classList.add("active");
-}
-if(v==="vacaciones"){
-document.querySelectorAll(".rh-nav")[4]?.classList.add("active");
-}
-if(v==="contratos"){
-document.querySelectorAll(".rh-nav")[5]?.classList.add("active");
 }
 
 let html="";
@@ -1424,11 +1797,11 @@ let filtradas = citas.filter(c => {
     let pasaFiltroGlobal = coincideMes && coincideFecha && coincideNombre;
 
     if(tipoCitaFiltro==="Historial"){
-        return (c.estado === "No se presentó" || c.estado === "Cancelada") && pasaFiltroGlobal;
+        return (c.estado === "Realizada" || c.estado === "No se presentó" || c.estado === "Cancelada") && pasaFiltroGlobal;
     }
 
-    // PARA AGENDADAS (Activas): Incluye Agendada y Realizada
-    return c.estado !== "No se presentó" && c.estado !== "Cancelada" && pasaFiltroGlobal;
+    // PARA AGENDADAS (Activas): Excluye Realizada, No se presentó y Cancelada
+    return (c.estado !== "Realizada" && c.estado !== "No se presentó" && c.estado !== "Cancelada") && pasaFiltroGlobal;
 });
 
 html=`
@@ -1538,13 +1911,37 @@ html=`@include('administracion.recursos_humanos.agendar_cita_detalle')`;
 // VISTA: LISTADO DE EMPLEADOS
 if(v==="empleados"){
 let filtrados = empleados.filter(e => {
-    // 1. Si tienen fecha de egreso, los excluimos inmediatamente
-    if (e.egreso) return false;
+    let completedYears = calcularAniosServicio(e.fecha);
+    let totalAcumulado = completedYears * 12;
+    let totalUsados = vacaciones.filter(v => v.empleado_id === e.id && v.estado === 'Aprobadas' && v.tipo === 'Vacaciones').reduce((sum, v) => sum + v.dias, 0);
+    let disponibles = totalAcumulado - totalUsados;
+    
+    let coincideVacaciones = true;
+    if (filtroVacacionesNivel !== "") {
+        let alerta = comprobarVacacionesNoTomadas(e);
+        if (filtroVacacionesNivel === "tiene") {
+            coincideVacaciones = disponibles > 0;
+        } else if (filtroVacacionesNivel === "sin") {
+            coincideVacaciones = disponibles <= 0;
+        } else if (filtroVacacionesNivel === "pocas") {
+            coincideVacaciones = disponibles > 0 && disponibles <= 5;
+        } else if (filtroVacacionesNivel === "muchas") {
+            coincideVacaciones = disponibles >= 12;
+        } else if (filtroVacacionesNivel === "alerta") {
+            coincideVacaciones = alerta.alertar === true;
+        }
+    }
 
-    // 2. Si no tienen fecha de egreso, aplicamos los filtros normales
+    let estado = e.egreso ? "Inactivo" : "Activo";
+    let coincideEstado = filtroEstado === "" || estado === filtroEstado;
+
     return (
-        ((e.nombre || '').toLowerCase().includes(filtroNombre.toLowerCase())) &&
-        ((e.empresa || '').toLowerCase().includes(filtroEmpresa.toLowerCase()))
+        ((e.nombre || '').toLowerCase().includes(filtroNombre.toLowerCase()) || 
+         (e.ap || '').toLowerCase().includes(filtroNombre.toLowerCase()) || 
+         (e.am || '').toLowerCase().includes(filtroNombre.toLowerCase())) &&
+        ((e.empresa || '').toLowerCase().includes(filtroEmpresa.toLowerCase())) &&
+        coincideEstado &&
+        coincideVacaciones
     );
 });
 
@@ -1554,31 +1951,69 @@ html=`
 <div class="tab" onclick="mostrar('ficha')">Ficha Detalle</div>
 </div>
 <div class="rh-card">
-<h2 style="display:flex; justify-content:space-between; align-items:center;">
+<h2 style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
     Empleados
     <button class="btn-ver" style="background:#22c55e; margin:0; padding:4px 8px; font-size:12px; font-weight:normal; border-radius:4px;" onclick="nuevoEmpleado()">+ Nuevo Empleado</button>
 </h2>
+
+<!-- Buscador global compacto -->
+<div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0; flex-wrap:wrap;">
+    <i class="bi bi-search" style="color:#64748b;"></i>
+    <input type="text" value="${filtroNombre}" placeholder="Buscar nombre..." oninput="filtroNombre=this.value;filtrarConDelay('empleados')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; flex-grow:1; min-width:150px; font-size:13px;">
+    <input type="text" value="${filtroEmpresa}" placeholder="Buscar empresa..." oninput="filtroEmpresa=this.value;filtrarConDelay('empleados')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; min-width:150px; font-size:13px;">
+    
+    <select onchange="filtroEstado=this.value;mostrar('empleados')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px; min-width:110px;">
+        <option value="">-- Estado --</option>
+        <option value="Activo" ${filtroEstado==="Activo"?"selected":""}>Activos</option>
+        <option value="Inactivo" ${filtroEstado==="Inactivo"?"selected":""}>Inactivos</option>
+    </select>
+
+    <select onchange="filtroVacacionesNivel=this.value;mostrar('empleados')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px; min-width:160px;">
+        <option value="">-- Filtro Vacaciones --</option>
+        <option value="tiene" ${filtroVacacionesNivel==="tiene"?"selected":""}>Con días disponibles</option>
+        <option value="sin" ${filtroVacacionesNivel==="sin"?"selected":""}>Sin días disponibles</option>
+        <option value="pocas" ${filtroVacacionesNivel==="pocas"?"selected":""}>Pocas vacaciones (1-5 días)</option>
+        <option value="muchas" ${filtroVacacionesNivel==="muchas"?"selected":""}>Muchas vacaciones (12+ días)</option>
+        <option value="alerta" ${filtroVacacionesNivel==="alerta"?"selected":""}>Con Alerta de pendientes</option>
+    </select>
+    
+    ${(filtroNombre || filtroEmpresa || filtroEstado || filtroVacacionesNivel) ? `<button class="btn-ver" style="background:#6b7280; padding:5px 10px; margin:0; font-size:13px; border-radius:4px;" onclick="filtroNombre=''; filtroEmpresa=''; filtroEstado=''; filtroVacacionesNivel=''; mostrar('empleados');" title="Limpiar Filtros"><i class="bi bi-x-circle"></i></button>` : ''}
+</div>
+
 <table class="rh-table">
 <thead>
 <tr>
-<th>Nombre<br><input value="${filtroNombre}" oninput="filtroNombre=this.value;filtrarConDelay('empleados')" style="width:90%"></th>
+<th>Nombre</th>
 <th>Apellido Paterno</th>
 <th>Apellido Materno</th>
-<th>Empresa<br><input value="${filtroEmpresa}" oninput="filtroEmpresa=this.value;filtrarConDelay('empleados')" style="width:90%"></th>
-<th>Estado<br>
-<select onchange="filtroEstado=this.value;mostrar('empleados')" style="width:95%">
-<option value="">Todos</option>
-<option value="Activo" ${filtroEstado==="Activo"?"selected":""}>Activo</option>
-<option value="Inactivo" ${filtroEstado==="Inactivo"?"selected":""}>Inactivo</option>
-</select>
-</th>
+<th>Empresa</th>
+<th>Estado</th>
 <th>Fecha Ingreso</th>
+<th>Días</th>
 <th>Fecha Egreso</th>
 </tr>
 </thead>
 <tbody>
 ${filtrados.map(e=>{
 let estado = e.egreso ? "Inactivo" : "Activo";
+let completedYears = calcularAniosServicio(e.fecha);
+let totalAcumulado = completedYears * 12;
+let totalUsados = vacaciones.filter(v => v.empleado_id === e.id && v.estado === 'Aprobadas' && v.tipo === 'Vacaciones').reduce((sum, v) => sum + v.dias, 0);
+let disponibles = totalAcumulado - totalUsados;
+let alerta = comprobarVacacionesNoTomadas(e);
+let alertaBadge = alerta.alertar ? `<span style="background:#f59e0b;color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:bold;margin-left:6px;display:inline-block;" title="Alerta: No ha tomado vacaciones en el período ${alerta.anio}">⚠ Vacaciones pendientes (${alerta.anio})</span>` : '';
+
+let badgeColor = "";
+if (disponibles >= 8) {
+    badgeColor = "background:#fee2e2; color:#b91c1c; border: 1px solid #fca5a5;"; // Rojo
+} else if (disponibles >= 2) {
+    badgeColor = "background:#fef9c3; color:#854d0e; border: 1px solid #fef08a;"; // Amarillo
+} else {
+    badgeColor = "background:#dcfce7; color:#15803d; border: 1px solid #86efac;"; // Verde
+}
+let badgeDisp = `<span style="padding:4px 8px; border-radius:20px; font-weight:bold; font-size:12px; display:inline-block; margin-right:6px; ${badgeColor}">${disponibles} disp.</span>`;
+let badgeTom = `<span style="padding:4px 8px; border-radius:20px; font-weight:bold; font-size:12px; display:inline-block; background:#dbeafe; color:#1e40af; border: 1px solid #bfdbfe;">${totalUsados} tom.</span>`;
+
 return `
 <tr style="cursor:pointer;" onclick="seleccionar('${e.id}')">
 <td>${e.nombre}</td>
@@ -1587,6 +2022,7 @@ return `
 <td>${e.empresa}</td>
 <td>${estado}</td>
 <td>${e.fecha || ''}</td>
+<td>${badgeDisp} ${badgeTom} ${alertaBadge}</td>
 <td>${e.egreso || '-'}</td>
 </tr>
 `;
@@ -1605,6 +2041,39 @@ if(v==="practicantes"){
     // Si no definimos pestaña, por defecto 'activos'
     if(typeof vistaPract === 'undefined') vistaPract = 'activos';
 
+    let coincidentes = (vistaPract === 'activos' ? activos : historial).filter(p => {
+        let coincideTexto = true;
+        if (filtroTextoPracticante !== "") {
+            let q = filtroTextoPracticante.toLowerCase();
+            coincideTexto = (p.nombre || '').toLowerCase().includes(q) || 
+                            (p.ap || '').toLowerCase().includes(q) || 
+                            (p.am || '').toLowerCase().includes(q) ||
+                            (p.puesto || '').toLowerCase().includes(q) ||
+                            (p.escuela_procedencia || '').toLowerCase().includes(q);
+        }
+        
+        let coincideHoras = true;
+        if (filtroPracticanteHoras !== "") {
+            let req = p.horas_requeridas || 480;
+            let llev = p.horas_llevadas || 0;
+            let rest = req - llev;
+            
+            if (filtroPracticanteHoras === "completado") {
+                coincideHoras = rest <= 0;
+            } else if (filtroPracticanteHoras === "pendiente") {
+                coincideHoras = rest > 0;
+            } else if (filtroPracticanteHoras === "cerca") {
+                coincideHoras = rest > 0 && rest <= 100;
+            } else if (filtroPracticanteHoras === "critico") {
+                coincideHoras = rest > 0 && rest <= 50;
+            } else if (filtroPracticanteHoras === "lejos") {
+                coincideHoras = rest > 200;
+            }
+        }
+        
+        return coincideTexto && coincideHoras;
+    });
+
     html = `
     <div class="tabs">
         <div class="tab ${vistaPract==='activos'?'active':''}" onclick="vistaPract='activos';mostrar('practicantes')">Activos</div>
@@ -1613,20 +2082,37 @@ if(v==="practicantes"){
     </div>
     <div class="rh-card">
         <h2>${vistaPract === 'activos' ? 'Practicantes Activos' : 'Historial de Bajas'}</h2>
+        
+        <!-- Buscador global compacto -->
+        <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0; flex-wrap:wrap;">
+            <i class="bi bi-search" style="color:#64748b;"></i>
+            <input type="text" value="${filtroTextoPracticante}" placeholder="Buscar nombre, puesto, escuela..." oninput="filtroTextoPracticante=this.value;filtrarConDelay('practicantes')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; flex-grow:1; min-width:150px; font-size:13px;">
+            
+            <select onchange="filtroPracticanteHoras=this.value;mostrar('practicantes')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px; min-width:180px;">
+                <option value="">-- Horas Restantes --</option>
+                <option value="pendiente" ${filtroPracticanteHoras==="pendiente"?"selected":""}>Con horas pendientes</option>
+                <option value="completado" ${filtroPracticanteHoras==="completado"?"selected":""}>Completados (0h restantes)</option>
+                <option value="cerca" ${filtroPracticanteHoras==="cerca"?"selected":""}>Por finalizar (<= 100h restantes)</option>
+                <option value="critico" ${filtroPracticanteHoras==="critico"?"selected":""}>Por finalizar urgente (<= 50h)</option>
+                <option value="lejos" ${filtroPracticanteHoras==="lejos"?"selected":""}>Falta mucho (> 200h restantes)</option>
+            </select>
+            
+            ${(filtroTextoPracticante || filtroPracticanteHoras) ? `<button class="btn-ver" style="background:#6b7280; padding:5px 10px; margin:0; font-size:13px; border-radius:4px;" onclick="filtroTextoPracticante=''; filtroPracticanteHoras=''; mostrar('practicantes');" title="Limpiar Filtros"><i class="bi bi-x-circle"></i></button>` : ''}
+        </div>
+
         <table class="rh-table">
             <thead>
                 <tr>
                     <th>Nombre</th> 
-                     <th>Puesto</th>
+                    <th>Puesto</th>
                     <th>Escuela de Procedencia</th>
                     <th>Horas (Acum. / Req.)</th>
                     <th>${vistaPract === 'activos' ? 'Ingreso' : 'Egreso'}</th>
                     <th>Acciones</th>
-                  
                 </tr>
             </thead>
             <tbody>
-                ${(vistaPract === 'activos' ? activos : historial).map(p => `
+                ${coincidentes.map(p => `
                 <tr style="cursor:pointer;" onclick="seleccionarPract('${p.id}'); mostrar('ficha_practicante');">
                     <td>${p.destacado ? '⭐ ' : ''}${p.nombre || ''} ${p.ap || ''}</td>
                     <td>${p.puesto_solicitado || p.puesto || 'N/A'}</td>
@@ -1652,8 +2138,23 @@ if(v==="practicantes"){
 // VISTA: LISTADO DE CANDIDATOS
 if(v==="candidatos"){
 let filtrados = candidatos.filter(c => {
-    return c.tipo_candidatura === filtroCandidatoTipo && 
-           (c.nombre || '').toLowerCase().includes(filtroNombreCandidato.toLowerCase());
+    if (c.tipo_candidatura !== filtroCandidatoTipo) return false;
+    
+    let coincideNombre = (c.nombre || '').toLowerCase().includes(filtroNombreCandidato.toLowerCase()) ||
+                         (c.ap || '').toLowerCase().includes(filtroNombreCandidato.toLowerCase()) ||
+                         (c.am || '').toLowerCase().includes(filtroNombreCandidato.toLowerCase());
+    
+    let coincidePuesto = (c.puesto_deseado || '').toLowerCase().includes(filtroPuestoCandidato.toLowerCase());
+    
+    let coincideEstatus = filtroEstatusCandidato === "" || c.estatus_reclutamiento === filtroEstatusCandidato;
+    
+    let coincideCalificacion = true;
+    if (filtroCalificacionCandidato !== "") {
+        let minStars = parseInt(filtroCalificacionCandidato);
+        coincideCalificacion = (c.calificacion || 0) >= minStars;
+    }
+    
+    return coincideNombre && coincidePuesto && coincideEstatus && coincideCalificacion;
 });
 
 html = `
@@ -1664,13 +2165,38 @@ html = `
 </div>
 
 <div class="rh-card">
-<h2 style="display:flex; justify-content:space-between; align-items:center;">
+<h2 style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
     Candidatos a ${filtroCandidatoTipo}
 </h2>
+
+<!-- Buscador global compacto -->
+<div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0; flex-wrap:wrap;">
+    <i class="bi bi-search" style="color:#64748b;"></i>
+    <input type="text" value="${filtroNombreCandidato}" placeholder="Buscar nombre..." oninput="filtroNombreCandidato=this.value;filtrarConDelay('candidatos')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; flex-grow:1; min-width:150px; font-size:13px;">
+    <input type="text" value="${filtroPuestoCandidato}" placeholder="Buscar puesto..." oninput="filtroPuestoCandidato=this.value;filtrarConDelay('candidatos')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; min-width:150px; font-size:13px;">
+    
+    <select onchange="filtroEstatusCandidato=this.value;mostrar('candidatos')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px; min-width:120px;">
+        <option value="">-- Estatus --</option>
+        <option value="Pendiente" ${filtroEstatusCandidato==="Pendiente"?"selected":""}>Pendiente</option>
+        <option value="Aceptado" ${filtroEstatusCandidato==="Aceptado"?"selected":""}>Aceptado</option>
+        <option value="Rechazado" ${filtroEstatusCandidato==="Rechazado"?"selected":""}>Rechazado</option>
+    </select>
+
+    <select onchange="filtroCalificacionCandidato=this.value;mostrar('candidatos')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px; min-width:140px;">
+        <option value="">-- Calificación --</option>
+        <option value="5" ${filtroCalificacionCandidato==="5"?"selected":""}>⭐⭐⭐⭐⭐ (5/5)</option>
+        <option value="4" ${filtroCalificacionCandidato==="4"?"selected":""}>⭐⭐⭐⭐+ (>= 4/5)</option>
+        <option value="3" ${filtroCalificacionCandidato==="3"?"selected":""}>⭐⭐⭐+ (>= 3/5)</option>
+        <option value="1" ${filtroCalificacionCandidato==="1"?"selected":""}>Con estrellas (>= 1/5)</option>
+    </select>
+    
+    ${(filtroNombreCandidato || filtroPuestoCandidato || filtroEstatusCandidato || filtroCalificacionCandidato) ? `<button class="btn-ver" style="background:#6b7280; padding:5px 10px; margin:0; font-size:13px; border-radius:4px;" onclick="filtroNombreCandidato=''; filtroPuestoCandidato=''; filtroEstatusCandidato=''; filtroCalificacionCandidato=''; mostrar('candidatos');" title="Limpiar Filtros"><i class="bi bi-x-circle"></i></button>` : ''}
+</div>
+
 <table class="rh-table">
 <thead>
 <tr>
-<th>Nombre <br><input value="${filtroNombreCandidato}" oninput="filtroNombreCandidato=this.value;filtrarConDelay('candidatos')" style="width:90%"></th>
+<th>Nombre</th>
 <th>Puesto Deseado</th>
 <th>Nivel Educativo</th>
 <th>Fecha Postulación</th>
@@ -1741,6 +2267,8 @@ if(v==="ficha_practicante" && !practSel){
 // VISTA: FICHA DE PRACTICANTE
 if(v==="ficha_practicante" && practSel){
 let p = practSel;
+let permPrac = (practicantesPermisos || []).map((vp,index)=>({...vp,index})).filter(vp => vp.practicante_id == p.id);
+let totalDiasTomados = permPrac.filter(vp => vp.estado === 'Aprobadas').reduce((a,vp)=>a+vp.dias, 0);
 html = `@include('administracion.recursos_humanos.practicantes_detalle')`;
 document.getElementById("contenido").innerHTML = html;
 renderizarDocumentos();
@@ -1768,49 +2296,91 @@ html = `@include('administracion.recursos_humanos.candidatos_detalle')`;
 
 // VISTA: GESTIÓN GENERAL DE VACACIONES
 if(v==="vacaciones"){
-html=`
-<div class="rh-card">
-<h2 style="display:flex; justify-content:space-between; align-items:center;">
-  Gestión de Vacaciones
-  <button class="btn-ver" style="background:#22c55e; margin:0; padding:4px 8px; font-size:12px; font-weight:normal; border-radius:4px;" onclick="mostrarModalVacaciones()">+ Solicitar</button>
-</h2>
-<table class="rh-table">
-<thead>
-<tr>
-<th>Empleado<br><input value="${filtroNombreVacaciones}" oninput="filtroNombreVacaciones=this.value;filtrarConDelay('vacaciones')" style="width:90%;margin-top:5px;"></th>
-<th>Inicio contrato</th>
-<th>Inicio vacaciones</th>
-<th>Fin vacaciones</th>
-<th>Días</th>
-<th>Tipo</th>
-<th>Estado</th>
-<th>Cobertura</th>
-<th>Acción</th>
-</tr>
-</thead>
-<tbody>
-${vacaciones.filter(v=>{
-    let emp = empleados.find(e=>e.id==v.empleado_id);
-    let nombreCompleto = emp ? (emp.nombre + " " + emp.ap + " " + emp.am).toLowerCase() : "";
-    return nombreCompleto.includes(filtroNombreVacaciones.toLowerCase());
-}).map(v=>{
-let emp = empleados.find(e=>e.id==v.empleado_id);
-return `
-<tr>
-<td>${emp ? emp.nombre : 'N/A'}</td>
-<td>${emp ? formatearFecha(emp.fecha) : ''}</td>
-<td>${formatearFecha(v.inicio)}</td>
-<td>${formatearFecha(v.fin)}</td>
-<td>${v.dias}</td>
-<td>${v.tipo}</td>
-<td><span style="padding:4px 8px;border-radius:6px;background:${v.estado==="Aprobadas"?"#22c55e":v.estado==="Pendiente"?"#facc15":"#ef4444"};color:white;font-size:12px;">${v.estado}</span></td>
-<td>${v.cobertura}</td>
-<td style="text-align:center;"><button style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer;" onclick="eliminarVacacionGlobal(${vacaciones.indexOf(v)})">Eliminar</button></td>
-</tr>`;
-}).join('')}
-</tbody>
-</table>
-</div>`;
+    let filtradasVac = vacaciones.filter(v=>{
+        let emp = empleados.find(e=>e.id==v.empleado_id);
+        let nombreCompleto = emp ? (emp.nombre + " " + emp.ap + " " + emp.am).toLowerCase() : "";
+        let coincideNombre = nombreCompleto.includes(filtroNombreVacaciones.toLowerCase());
+        
+        let coincideEstado = filtroEstadoVacaciones === "" || v.estado === filtroEstadoVacaciones;
+        let coincideTipo = filtroTipoVacaciones === "" || v.tipo === filtroTipoVacaciones;
+        
+        let coincideMes = true;
+        if (filtroMesVacaciones !== "") {
+            coincideMes = v.inicio && v.inicio.startsWith(filtroMesVacaciones);
+        }
+        
+        return coincideNombre && coincideEstado && coincideTipo && coincideMes;
+    });
+
+    html=`
+    <div class="rh-card">
+        <h2 style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+            Gestión de Vacaciones
+            <button class="btn-ver" style="background:#22c55e; margin:0; padding:4px 8px; font-size:12px; font-weight:normal; border-radius:4px;" onclick="mostrarModalVacaciones()">+ Solicitar</button>
+        </h2>
+
+        <!-- Buscador global compacto -->
+        <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0; flex-wrap:wrap;">
+            <i class="bi bi-search" style="color:#64748b;"></i>
+            <input type="text" value="${filtroNombreVacaciones}" placeholder="Buscar empleado..." oninput="filtroNombreVacaciones=this.value;filtrarConDelay('vacaciones')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; flex-grow:1; min-width:150px; font-size:13px;">
+            
+            <select onchange="filtroEstadoVacaciones=this.value;mostrar('vacaciones')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px; min-width:120px;">
+                <option value="">-- Estado --</option>
+                <option value="Pendiente" ${filtroEstadoVacaciones==="Pendiente"?"selected":""}>Pendientes</option>
+                <option value="Aprobadas" ${filtroEstadoVacaciones==="Aprobadas"?"selected":""}>Aprobadas</option>
+                <option value="Rechazadas" ${filtroEstadoVacaciones==="Rechazadas"?"selected":""}>Rechazadas</option>
+            </select>
+
+            <select onchange="filtroTipoVacaciones=this.value;mostrar('vacaciones')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px; min-width:120px;">
+                <option value="">-- Tipo --</option>
+                <option value="Vacaciones" ${filtroTipoVacaciones==="Vacaciones"?"selected":""}>Vacaciones</option>
+                <option value="Permiso" ${filtroTipoVacaciones==="Permiso"?"selected":""}>Permiso</option>
+            </select>
+
+            <input type="month" value="${filtroMesVacaciones}" title="Filtrar por Mes" onchange="filtroMesVacaciones=this.value;mostrar('vacaciones')" style="padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px; font-size:13px;">
+            
+            ${(filtroNombreVacaciones || filtroEstadoVacaciones || filtroTipoVacaciones || filtroMesVacaciones) ? `<button class="btn-ver" style="background:#6b7280; padding:5px 10px; margin:0; font-size:13px; border-radius:4px;" onclick="filtroNombreVacaciones=''; filtroEstadoVacaciones=''; filtroTipoVacaciones=''; filtroMesVacaciones=''; mostrar('vacaciones');" title="Limpiar Filtros"><i class="bi bi-x-circle"></i></button>` : ''}
+        </div>
+
+        <table class="rh-table">
+            <thead>
+                <tr>
+                    <th>Empleado</th>
+                    <th>Inicio contrato</th>
+                    <th>Inicio vacaciones</th>
+                    <th>Fin vacaciones</th>
+                    <th>Días</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Cobertura</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${filtradasVac.map(v=>{
+                    let emp = empleados.find(e=>e.id==v.empleado_id);
+                    return `
+                    <tr>
+                        <td>${emp ? emp.nombre + ' ' + emp.ap : 'N/A'}</td>
+                        <td>${emp ? formatearFecha(emp.fecha) : ''}</td>
+                        <td>${formatearFecha(v.inicio)}</td>
+                        <td>${formatearFecha(v.fin)}</td>
+                        <td style="text-align:center; font-weight:bold;">${v.dias}</td>
+                        <td>${v.tipo}</td>
+                        <td>
+                            <span style="padding:4px 8px; border-radius:20px; background:${v.estado==="Aprobadas"?"#dcfce7":v.estado==="Pendiente"?"#fef9c3":"#fee2e2"}; color:${v.estado==="Aprobadas"?"#15803d":v.estado==="Pendiente"?"#854d0e":"#991b1b"}; font-size:12px; font-weight:bold;">
+                                ${v.estado}
+                            </span>
+                        </td>
+                        <td>${v.cobertura || '-'}</td>
+                        <td style="text-align:center;">
+                            <button style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:12px; cursor:pointer;" onclick="eliminarVacacionGlobal(${vacaciones.indexOf(v)})">Eliminar</button>
+                        </td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>
+    </div>`;
 }
 
 // ... dentro de tu función mostrar(v) ...
@@ -1861,6 +2431,7 @@ empSel=empleados.find(e=>e.id==id);
 if(!empSel) { alert("ERROR CRÍTICO: No se encontró empleado con ID: " + id); }
 practSel=null;
 candSel=null;
+subTabEmpleado = 'informacion';
 mostrar("ficha");
 }
 
@@ -1881,6 +2452,7 @@ function seleccionarPract(id){
 practSel = practicantes.find(p => p.id == id);
 empSel = null;
 candSel = null;
+subTabPracticante = 'informacion';
 mostrar("ficha_practicante");
 }
 
@@ -1890,6 +2462,7 @@ candSel=candidatos.find(c=>c.id==id);
 if(!candSel) { alert("ERROR CRÍTICO: No se encontró candidato con ID: " + id); }
 empSel=null;
 practSel=null;
+subTabCandidato = 'informacion';
 mostrar("ficha_candidato");
 if (typeof renderizarDocumentos === 'function') {
         setTimeout(renderizarDocumentos, 100); 
@@ -1930,6 +2503,56 @@ if(input.files && input.files[0]){
         });
         guardarBD();
         mostrar("ficha_candidato");
+    };
+    reader.readAsDataURL(file);
+}
+}
+
+function subirArchivoEmpleado(input){
+if(input.files && input.files[0]){
+    let reader = new FileReader();
+    let file = input.files[0];
+    let isImage = file.type.startsWith("image/");
+    reader.onload = function(e){
+        if(e.target.result.length > 2_000_000){
+            alert("Este archivo es demasiado grande para guardarse localmente. Intenta con un archivo más pequeño.");
+            return;
+        }
+        if(!empSel.documentos) empSel.documentos = [];
+        empSel.documentos.push({
+            url: e.target.result,
+            tipo: isImage ? 'imagen' : 'pdf',
+            nombre: file.name,
+            owner_tipo: "empleado",
+            owner_id: empSel.id
+        });
+        guardarBD();
+        mostrar("ficha");
+    };
+    reader.readAsDataURL(file);
+}
+}
+
+function subirArchivoPracticante(input){
+if(input.files && input.files[0]){
+    let reader = new FileReader();
+    let file = input.files[0];
+    let isImage = file.type.startsWith("image/");
+    reader.onload = function(e){
+        if(e.target.result.length > 2_000_000){
+            alert("Este archivo es demasiado grande para guardarse localmente. Intenta con un archivo más pequeño.");
+            return;
+        }
+        if(!practSel.documentos) practSel.documentos = [];
+        practSel.documentos.push({
+            data: e.target.result,
+            tipo: isImage ? 'imagen' : 'pdf',
+            nombre: file.name,
+            owner_tipo: "practicante",
+            owner_id: practSel.id
+        });
+        guardarBD();
+        renderizarDocumentos();
     };
     reader.readAsDataURL(file);
 }
@@ -2014,7 +2637,7 @@ function mostrarModalVacaciones(){
     document.getElementById('modalVacaciones').style.display='flex';
 }
 
-function guardarNuevaVacacion(){
+function guardarNuevaVacacion(aprobarDirecto = false){
     let empId = document.getElementById('v_emp_id').value;
     if(!empId){ alert('Debes seleccionar un empleado.'); return; }
     let emp = empleados.find(e=>e.id==empId);
@@ -2022,18 +2645,130 @@ function guardarNuevaVacacion(){
     let inicio = document.getElementById('v_inicio').value;
     let fin = document.getElementById('v_fin').value;
     if(!inicio || !fin){ alert('Debes indicar las fechas de inicio y fin.'); return; }
+    let dias = parseInt(document.getElementById('v_dias').value) || 0;
+    let tipo = document.getElementById('v_tipo').value;
+    
+    if(tipo === 'Vacaciones') {
+        let completedYears = calcularAniosServicio(emp.fecha);
+        let totalAcumulado = completedYears * 12;
+        let totalUsados = vacaciones.filter(v => v.empleado_id === emp.id && v.estado === 'Aprobadas' && v.tipo === 'Vacaciones').reduce((sum, v) => sum + v.dias, 0);
+        let disponibles = totalAcumulado - totalUsados;
+        
+        if(dias > disponibles) {
+            alert(`No se pueden solicitar ${dias} días de vacaciones. El empleado solo tiene ${disponibles} días disponibles acumulados.`);
+            return;
+        }
+    }
+    
     vacaciones.unshift({
         empleado_id: parseInt(empId),
         inicio: inicio,
         fin: fin,
-        dias: parseInt(document.getElementById('v_dias').value) || 0,
-        tipo: document.getElementById('v_tipo').value,
-        estado: 'Pendiente',
+        dias: dias,
+        tipo: tipo,
+        estado: aprobarDirecto ? 'Aprobadas' : 'Pendiente',
         cobertura: document.getElementById('v_cobertura').value
     });
     guardarBD();
     document.getElementById('modalVacaciones').style.display='none';
     mostrar('vacaciones');
+}
+
+function mostrarModalPermisosPracticante(){
+    let sel = document.getElementById('vp_pract_id');
+    sel.innerHTML = '<option value="">-- Seleccionar practicante --</option>';
+    practicantes
+        .filter(p => !p.egreso)
+        .sort((a,b) => (a.nombre+a.ap).localeCompare(b.nombre+b.ap))
+        .forEach(p => {
+            let opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${p.nombre} ${p.ap} ${p.am || ''}`.trim();
+            sel.appendChild(opt);
+        });
+
+    if(practSel){
+        sel.value = practSel.id;
+    }
+    
+    document.getElementById('vp_inicio').value = '';
+    document.getElementById('vp_fin').value = '';
+    document.getElementById('vp_dias').value = '';
+    document.getElementById('vp_tipo').value = 'Permiso';
+    document.getElementById('vp_cobertura').value = '';
+
+    document.getElementById('modalPermisosPracticante').style.display='flex';
+}
+
+function guardarNuevoPermisoPracticante(aprobarDirecto = false){
+    let practId = document.getElementById('vp_pract_id').value;
+    if(!practId){ alert('Debes seleccionar un practicante.'); return; }
+    let pract = practicantes.find(p=>p.id==practId);
+    if(!pract){ alert('Practicante no encontrado.'); return; }
+    let inicio = document.getElementById('vp_inicio').value;
+    let fin = document.getElementById('vp_fin').value;
+    if(!inicio || !fin){ alert('Debes indicar las fechas de inicio y fin.'); return; }
+    let dias = parseInt(document.getElementById('vp_dias').value) || 0;
+    let tipo = document.getElementById('vp_tipo').value;
+    let cobertura = document.getElementById('vp_cobertura').value;
+
+    practicantesPermisos.unshift({
+        practicante_id: parseInt(practId),
+        inicio: inicio,
+        fin: fin,
+        dias: dias,
+        tipo: tipo,
+        estado: aprobarDirecto ? 'Aprobadas' : 'Pendiente',
+        cobertura: cobertura
+    });
+    
+    guardarBD();
+    document.getElementById('modalPermisosPracticante').style.display='none';
+    
+    if(practSel && practSel.id == practId){
+        mostrar('ficha_practicante');
+    } else {
+        mostrar('practicantes');
+    }
+}
+
+function calcularDiasPermisosPracticanteAuto() {
+    let inicioVal = document.getElementById('vp_inicio').value;
+    let finVal = document.getElementById('vp_fin').value;
+    if(inicioVal && finVal) {
+        let d1 = new Date(inicioVal + 'T00:00:00');
+        let d2 = new Date(finVal + 'T00:00:00');
+        if(!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
+            let diffTime = d2.getTime() - d1.getTime();
+            let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+            let days = diffDays <= 0 ? 1 : diffDays;
+            document.getElementById('vp_dias').value = days;
+        }
+    }
+}
+
+function aprobarPermisoPracticante(index){
+    let req = practicantesPermisos[index];
+    if(!req) return;
+    practicantesPermisos[index].estado = "Aprobadas";
+    guardarBD();
+    mostrar("ficha_practicante");
+}
+
+function rechazarPermisoPracticante(index) {
+    if(confirm("¿Rechazar solicitud de permiso?")){
+        practicantesPermisos[index].estado = "Rechazadas";
+        guardarBD();
+        mostrar("ficha_practicante");
+    }
+}
+
+function eliminarPermisoPracticante(index) {
+    if(confirm("¿Estás seguro de que deseas eliminar este registro de permiso de forma permanente?")){
+        practicantesPermisos.splice(index, 1);
+        guardarBD();
+        mostrar("ficha_practicante");
+    }
 }
 
 function nuevoEmpleado(){
@@ -2209,6 +2944,7 @@ async function guardarCambiosFicha(){
     
     // Cambiar a pestaña Expediente para mostrar el PDF generado
     if(citaSel) {
+        subTabCita = 'expediente';
         citaSel.modo_actual = 'expediente';
         mostrar('ficha_cita');
     }
@@ -2303,17 +3039,21 @@ function nuevaCita(){
     };
     citaSel = nuevaCita;
     citaSel.modo_actual = 'entrevista';
+    subTabCita = 'entrevista';
     empSel=null; practSel=null; candSel=null;
     mostrar("ficha_cita");
 }
 
 function seleccionarCita(id){
     citaSel = citas.find(c=>c.id==id);
+    subTabCita = 'entrevista';
     empSel=null; practSel=null; candSel=null;
     if (citaSel) {
         if (citaSel.estado === 'Realizada') {
+            subTabCita = 'expediente';
             citaSel.modo_actual = 'expediente';
         } else {
+            subTabCita = 'entrevista';
             citaSel.modo_actual = 'entrevista';
         }
     }
@@ -2543,19 +3283,32 @@ if (!restaurarEstadoNavegacionRH()) {
  * Aprueba una solicitud de vacaciones validando disponibilidad de días
  */
 function aprobarVacacionFicha(index){
-let e = empSel;
-let registro = vacacionesAnuales.find(v=> v.empleado_id===e.id && v.anio===e.anioSeleccionado);
-let diasTotales = registro ? registro.dias_totales : 0;
-let usados = vacaciones.filter(v=> v.empleado_id===e.id && new Date(v.inicio).getFullYear() === e.anioSeleccionado).reduce((a,v)=>a+v.dias,0);
-let disponibles = diasTotales - usados;
-
-if(disponibles <= 0){
-    alert("Este año ya no tiene días disponibles");
-    return;
+    let e = empSel;
+    let req = vacaciones[index];
+    if(!req) return;
+    
+    let completedYears = calcularAniosServicio(e.fecha);
+    let totalAcumulado = completedYears * 12;
+    let totalUsados = vacaciones.filter(v => v.empleado_id === e.id && v.estado === 'Aprobadas' && v.tipo === 'Vacaciones').reduce((sum, v) => sum + v.dias, 0);
+    let disponibles = totalAcumulado - totalUsados;
+    
+    if (req.tipo === 'Vacaciones' && req.dias > disponibles) {
+        if (!confirm(`⚠️ Atención: La solicitud requiere ${req.dias} días, pero el empleado solo tiene ${disponibles} días disponibles.\n\n¿Deseas aprobar esta solicitud de todos modos por acuerdo previo?`)) {
+            return;
+        }
+    }
+    
+    vacaciones[index].estado = "Aprobadas";
+    guardarBD();
+    mostrar("ficha");
 }
 
-vacaciones[index].estado="Aprobadas";
-mostrar("ficha");
+function rechazarVacacionFicha(index) {
+    if(confirm("¿Rechazar solicitud?")){
+        vacaciones[index].estado = "Rechazadas";
+        guardarBD();
+        mostrar("ficha");
+    }
 }
 
 // Manejador global para saltar al siguiente input con tecla Enter
@@ -2864,6 +3617,63 @@ function eliminarCitaIndividual(id) {
         citasSeleccionadas = citasSeleccionadas.filter(cid => cid !== id);
         guardarBD();
         mostrar('citas');
+    }
+}
+
+// --- FUNCIONES DE CÁLCULO DE VACACIONES ---
+function calcularAniosServicio(fechaIngreso, fechaFin = new Date()) {
+    if(!fechaIngreso) return 0;
+    let ing = new Date(fechaIngreso);
+    let fin = new Date(fechaFin);
+    if(isNaN(ing.getTime())) return 0;
+    
+    let diffYears = fin.getFullYear() - ing.getFullYear();
+    if (fin.getMonth() < ing.getMonth() || (fin.getMonth() === ing.getMonth() && fin.getDate() < ing.getDate())) {
+        diffYears--;
+    }
+    return Math.max(0, diffYears);
+}
+
+function comprobarVacacionesNoTomadas(e) {
+    if(!e.fecha) return { alertar: false };
+    let ing = new Date(e.fecha);
+    let hoy = new Date();
+    if(isNaN(ing.getTime())) return { alertar: false };
+    
+    let completedYears = calcularAniosServicio(e.fecha, hoy);
+    if(completedYears === 0) return { alertar: false };
+    
+    for (let i = 0; i < completedYears; i++) {
+        let inicioServicio = new Date(ing.getFullYear() + i, ing.getMonth(), ing.getDate());
+        let finServicio = new Date(ing.getFullYear() + i + 1, ing.getMonth(), ing.getDate());
+        
+        let filtradas = vacaciones.filter(v => {
+            if (v.empleado_id !== e.id || v.estado !== 'Aprobadas' || v.tipo !== 'Vacaciones') return false;
+            let inicioVac = new Date(v.inicio);
+            return inicioVac >= inicioServicio && inicioVac < finServicio;
+        });
+        
+        let totalDiasEnAnio = filtradas.reduce((sum, v) => sum + v.dias, 0);
+        if (totalDiasEnAnio === 0) {
+            let anioServicioTexto = `${inicioServicio.getFullYear()} - ${finServicio.getFullYear()}`;
+            return { alertar: true, anio: anioServicioTexto };
+        }
+    }
+    return { alertar: false };
+}
+
+function calcularDiasVacacionesAuto() {
+    let inicioVal = document.getElementById('v_inicio').value;
+    let finVal = document.getElementById('v_fin').value;
+    if(inicioVal && finVal) {
+        let d1 = new Date(inicioVal + 'T00:00:00');
+        let d2 = new Date(finVal + 'T00:00:00');
+        if(!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
+            let diffTime = d2.getTime() - d1.getTime();
+            let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+            let days = diffDays <= 0 ? 1 : diffDays;
+            document.getElementById('v_dias').value = days;
+        }
     }
 }
 
